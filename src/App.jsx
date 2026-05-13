@@ -5,7 +5,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("");
 
   useEffect(() => {
-    fetch('/catalogue.json')
+    fetch('catalogue.json')
       .then(res => res.json())
       .then(data => {
         setCatalogue(data);
@@ -16,37 +16,55 @@ export default function App() {
   const currentProduct = catalogue[activeTab];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#020617', color: '#fff', fontFamily: 'Inter, sans-serif', padding: '40px' }}>
-      <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <h1 style={{ fontSize: '4rem', fontWeight: '900', fontStyle: 'italic' }}>
+    <div style={{ minHeight: '100vh', background: '#000', color: '#fff', fontFamily: 'sans-serif', padding: '40px' }}>
+      <header style={{ marginBottom: '40px' }}>
+        <h1 style={{ fontSize: '4rem', fontWeight: '900', fontStyle: 'italic', margin: 0, letterSpacing: '-2px' }}>
           CLARKY'S <span style={{ color: '#3b82f6' }}>PRINTHOUSE</span>
         </h1>
       </header>
 
-      {/* Pill Menu */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '40px' }}>
-        {Object.keys(catalogue).map(key => (
-          <button 
-            key={key} 
-            onClick={() => setActiveTab(key)}
-            style={{
-              padding: '10px 25px', borderRadius: '20px', border: 'none',
-              background: activeTab === key ? '#3b82f6' : '#1e293b',
-              color: '#fff', fontWeight: 'bold', cursor: 'pointer'
-            }}
-          >
-            {catalogue[key].displayName}
-          </button>
-        ))}
-      </div>
-
-      {/* Product Display */}
-      {currentProduct && (
-        <div style={{ maxWidth: '800px', margin: '0 auto', background: '#0f172a', borderRadius: '20px', padding: '20px', border: '1px solid #1e293b' }}>
-          <h2 style={{ fontSize: '2rem', marginBottom: '20px' }}>{currentProduct.displayName}</h2>
-          <img src={currentProduct.photo} style={{ width: '100%', borderRadius: '15px' }} alt={currentProduct.displayName} />
+      <main style={{ maxWidth: '1200px' }}>
+        {/* Navigation */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '50px', borderBottom: '1px solid #222' }}>
+          {Object.keys(catalogue).map(key => (
+            <button 
+              key={key} 
+              onClick={() => setActiveTab(key)}
+              style={{
+                padding: '10px 0', background: 'transparent',
+                border: 'none', borderBottom: activeTab === key ? '4px solid #3b82f6' : '4px solid transparent',
+                color: activeTab === key ? '#fff' : '#444',
+                cursor: 'pointer', fontWeight: 'bold', fontSize: '1.1rem', textTransform: 'uppercase'
+              }}
+            >
+              {catalogue[key].displayName}
+            </button>
+          ))}
         </div>
-      )}
+
+        {currentProduct && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '60px' }}>
+            {/* Image */}
+            <img src={currentProduct.photo} style={{ width: '100%', display: 'block' }} alt="Print" />
+            
+            {/* Content */}
+            <div style={{ paddingTop: '10px' }}>
+              <h2 style={{ fontSize: '3rem', fontWeight: '900', margin: '0 0 20px 0', textTransform: 'uppercase' }}>
+                {currentProduct.displayName}
+              </h2>
+              <p style={{ 
+                fontSize: '1.2rem', 
+                color: '#bbb', 
+                lineHeight: '1.6', 
+                margin: 0, 
+                whiteSpace: 'pre-wrap' // This fixes the line breaks from your text file
+              }}>
+                {currentProduct.description}
+              </p>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
