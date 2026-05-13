@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-// Define our dynamic theme colors based on category names
 const CATEGORY_COLORS = {
   peptides: '#14B8A6',     // Retro Teal
   accessories: '#FF007F',  // Cyberpunk Pink
@@ -11,7 +10,7 @@ const CATEGORY_COLORS = {
 export default function App() {
   const [catalogue, setCatalogue] = useState({});
   const [activeCategory, setActiveCategory] = useState("");
-  const [activeProduct, setActiveProduct] = useState(null);
+  const [activeProduct, setActiveProduct] = useState("");
 
   useEffect(() => {
     fetch('catalogue.json')
@@ -21,17 +20,20 @@ export default function App() {
         const firstCategory = Object.keys(data)[0];
         if (firstCategory) {
           setActiveCategory(firstCategory);
+          // FIX: Automatically load the first product of the first category
+          const firstProduct = Object.keys(data[firstCategory].products)[0];
+          setActiveProduct(firstProduct);
         }
       });
   }, []);
 
-  // Handlers
+  // FIX: When changing categories, instantly load the first product inside it
   const handleCategoryClick = (catKey) => {
     setActiveCategory(catKey);
-    setActiveProduct(null); // Reset to the grid view when changing categories
+    const firstProduct = Object.keys(catalogue[catKey].products)[0];
+    setActiveProduct(firstProduct);
   };
 
-  // Get current active data
   const currentCategoryData = catalogue[activeCategory];
   const currentThemeColor = CATEGORY_COLORS[activeCategory] || CATEGORY_COLORS.default;
 
@@ -48,7 +50,6 @@ export default function App() {
         {`@import url('https://fonts.googleapis.com/css2?family=Bungee&family=Space+Mono:wght@400;700&display=swap');`}
       </style>
 
-      {/* Main Header */}
       <header style={{ marginBottom: '40px', textAlign: 'center', paddingTop: '20px' }}>
         <h1 style={{ 
           fontFamily: '"Bungee", cursive',
@@ -68,9 +69,9 @@ export default function App() {
 
       <main style={{ maxWidth: '1500px', width: '95%', margin: '0 auto' }}>
         
-        {/* Tier 1: Category Navigation */}
+        {/* Tier 1: Category Navigation (The Big Buttons) */}
         <div style={{ 
-          display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '30px', justifyContent: 'center' 
+          display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '20px', justifyContent: 'center' 
         }}>
           {Object.keys(catalogue).map(catKey => {
             const isCatActive = activeCategory === catKey;
@@ -98,8 +99,39 @@ export default function App() {
           })}
         </div>
 
-        {/* System Terminal Breadcrumbs */}
+        {/* Tier 2: Product Sub-Menu (The Quick Selectors) */}
         {currentCategoryData && (
+          <div style={{ 
+            display: 'flex', flexWrap: 'wrap', gap: '15px', marginBottom: '40px', justifyContent: 'center' 
+          }}>
+            {Object.keys(currentCategoryData.products).map(prodKey => {
+              const isProdActive = activeProduct === prodKey;
+              return (
+                <button 
+                  key={prodKey} 
+                  onClick={() => setActiveProduct(prodKey)}
+                  style={{
+                    padding: '8px 25px',
+                    backgroundColor: isProdActive ? '#F5F0E6' : 'transparent',
+                    border: `3px solid ${isProdActive ? '#F5F0E6' : currentThemeColor}`,
+                    color: isProdActive ? '#121212' : currentThemeColor,
+                    fontFamily: '"Bungee", cursive',
+                    fontSize: '1.2rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.1s ease',
+                    boxShadow: isProdActive ? `4px 4px 0px ${currentThemeColor}` : 'none',
+                    transform: isProdActive ? 'translate(-2px, -2px)' : 'none'
+                  }}
+                >
+                  {currentCategoryData.products[prodKey].displayName}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* System Terminal Breadcrumbs */}
+        {currentCategoryData && activeProduct && (
           <div style={{
             fontFamily: '"Space Mono", monospace',
             fontSize: '1.2rem',
@@ -113,76 +145,38 @@ export default function App() {
           }}>
             <span style={{ color: '#F5F0E6' }}>SYS &gt; PRINTHOUSE &gt; </span> 
             {currentCategoryData.displayName} 
-            {activeProduct && <span style={{ color: '#F5F0E6' }}> &gt; {currentCategoryData.products[activeProduct].displayName}.EXE</span>}
-            {!activeProduct && <span style={{ color: '#F5F0E6' }}> &gt; INDEX.DIR</span>}
+            <span style={{ color: '#F5F0E6' }}> &gt; {currentCategoryData.products[activeProduct].displayName}.EXE</span>
             <span style={{ animation: 'blink 1s step-end infinite' }}>_</span>
             <style>{`@keyframes blink { 50% { opacity: 0; } }`}</style>
           </div>
         )}
 
-        {/* View Router: Show Grid or Detail */}
-        {currentCategoryData && !activeProduct && (
-          // === DIRECTORY GRID VIEW ===
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
-            gap: '30px' 
-          }}>
-            {Object.keys(currentCategoryData.products).map(prodKey => {
-              const prod = currentCategoryData.products[prodKey];
-              return (
-                <div 
-                  key={prodKey}
-                  onClick={() => setActiveProduct(prodKey)}
-                  style={{
-                    backgroundColor: currentThemeColor,
-                    border: '4px solid #F5F0E6',
-                    boxShadow: '8px 8px 0px #000',
-                    cursor: 'pointer',
-                    transition: 'transform 0.1s',
-                    display: 'flex',
-                    flexDirection: 'column'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translate(-4px, -4px)'}
-                  onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
-                >
-                  <div style={{ height: '250px', backgroundColor: '#121212', overflow: 'hidden' }}>
-                    <img src={prod.photo} alt={prod.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.1) brightness(0.95)' }} />
-                  </div>
-                  <div style={{ padding: '20px', textAlign: 'center', backgroundColor: '#1A1A1A', flexGrow: 1, borderTop: `4px solid ${currentThemeColor}` }}>
-                    <h3 style={{ fontFamily: '"Bungee", cursive', fontSize: '1.8rem', color: currentThemeColor, margin: 0, textShadow: '2px 2px 0px #000' }}>
-                      {prod.displayName}
-                    </h3>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
+        {/* PRODUCT DETAIL VIEW */}
         {currentCategoryData && activeProduct && (
-          // === PRODUCT DETAIL VIEW ===
           <div style={{ 
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '8px',
-            backgroundColor: currentThemeColor, border: '4px solid #F5F0E6', boxShadow: '12px 12px 0px #000' 
+            backgroundColor: currentThemeColor, border: '4px solid #F5F0E6', boxShadow: '12px 12px 0px #000',
+            transition: 'background-color 0.3s ease'
           }}>
             <div style={{ backgroundColor: '#121212', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <img 
                 src={currentCategoryData.products[activeProduct].photo} 
                 style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', filter: 'contrast(1.1) brightness(0.95)' }} 
-                alt="Product" 
+                alt={currentCategoryData.products[activeProduct].displayName} 
               />
             </div>
             <div style={{ backgroundColor: '#1A1A1A', padding: '40px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <h2 style={{ 
                 fontFamily: '"Bungee", cursive', fontSize: 'clamp(2rem, 4vw, 3.5rem)', margin: '0 0 30px 0', lineHeight: '1.1',
-                color: currentThemeColor, textShadow: '3px 3px 0px #000, 6px 6px 0px #F5F0E6', textAlign: 'center' 
+                color: currentThemeColor, textShadow: '3px 3px 0px #000, 6px 6px 0px #F5F0E6', textAlign: 'center',
+                transition: 'color 0.3s ease'
               }}>
                 {currentCategoryData.products[activeProduct].displayName}
               </h2>
               <div style={{ 
                 fontFamily: '"Space Mono", monospace', fontSize: '1.05rem', color: '#F5F0E6', lineHeight: '2', letterSpacing: '0.5px', whiteSpace: 'pre-wrap',
-                padding: '35px', backgroundColor: '#121212', border: `2px dashed ${currentThemeColor}`, textAlign: 'left'
+                padding: '35px', backgroundColor: '#121212', border: `2px dashed ${currentThemeColor}`, textAlign: 'left',
+                transition: 'border-color 0.3s ease'
               }}>
                 {currentCategoryData.products[activeProduct].description}
               </div>

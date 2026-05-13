@@ -2,7 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Recreate __dirname for ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -11,8 +10,12 @@ const outputFile = path.join(__dirname, 'public', 'catalogue.json');
 
 const catalogue = {};
 
-// Adds spaces before capitals/numbers and makes it uppercase
-const formatName = (str) => str.replace(/([A-Z0-9])/g, ' $1').trim().toUpperCase().replace(/\s+/g, ' ');
+// FIX: Now replaces underscores/hyphens and handles camelCase properly
+const formatName = (str) => {
+  let clean = str.replace(/[_-]/g, ' ');
+  clean = clean.replace(/([a-z])([A-Z0-9])/g, '$1 $2');
+  return clean.trim().toUpperCase().replace(/\s+/g, ' ');
+};
 
 if (fs.existsSync(productsDir)) {
   const categories = fs.readdirSync(productsDir).filter(f => fs.statSync(path.join(productsDir, f)).isDirectory());
@@ -31,14 +34,12 @@ if (fs.existsSync(productsDir)) {
       const prodKey = productFolder.toLowerCase();
       const prodPath = path.join(catPath, productFolder);
 
-      // Read description
       let description = "No description data found.";
       const descPath = path.join(prodPath, 'desc.txt');
       if (fs.existsSync(descPath)) {
         description = fs.readFileSync(descPath, 'utf8');
       }
 
-      // Find first image (jpg or png)
       let photoFile = "";
       const files = fs.readdirSync(prodPath);
       const imgFile = files.find(f => f.endsWith('.jpg') || f.endsWith('.png'));
@@ -48,7 +49,8 @@ if (fs.existsSync(productsDir)) {
 
       catalogue[catKey].products[prodKey] = {
         displayName: formatName(productFolder),
-        photo: `/products/${categoryFolder}/${productFolder}/${photoFile}`,
+        // FIX: Removed the leading '/' so GitHub Pages can route the image correctly
+        photo: `products/${categoryFolder}/${productFolder}/${photoFile}`,
         description: description
       };
     });
@@ -56,4 +58,4 @@ if (fs.existsSync(productsDir)) {
 }
 
 fs.writeFileSync(outputFile, JSON.stringify(catalogue, null, 2));
-console.log("BOOM! Nested catalogue generated successfully!");
+console.log("Scanner complete: Paths and underscores fixed!");
