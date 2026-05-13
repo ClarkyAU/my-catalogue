@@ -1,12 +1,22 @@
 {
-  "Large_Box_54": {
-    "displayName": "Large Box 54",
-    "photo": "products/Large_Box_54/printed_1.jpg",
-    "description": ""
-  },
-  "MixedBox": {
-    "displayName": "MixedBox",
-    "photo": "products/MixedBox/printed_1.jpg",
-    "description": "Small-sized rugged case that fits nicely into the fridge.\n\nHolds:\n\n    8x 3ml Vials\n\n    6x 10ml Vials"
+  "peptides": {
+    "displayName": "PEPTIDES",
+    "products": {
+      "accessories": {
+        "displayName": "ACCESSORIES",
+        "photo": "/products/Peptides/Accessories/",
+        "description": "No description data found."
+      },
+      "large_box": {
+        "displayName": "LARGE_ BOX",
+        "photo": "/products/Peptides/Large_Box/printed_1.jpg",
+        "description": "This is the big one! \nStore all your vials in one case.\n\nHolds:\n - 54x 3ml Vials\n\nColour Options:\nEach componet can be customized to a colour of choice.\n - Latches\n - Lid / Base\n - Insert\n\nSurfaces:\n - Carbon Fibre Look\n - Textured"
+      },
+      "mixed_box": {
+        "displayName": "MIXED_ BOX",
+        "photo": "/products/Peptides/Mixed_Box/printed_1.jpg",
+        "description": "Medium-sized rugged case that fits nicely into the fridge.\n\nHolds:\n - 8x 3ml Vials\n - 6x 10ml Vials\n\nColour Options:\nEach componet can be customized to a colour of choice.\n - Latches\n - Lid / Base\n - Insert\n\nSurfaces:\n - Carbon Fibre Look\n - Textured"
+      }
+    }
   }
 }
