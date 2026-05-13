@@ -2,6 +2,11 @@
   "accessories": {
     "displayName": "ACCESSORIES",
     "products": {
+      "can_holder": {
+        "displayName": "CAN HOLDER",
+        "photo": "products/Accessories/Can_Holder/",
+        "description": "Want to be the center of attention at your next gathering?\nStand out with one of these bad boys.\nSlap a can in and enjoy easy care free sipping!\n\nPicture To Come!\n\nColour Options:\n - Enquire about what colours are avalible\n\nSurfaces Options:\n - Carbon Fibre Look\n - Textured"
+      },
       "trolley_key": {
         "displayName": "TROLLEY KEY",
         "photo": "products/Accessories/Trolley_Key/",
@@ -15,12 +20,12 @@
       "large_box": {
         "displayName": "LARGE BOX",
         "photo": "products/Peptides/Large_Box/printed_1.jpg",
-        "description": "This is the big one! \nStore all your vials in one case.\n\nHolds:\n - 54x 3ml Vials\n\nColour Options:\nEach componet can be customized to a colour of choice.\n - Latches\n - Lid / Base\n - Insert\n\nSurfaces:\n - Carbon Fibre Look\n - Textured"
+        "description": "This is the big one! \nStore all your vials in one case.\n\nHolds:\n - 54x 3ml Vials\n\nColour Options:\nEach component can be customized to a colour of choice.\n - Latches\n - Lid / Base\n - Insert\n\nSurfaces:\n - Carbon Fibre Look\n - Textured"
       },
       "mixed_box": {
         "displayName": "MIXED BOX",
         "photo": "products/Peptides/Mixed_Box/printed_1.jpg",
-        "description": "Medium-sized rugged case that fits nicely into the fridge.\n\nHolds:\n - 8x 3ml Vials\n - 6x 10ml Vials\n\nColour Options:\nEach componet can be customized to a colour of choice.\n - Latches\n - Lid / Base\n - Insert\n\nSurfaces:\n - Carbon Fibre Look\n - Textured"
+        "description": "Medium-sized rugged case that fits nicely into the fridge.\n\nHolds:\n - 8x 3ml Vials\n - 6x 10ml Vials\n\nColour Options:\nEach component can be customized to a colour of choice.\n - Latches\n - Lid / Base\n - Insert\n\nSurfaces:\n - Carbon Fibre Look\n - Textured"
       }
     }
   }
