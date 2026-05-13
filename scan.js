@@ -22,7 +22,7 @@ folders.forEach(folder => {
   if (images.length > 0) {
     catalogue[folder] = {
       displayName: folder.replace(/_/g, ' '),
-      photo: `/products/${folder}/${images[0]}`
+      photo: `products/${folder}/${images[0]}`
     };
   }
 });
