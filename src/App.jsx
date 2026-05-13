@@ -52,8 +52,6 @@ export default function App() {
       <style>
         {`
           @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Space+Mono:wght@400;700&display=swap');
-          
-          /* Smooth scrolling for navigation rows */
           .nav-scroll::-webkit-scrollbar { display: none; }
           .nav-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         `}
@@ -76,14 +74,14 @@ export default function App() {
 
       <main style={{ maxWidth: '1500px', width: '100%', margin: '0 auto' }}>
         
-        {/* Category Nav - Scrollable on mobile */}
+        {/* Tier 1: Category Nav - Fixed Centering */}
         <div className="nav-scroll" style={{ 
           display: 'flex', 
           overflowX: 'auto',
           gap: '15px', 
           marginBottom: '20px', 
           padding: '10px 5px',
-          justifyContent: isMobile ? 'flex-start' : 'center' 
+          justifyContent: 'center' // Changed to center for better mobile alignment
         }}>
           {Object.keys(catalogue).map(catKey => {
             const isCatActive = activeCategory === catKey;
@@ -110,7 +108,7 @@ export default function App() {
           })}
         </div>
 
-        {/* Product Nav - Scrollable on mobile */}
+        {/* Tier 2: Product Nav - Fixed Centering */}
         {currentCategoryData && (
           <div className="nav-scroll" style={{ 
             display: 'flex', 
@@ -118,7 +116,7 @@ export default function App() {
             gap: '10px', 
             marginBottom: '30px', 
             padding: '10px 5px',
-            justifyContent: isMobile ? 'flex-start' : 'center' 
+            justifyContent: 'center' // Changed to center
           }}>
             {Object.keys(currentCategoryData.products).map(prodKey => {
               const isProdActive = activeProduct === prodKey;
@@ -144,7 +142,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Product Detail - Stacks on mobile */}
+        {/* Product Detail */}
         {currentCategoryData && activeProduct && (
           <div style={{ 
             display: 'flex',
@@ -153,7 +151,6 @@ export default function App() {
             border: isMobile ? '3px solid #F5F0E6' : '4px solid #F5F0E6', 
             boxShadow: isMobile ? '8px 8px 0px #000' : '12px 12px 0px #000',
           }}>
-            {/* Image Container */}
             <div style={{ 
               flex: 1,
               backgroundColor: '#121212', 
@@ -164,12 +161,11 @@ export default function App() {
             }}>
               <img 
                 src={currentCategoryData.products[activeProduct].photo} 
-                style={{ width: '100%', maxHeight: isMobile ? '300px' : 'none', objectFit: 'contain', display: 'block' }} 
+                style={{ width: '100%', maxHeight: isMobile ? '350px' : 'none', objectFit: 'contain', display: 'block' }} 
                 alt="Product" 
               />
             </div>
 
-            {/* Info Container */}
             <div style={{ 
               flex: 1,
               backgroundColor: '#1A1A1A', 
