@@ -34,6 +34,7 @@ export const ProductDisplay = ({ product }) => {
         <h2 className="product-title">{product.displayName}</h2>
         <div className="description-box">{product.description}</div>
         <button onClick={handleShare} className="share-btn">
+          <i className="fa-solid fa-share-nodes"></i>
           {copied ? "[ COPIED! ]" : "[ SHARE ]"}
         </button>
       </div>

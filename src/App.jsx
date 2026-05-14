@@ -21,6 +21,7 @@ export default function App() {
         {currentProduct && <ProductDisplay product={currentProduct} />}
       </div>
       <a href="https://t.me/Clarky_AU" className="order-fab" target="_blank" rel="noreferrer">
+        <i className="fa-brands fa-telegram"></i>
         ORDER VIA
       </a>
     </div>
