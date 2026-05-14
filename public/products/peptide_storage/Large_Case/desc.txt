@@ -5,7 +5,7 @@ Holds:
  - 54x 3ml Vials
 
 Colour Options:
-Each component can be customized to a colour of choice.
+Each component can be customised to a colour of choice.
  - Latches
  - Lid / Base
  - Insert

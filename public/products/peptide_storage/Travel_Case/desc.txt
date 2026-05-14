@@ -6,7 +6,7 @@ Holds:
  - 1x 10 Vial
 
 Colour Options:
-Each component can be customized to a colour of choice.
+Each component can be customised to a colour of choice.
  - Latch
  - Lid / Base
 
