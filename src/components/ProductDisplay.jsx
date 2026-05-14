@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-export const ProductCard = ({ product }) => {
-  const [photoIndex, setPhotoIndex] = useState(0);
+export const ProductDisplay = ({ product }) => {
+  const [index, setIndex] = useState(0);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => setIndex(0), [product]);
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -15,15 +17,15 @@ export const ProductCard = ({ product }) => {
       <div className="gallery-pane">
         <div className="main-image-container">
           {product.photos?.length > 0 ? (
-            <img src={product.photos[photoIndex]} alt="" className="main-img" />
+            <img src={product.photos[index]} className="main-img" alt="" />
           ) : (
-            <div className="placeholder-text">PICTURE TO COME</div>
+            <div className="placeholder">PICTURE TO COME</div>
           )}
         </div>
         <div className="thumbnail-row">
-          {product.photos?.map((img, idx) => (
-            <img key={idx} src={img} onClick={() => setPhotoIndex(idx)} 
-                 className={`thumb ${photoIndex === idx ? 'active' : ''}`} alt="" />
+          {product.photos?.map((img, i) => (
+            <img key={i} src={img} onClick={() => setIndex(i)} 
+                 className={`thumb ${index === i ? 'active' : ''}`} alt="" />
           ))}
         </div>
       </div>
@@ -31,11 +33,9 @@ export const ProductCard = ({ product }) => {
       <div className="details-pane">
         <h2 className="product-title">{product.displayName}</h2>
         <div className="description-box">{product.description}</div>
-        <div className="action-row">
-          <button onClick={handleShare} className="share-btn">
-            {copied ? "[ COPIED! ]" : "[ SHARE ]"}
-          </button>
-        </div>
+        <button onClick={handleShare} className="share-btn">
+          {copied ? "[ COPIED! ]" : "[ SHARE ]"}
+        </button>
       </div>
     </main>
   );

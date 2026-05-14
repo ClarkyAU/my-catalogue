@@ -30,7 +30,6 @@ export const useCatalogue = () => {
 
   useEffect(() => {
     if (activeCategory) {
-      // Logic from image_b1017d.png: Fetching from the products folder
       fetch(`products/${activeCategory}/theme.json`)
         .then(res => res.ok ? res.json() : { themeColor: DEFAULT_COLOR })
         .then(data => setActiveTheme(data))
