@@ -1,3 +1,4 @@
+// This Site was written by Gemini & Human Rage
 import './styles/global.css';
 import { useCatalogue } from './hooks/useCatalogue';
 import { Header } from './components/Header';
