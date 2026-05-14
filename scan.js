@@ -10,7 +10,6 @@ const outputFile = path.join(__dirname, 'public', 'catalogue.json');
 
 const catalogue = {};
 
-// FIX: Now replaces underscores/hyphens and handles camelCase properly
 const formatName = (str) => {
   let clean = str.replace(/[_-]/g, ' ');
   clean = clean.replace(/([a-z])([A-Z0-9])/g, '$1 $2');
@@ -40,17 +39,15 @@ if (fs.existsSync(productsDir)) {
         description = fs.readFileSync(descPath, 'utf8');
       }
 
-      let photoFile = "";
+      // NEW: Find ALL images in the folder
       const files = fs.readdirSync(prodPath);
-      const imgFile = files.find(f => f.endsWith('.jpg') || f.endsWith('.png'));
-      if (imgFile) {
-        photoFile = imgFile;
-      }
+      const photoFiles = files
+        .filter(f => f.endsWith('.jpg') || f.endsWith('.png') || f.endsWith('.jpeg'))
+        .map(f => `products/${categoryFolder}/${productFolder}/${f}`);
 
       catalogue[catKey].products[prodKey] = {
         displayName: formatName(productFolder),
-        // FIX: Removed the leading '/' so GitHub Pages can route the image correctly
-        photo: `products/${categoryFolder}/${productFolder}/${photoFile}`,
+        photos: photoFiles, // Store the array of all photos
         description: description
       };
     });
@@ -58,4 +55,4 @@ if (fs.existsSync(productsDir)) {
 }
 
 fs.writeFileSync(outputFile, JSON.stringify(catalogue, null, 2));
-console.log("Scanner complete: Paths and underscores fixed!");
+console.log("Scanner complete: Multiple photos supported!");

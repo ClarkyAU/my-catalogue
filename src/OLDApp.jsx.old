@@ -1,0 +1,208 @@
+import React, { useState, useEffect } from 'react';
+
+const TELEGRAM_BLUE = '#26A5E4';
+const DEFAULT_COLOR = '#00E5FF';
+
+// --- Sub-Components ---
+
+const NavButton = ({ label, isActive, onClick, isCategory }) => (
+  <button 
+    onClick={onClick} 
+    style={{
+      padding: isCategory ? '10px 25px' : '6px 15px',
+      backgroundColor: isActive ? (isCategory ? 'var(--theme-color)' : '#F5F0E6') : 'transparent',
+      border: isCategory ? '3px solid #F5F0E6' : `2px solid ${isActive ? '#F5F0E6' : 'var(--theme-color)'}`,
+      color: isActive ? '#121212' : (isCategory ? '#F5F0E6' : 'var(--theme-color)'),
+      fontFamily: '"Bungee", cursive',
+      fontSize: isCategory ? 'clamp(0.8rem, 2vw, 1.2rem)' : '0.8rem',
+      cursor: 'pointer',
+      whiteSpace: 'nowrap',
+      boxShadow: isCategory && isActive ? '3px 3px 0px #F5F0E6' : (isCategory ? `3px 3px 0px var(--theme-color)` : 'none'),
+      transition: 'all 0.1s ease',
+      flex: '0 1 auto' 
+    }}
+  >
+    {label}
+  </button>
+);
+
+export default function App() {
+  const [catalogue, setCatalogue] = useState({});
+  const [activeCategory, setActiveCategory] = useState("");
+  const [activeProduct, setActiveProduct] = useState("");
+  const [activeTheme, setActiveTheme] = useState({ themeColor: DEFAULT_COLOR });
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [isCopied, setIsCopied] = useState(false);
+
+  useEffect(() => {
+    if (activeCategory) {
+      fetch(`products/${activeCategory}/theme.json`)
+        .then(res => res.ok ? res.json() : { themeColor: DEFAULT_COLOR })
+        .then(themeData => setActiveTheme(themeData))
+        .catch(() => setActiveTheme({ themeColor: DEFAULT_COLOR }));
+    }
+  }, [activeCategory]);
+
+  useEffect(() => {
+    fetch('catalogue.json')
+      .then(res => res.json())
+      .then(data => {
+        setCatalogue(data);
+        const hash = window.location.hash.replace('#', '').split('/');
+        if (data[hash[0]]) {
+          setActiveCategory(hash[0]);
+          setActiveProduct(hash[1] || Object.keys(data[hash[0]].products)[0]);
+        } else {
+          const firstCat = Object.keys(data)[0];
+          setActiveCategory(firstCat || "");
+          setActiveProduct(firstCat ? Object.keys(data[firstCat].products)[0] : "");
+        }
+      });
+  }, []);
+
+  const currentProduct = catalogue[activeCategory]?.products[activeProduct];
+
+  return (
+    <div style={{ 
+      minHeight: '100vh', 
+      backgroundColor: '#121212', 
+      color: '#F5F0E6',
+      '--theme-color': activeTheme.themeColor || DEFAULT_COLOR,
+      backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.2) 2px, rgba(0,0,0,0.2) 4px)',
+      padding: 'clamp(20px, 5vh, 60px) 0', 
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+      boxSizing: 'border-box'
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Space+Mono:wght@400;700&display=swap');
+        
+        .main-wrapper {
+          width: 100%;
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: 0 20px;
+          box-sizing: border-box;
+        }
+
+        .product-card {
+          display: flex;
+          flex-wrap: wrap;
+          background-color: #1A1A1A;
+          border: 4px solid var(--theme-color);
+          box-shadow: 12px 12px 0px #000;
+          overflow: hidden;
+        }
+
+        .gallery-pane {
+          flex: 1 1 450px;
+          background-color: #121212;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 15px;
+        }
+
+        .details-pane {
+          flex: 1 1 450px;
+          padding: clamp(25px, 5%, 50px);
+          display: flex;
+          flex-direction: column;
+          border-left: 4px solid #F5F0E6;
+          background-color: #1A1A1A;
+        }
+
+        .nav-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          justify-content: center;
+          margin-bottom: 25px;
+        }
+
+        @media (max-width: 944px) {
+          .details-pane { border-left: none; border-top: 4px solid #F5F0E6; }
+        }
+      `}</style>
+
+      <header style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <h1 style={{ 
+          fontFamily: '"Bungee", cursive', fontSize: 'clamp(2.5rem, 8vw, 6rem)', 
+          margin: 0, lineHeight: '1', color: '#F5F0E6',
+          textShadow: `4px 4px 0px #000, 8px 8px 0px var(--theme-color)` 
+        }}>
+          CLARKY'S <br/><span style={{ color: 'var(--theme-color)' }}>PRINTHOUSE</span>
+        </h1>
+      </header>
+
+      <div className="main-wrapper">
+        <nav className="nav-row">
+          {Object.keys(catalogue).map(catKey => (
+            <NavButton 
+              key={catKey} label={catalogue[catKey].displayName} isCategory isActive={activeCategory === catKey} 
+              onClick={() => {
+                const firstProd = Object.keys(catalogue[catKey].products)[0];
+                setActiveCategory(catKey); setActiveProduct(firstProd); setSelectedPhotoIndex(0);
+                window.location.hash = `#${catKey}/${firstProd}`;
+              }} 
+            />
+          ))}
+        </nav>
+
+        {catalogue[activeCategory] && (
+          <nav className="nav-row" style={{ marginBottom: '40px' }}>
+            {Object.keys(catalogue[activeCategory].products).map(prodKey => (
+              <NavButton 
+                key={prodKey} label={catalogue[activeCategory].products[prodKey].displayName} 
+                isActive={activeProduct === prodKey} 
+                onClick={() => { setActiveProduct(prodKey); setSelectedPhotoIndex(0); window.location.hash = `#${activeCategory}/${prodKey}`; }} 
+              />
+            ))}
+          </nav>
+        )}
+
+        {currentProduct && (
+          <main className="product-card">
+            <div className="gallery-pane">
+              <div style={{ flexGrow: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#0A0A0A', minHeight: '450px', border: '2px solid #333' }}>
+                {currentProduct.photos?.length > 0 ? (
+                  <img src={currentProduct.photos[selectedPhotoIndex]} style={{ width: '100%', height: '100%', objectFit: 'contain' }} alt="" />
+                ) : (
+                  <div style={{ fontFamily: '"Space Mono", monospace', color: 'var(--theme-color)' }}>PICTURE TO COME</div>
+                )}
+              </div>
+              {currentProduct.photos?.length > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  {currentProduct.photos.map((img, idx) => (
+                    <img key={idx} src={img} onClick={() => setSelectedPhotoIndex(idx)} 
+                         style={{ width: '65px', height: '65px', objectFit: 'cover', cursor: 'pointer', border: `2px solid ${selectedPhotoIndex === idx ? 'var(--theme-color)' : '#333'}`, opacity: selectedPhotoIndex === idx ? 1 : 0.6 }} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="details-pane">
+              <h2 style={{ fontFamily: '"Bungee", cursive', fontSize: 'clamp(1.8rem, 4vw, 3rem)', margin: '0 0 25px 0', color: 'var(--theme-color)', textAlign: 'center', textShadow: '2px 2px 0px #000' }}>
+                {currentProduct.displayName}
+              </h2>
+              <div style={{ fontFamily: '"Space Mono", monospace', fontSize: 'clamp(0.9rem, 1.1vw, 1.1rem)', color: '#F5F0E6', lineHeight: '1.7', whiteSpace: 'pre-wrap', padding: '30px', backgroundColor: '#121212', border: `2px dashed var(--theme-color)`, flexGrow: 1 }}>
+                {currentProduct.description}
+              </div>
+              <div style={{ textAlign: 'right', marginTop: '20px' }}>
+                <button onClick={() => { navigator.clipboard.writeText(window.location.href); setIsCopied(true); setTimeout(() => setIsCopied(false), 2000); }} 
+                        style={{ background: 'none', border: 'none', color: 'var(--theme-color)', cursor: 'pointer', fontFamily: '"Space Mono", monospace', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                  {isCopied ? "[ COPIED! ]" : "[ SHARE ]"}
+                </button>
+              </div>
+            </div>
+          </main>
+        )}
+      </div>
+
+      <a href="https://t.me/Clarky_AU" target="_blank" rel="noopener noreferrer" style={{ position: 'fixed', right: '30px', bottom: '30px', backgroundColor: '#1A1A1A', border: `3px solid ${TELEGRAM_BLUE}`, padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '8px 8px 0px #000', zIndex: 9999, textDecoration: 'none' }}>
+        <span style={{ fontFamily: '"Space Mono", monospace', fontWeight: 'bold', color: TELEGRAM_BLUE }}>ORDER VIA</span>
+      </a>
+    </div>
+  );
+}
