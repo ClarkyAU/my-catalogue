@@ -10,6 +10,6 @@ Each component can be customised to a colour of choice.
  - Lid / Base
  - Insert
 
-Surfaces:
+Surface Texture
  - Carbon Fibre Look
- - Textured
+ - Standard Textured

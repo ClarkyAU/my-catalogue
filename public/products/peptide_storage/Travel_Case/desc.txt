@@ -5,11 +5,11 @@ Holds:
  - 10x 3ml Vials
  - 1x 10 Vial
 
-Colour Options:
-Each component can be customised to a colour of choice.
+Fully Customisable Components
+Customise each part with your preferred colour
  - Latch
  - Lid / Base
 
-Surfaces:
+Surface Texture
  - Carbon Fibre Look
- - Textured
+ - Standard Textured

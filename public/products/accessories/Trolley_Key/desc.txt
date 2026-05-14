@@ -8,6 +8,6 @@ Picture To Come!
 Colour Options:
  - Enquire about what colours are avalible
 
-Surfaces Options:
+Surface Texture
  - Carbon Fibre Look
- - Textured
+ - Standard Textured
