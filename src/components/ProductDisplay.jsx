@@ -20,6 +20,19 @@ export const ProductDisplay = ({ product }) => {
   return (
     <main className="product-card">
       <div className="gallery-pane">
+        
+        {/* THUMBNAILS AT THE TOP */}
+        <div className="thumb-container">
+          {product.photos?.map((photo, i) => {
+            const thumbUrl = photo?.url || photo;
+            return (
+              <img key={i} src={thumbUrl} onClick={() => setIndex(i)} 
+                   className={`thumb ${index === i ? 'active' : ''}`} alt="" />
+            );
+          })}
+        </div>
+
+        {/* MAIN IMAGE AT THE BOTTOM */}
         <div className="main-image-container">
           {product.photos?.length > 0 ? (
             <div className="image-wrapper">
@@ -46,16 +59,7 @@ export const ProductDisplay = ({ product }) => {
             <div className="placeholder" style={{ fontFamily: 'Space Mono', color: '#888' }}>PICTURE TO COME</div>
           )}
         </div>
-        
-        <div className="thumbnail-row">
-          {product.photos?.map((photo, i) => {
-            const thumbUrl = photo?.url || photo;
-            return (
-              <img key={i} src={thumbUrl} onClick={() => setIndex(i)} 
-                   className={`thumb ${index === i ? 'active' : ''}`} alt="" />
-            );
-          })}
-        </div>
+
       </div>
 
       <div className="details-pane">

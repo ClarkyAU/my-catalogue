@@ -93,17 +93,15 @@
   padding: 20px; 
   display: flex; 
   flex-direction: column; 
-  gap: 15px; 
+  gap: 10px; 
 }
 
-.main-image-container { 
-  flex-grow: 1; 
-  display: flex; 
-  flex-direction: column; 
-  background: #0A0A0A; 
-  height: 500px; 
-  border: 2px solid #333; 
-  overflow: hidden; 
+.thumb-container {
+  display: flex;
+  gap: 10px;
+  height: 65px; 
+  align-items: center;
+  order: -1;
 }
 
 .thumb {
@@ -120,32 +118,47 @@
   opacity: 1;
 }
 
+.main-image-container { 
+  width: 100%;
+  background: #0A0A0A; 
+  height: 650px; 
+  border: 2px solid #333; 
+  overflow: hidden; 
+  display: flex;
+  flex-direction: column;
+}
+
 .details-pane {
   flex: 1 1 450px;
-  padding: clamp(25px, 5%, 50px);
+  padding: 20px;
   display: flex;
   flex-direction: column;
   border-left: 4px solid #F5F0E6;
+  gap: 10px;
 }
 
 .product-title {
   font-family: 'Bungee';
   font-size: clamp(1.8rem, 4vw, 3rem);
-  margin: 0 0 15px 0;
+  margin: 0;
   color: var(--theme-color);
   text-align: center;
   text-shadow: 2px 2px 0px #000;
+  height: 65px; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .description-box {
   font-family: 'Space Mono';
   font-size: clamp(0.9rem, 1.1vw, 1.1rem);
-  line-height: 1.7;
+  line-height: 1.6;
   white-space: pre-wrap;
-  padding: 30px;
+  padding: 25px;
   background: #121212;
   border: 2px dashed var(--theme-color);
-  height: 500px;
+  height: 650px;
   flex-grow: 0;
   box-sizing: border-box;
   text-align: left;
@@ -165,10 +178,10 @@
   cursor: pointer;
   font-family: 'Space Mono';
   font-weight: bold;
-  margin-top: 20px;
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-top: 10px;
   margin-right: auto;
 }
 
@@ -195,6 +208,12 @@
     border-left: none;
     border-top: 4px solid #F5F0E6;
   }
+  .product-title, .thumb-container {
+    height: auto;
+  }
+  .main-image-container, .description-box {
+    height: 500px;
+  }
 }
 
 .image-wrapper {
@@ -218,12 +237,12 @@
   width: 100%;
   background: #050505;
   border-top: 2px solid #333;
-  padding: 12px 15px;
+  padding: 10px 15px;
   font-family: 'Space Mono';
   text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   margin-top: auto;
 }
 

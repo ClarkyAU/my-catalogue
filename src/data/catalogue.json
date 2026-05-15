@@ -31,9 +31,11 @@
         "description": "A 5-tier industrial style display rack.\nComes Flat Pack style for you to assemble.\n\nHolds:\n - 5x 1:64 model cars\n\nSelect Any Colour For:\n - Uprights\n - Platforms\n\nSurface Texture:\n - Carbon Fibre Look\n - Standard Textured",
         "photos": [
           {
-            "url": "/products/hotwheels/5x1_Rack/PXL_20260515_111034013.jpg",
-            "filaments": [],
-            "texture": null
+            "url": "/products/hotwheels/5x1_Rack/hw5x1_printed_1.jpg",
+            "filaments": [
+              "PLA+ Silver, PLA Black"
+            ],
+            "texture": "Standard Texture"
           }
         ]
       }
