@@ -1,47 +1,65 @@
 import { useState, useEffect } from 'react';
-
-const DEFAULT_COLOR = '#00E5FF';
+import catalogueData from '../data/catalogue.json';
 
 export const useCatalogue = () => {
-  const [catalogue, setCatalogue] = useState({});
-  const [activeCategory, setActiveCategory] = useState("");
-  const [activeProduct, setActiveProduct] = useState("");
-  const [activeTheme, setActiveTheme] = useState({ themeColor: DEFAULT_COLOR });
-  const [loading, setLoading] = useState(true);
+  const [catalogue, setCatalogue] = useState(catalogueData);
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeProduct, setActiveProduct] = useState(null);
+  
+  const rawTheme = activeCategory && catalogueData[activeCategory]?.theme ? catalogueData[activeCategory].theme : {};
+  const activeTheme = { 
+    themeColor: rawTheme.themeColor || rawTheme.color || rawTheme.theme_color || '#00E5FF' 
+  };
 
   useEffect(() => {
-    fetch('catalogue.json')
-      .then(res => res.json())
-      .then(data => {
-        setCatalogue(data);
-        const hash = window.location.hash.replace('#', '').split('/');
-        if (data[hash[0]]) {
-          setActiveCategory(hash[0]);
-          setActiveProduct(hash[1] || Object.keys(data[hash[0]].products)[0]);
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      const [hashCat, hashProd] = hash.split('/');
+      const categories = Object.keys(catalogueData);
+
+      if (hashCat && catalogueData[hashCat]) {
+        setActiveCategory(hashCat);
+        if (hashProd && catalogueData[hashCat].products[hashProd]) {
+          setActiveProduct(hashProd);
         } else {
-          const firstCat = Object.keys(data)[0];
-          setActiveCategory(firstCat || "");
-          setActiveProduct(firstCat ? Object.keys(data[firstCat].products)[0] : "");
+          setActiveProduct(Object.keys(catalogueData[hashCat].products)[0]);
         }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+      } else if (categories.length > 0) {
+        const firstCat = categories[0];
+        setActiveCategory(firstCat);
+        const products = Object.keys(catalogueData[firstCat].products || {});
+        if (products.length > 0) {
+          setActiveProduct(products[0]);
+        }
+      }
+    };
+
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   useEffect(() => {
-    if (activeCategory) {
-      fetch(`products/${activeCategory}/theme.json`)
-        .then(res => res.ok ? res.json() : { themeColor: DEFAULT_COLOR })
-        .then(data => setActiveTheme(data))
-        .catch(() => setActiveTheme({ themeColor: DEFAULT_COLOR }));
+    if (activeCategory && activeProduct) {
+      const currentHash = window.location.hash.replace('#', '');
+      const newHash = `${activeCategory}/${activeProduct}`;
+      if (currentHash !== newHash) {
+        window.location.hash = newHash;
+      }
     }
-  }, [activeCategory]);
+  }, [activeCategory, activeProduct]);
 
-  const navigateTo = (cat, prod) => {
-    setActiveCategory(cat);
-    setActiveProduct(prod);
-    window.location.hash = `#${cat}/${prod}`;
+  const navigateTo = (categoryId, productId) => {
+    setActiveCategory(categoryId);
+    setActiveProduct(productId);
   };
 
-  return { catalogue, activeCategory, activeProduct, activeTheme, loading, navigateTo };
+  return {
+    catalogue,
+    activeCategory,
+    activeProduct,
+    activeTheme, 
+    navigateTo
+  };
 };

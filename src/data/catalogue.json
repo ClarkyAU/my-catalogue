@@ -1,0 +1,107 @@
+{
+  "accessories": {
+    "displayName": "ACCESSORIES",
+    "theme": {
+      "themeColor": "#9D50BB"
+    },
+    "products": {
+      "Can_Holder": {
+        "id": "Can_Holder",
+        "displayName": "CAN HOLDER",
+        "description": "Want to be the center of attention at your next gathering?\nStand out with one of these bad boys.\nSlap a can in and enjoy easy care free sipping!\n\nPicture To Come!\n\nColour Options:\n - Enquire about what colours are avalible\n\nSurface Texture - Underside only\n - Carbon Fibre Look\n - Standard Textured",
+        "photos": []
+      },
+      "Trolley_Key": {
+        "id": "Trolley_Key",
+        "displayName": "TROLLEY KEY",
+        "description": "Don't carry coins becasue you're not a boomer?\nThen this little dohickey is your saviour\nSlap this bad boy in the coin slot of your trolley!\n\nPicture To Come!\n\n\nColour Options:\n - Enquire about what colours are avalible\n\nSurface Texture\n - Carbon Fibre Look\n - Standard Textured",
+        "photos": []
+      }
+    }
+  },
+  "hotwheels": {
+    "displayName": "HOTWHEELS",
+    "theme": {
+      "themeColor": "#00E5FF"
+    },
+    "products": {
+      "Products_To_Come": {
+        "id": "Products_To_Come",
+        "displayName": "PRODUCTS TO COME",
+        "description": "This is just a placeholder for now.\nMove along nothing to see here.",
+        "photos": []
+      }
+    }
+  },
+  "peptide_storage": {
+    "displayName": "PEPTIDE STORAGE",
+    "theme": {
+      "themeColor": "#FF007F"
+    },
+    "products": {
+      "Large_Case": {
+        "id": "Large_Case",
+        "displayName": "LARGE CASE",
+        "description": "This is the big one! \nStore all your vials in one case.\n\nHolds:\n - 54x 3ml Vials\n\nColour Options:\nEach component can be customised to a colour of choice.\n - Latches\n - Lid / Base\n - Insert\n\nSurface Texture\n - Carbon Fibre Look\n - Standard Textured",
+        "photos": [
+          {
+            "url": "/products/peptide_storage/Large_Case/lb_printed_1.jpg",
+            "filaments": [
+              "PLA Black"
+            ],
+            "texture": "Carbon Look - Not Shown"
+          },
+          {
+            "url": "/products/peptide_storage/Large_Case/lb_printed_2.jpg",
+            "filaments": [
+              "PLA Black"
+            ],
+            "texture": "Carbon Look - Not Shown"
+          }
+        ]
+      },
+      "Medium_Case": {
+        "id": "Medium_Case",
+        "displayName": "MEDIUM CASE",
+        "description": "Handy for storing your lyophilized vials in the freezer.\n\nHolds:\n - 10x 3ml Vials\n\nFully Customisable Components\nCustomise each part with your preferred colour\n - Latches\n - Lid / Base\n - Insert\n\nSurface Texture\n - Carbon Fibre Look\n - Standard Textured",
+        "photos": [
+          {
+            "url": "/products/peptide_storage/Medium_Case/mc_printed_1.jpg",
+            "filaments": [
+              "PLA+ White"
+            ],
+            "texture": "Carbon Look - Not Shown"
+          }
+        ]
+      },
+      "Mixed_Case": {
+        "id": "Mixed_Case",
+        "displayName": "MIXED CASE",
+        "description": "Medium-sized case that fits nicely into the fridge.\n\nHolds:\n - 8x 3ml Vials\n - 6x 10ml Vials\n\nFully Customisable Components\nCustomise each part with your preferred colour\n - Latches\n - Lid / Base\n - Internal Insert\n\nSurface Texture\n - Carbon Fibre Look\n - Standard Textured",
+        "photos": [
+          {
+            "url": "/products/peptide_storage/Mixed_Case/printed_1.jpg",
+            "filaments": [
+              "PLA Black"
+            ],
+            "texture": "Carbon Look"
+          }
+        ]
+      },
+      "Travel_Case": {
+        "id": "Travel_Case",
+        "displayName": "TRAVEL CASE",
+        "description": "Compact durable case for travel.\nLarge area to hold insulin needles and other goodies.\n\nHolds:\n - 10x 3ml Vials\n - 1x 10 Vial\n\nFully Customisable Components\nCustomise each part with your preferred colour\n - Latch\n - Lid / Base\n\nSurface Texture\n - Carbon Fibre Look\n - Standard Textured",
+        "photos": [
+          {
+            "url": "/products/peptide_storage/Travel_Case/tc_printed_1.jpg",
+            "filaments": [
+              "PLA+ White, PLA Black"
+            ],
+            "texture": "Carbon Look - Visable On Latch"
+          }
+        ]
+      }
+    }
+  }
+}

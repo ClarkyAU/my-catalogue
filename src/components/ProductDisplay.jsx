@@ -12,21 +12,49 @@ export const ProductDisplay = ({ product }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const currentPhoto = product.photos?.[index];
+  const imgUrl = currentPhoto?.url || currentPhoto;
+  const hasFilaments = currentPhoto?.filaments && currentPhoto.filaments.length > 0;
+  const hasTexture = !!currentPhoto?.texture;
+
   return (
     <main className="product-card">
       <div className="gallery-pane">
         <div className="main-image-container">
           {product.photos?.length > 0 ? (
-            <img src={product.photos[index]} className="main-img" alt="" />
+            <div className="image-wrapper">
+              <img src={imgUrl} className="main-img" alt="" />
+              
+              {(hasFilaments || hasTexture) && (
+                <div className="image-caption">
+                  {hasFilaments && (
+                    <div className="caption-line">
+                      <span className="caption-label">Printed with - </span>
+                      <span className="filament-list">{currentPhoto.filaments.join(', ').toUpperCase()}</span>
+                    </div>
+                  )}
+                  {hasTexture && (
+                    <div className="caption-line">
+                      <span className="caption-label">Surface Texture - </span>
+                      <span className="texture-tag">{currentPhoto.texture.toUpperCase()}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           ) : (
-            <div className="placeholder">PICTURE TO COME</div>
+            <div className="placeholder" style={{ fontFamily: 'Space Mono', color: '#888' }}>PICTURE TO COME</div>
           )}
         </div>
+        
         <div className="thumbnail-row">
-          {product.photos?.map((img, i) => (
-            <img key={i} src={img} onClick={() => setIndex(i)} 
-                 className={`thumb ${index === i ? 'active' : ''}`} alt="" />
-          ))}
+          {product.photos?.map((photo, i) => {
+            const thumbUrl = photo?.url || photo;
+            return (
+              <img key={i} src={thumbUrl} onClick={() => setIndex(i)} 
+                   className={`thumb ${index === i ? 'active' : ''}`} alt="" />
+            );
+          })}
         </div>
       </div>
 

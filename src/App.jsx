@@ -1,4 +1,3 @@
-// This Site was written by Gemini & Human Rage
 import './styles/global.css';
 import { useCatalogue } from './hooks/useCatalogue';
 import { Header } from './components/Header';
@@ -23,7 +22,7 @@ export default function App() {
       </div>
       <a href="https://t.me/Clarky_AU" className="order-fab" target="_blank" rel="noreferrer">
         <i className="fa-brands fa-telegram"></i>
-        ORDER VIA
+        ORDER
       </a>
     </div>
   );
