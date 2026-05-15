@@ -1,0 +1,9 @@
+{
+  "images": [
+    {
+      "filename": "hw5x1_printed_1.jpg",
+      "filaments": ["PLA+ Silver, PLA Black"],
+      "texture": "Standard Texture"
+    }
+  ]
+}

@@ -4,12 +4,11 @@ Store all your vials in one case.
 Holds:
  - 54x 3ml Vials
 
-Colour Options:
-Each component can be customised to a colour of choice.
+Select Any Colour For:
  - Latches
  - Lid / Base
  - Insert
 
-Surface Texture
+Surface Texture:
  - Carbon Fibre Look
  - Standard Textured

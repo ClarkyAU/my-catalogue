@@ -4,6 +4,11 @@
       "filename": "printed_1.jpg",
       "filaments": ["PLA Black"],
       "texture": "Carbon Look"
+    },
+    {
+      "filename": "printed_2.jpg",
+      "filaments": ["PLA Black"],
+      "texture": "Carbon Look - Not Shown"
     }
   ]
 }
