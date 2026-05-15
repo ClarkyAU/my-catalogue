@@ -1,0 +1,9 @@
+{
+  "images": [
+    {
+      "filename": "tc_printed_1.jpg",
+      "filaments": ["PLA+ White, PLA Black"],
+      "texture": "Carbon Look - Visable On Latch"
+    }
+  ]
+}
