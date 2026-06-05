@@ -74,9 +74,15 @@ async function scanCatalogue() {
 
       const metaFile = files.find(f => f === 'metadata.json');
       let imageMetadata = [];
+      let basePrice = "0.00";
+      let isFeatured = false;
+
       if (metaFile) {
         try {
-          imageMetadata = JSON.parse(fs.readFileSync(path.join(productPath, metaFile), 'utf8')).images || [];
+          const metaData = JSON.parse(fs.readFileSync(path.join(productPath, metaFile), 'utf8'));
+          imageMetadata = metaData.images || [];
+          basePrice = metaData.basePrice || "0.00";
+          isFeatured = metaData.featured || false;
         } catch (e) { console.error(`    ⚠️ Meta error in ${product}`); }
       }
 
@@ -130,7 +136,9 @@ async function scanCatalogue() {
         id: product, 
         displayName: product.replace(/[-_]/g, ' ').toUpperCase(), 
         description, 
-        photos 
+        photos,
+        price: basePrice,
+        featured: isFeatured
       };
     }
   }

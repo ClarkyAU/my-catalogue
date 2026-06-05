@@ -1,4 +1,6 @@
 {
+  "basePrice": "20.00",
+  "featured": true,
   "images": [
     {
       "filename": "mc_printed_1.jpg",

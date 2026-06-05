@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Bungee&family=Space+Mono:wght@400;700&display=swap');
 
-:root { --theme-color: #00E5FF; }
+:root { 
+  --theme-color: #ff8c00; 
+}
 
 .app-container {
   min-height: 100vh;
@@ -27,7 +29,7 @@
 }
 
 .site-header h1 {
-  font-family: 'Bungee';
+  font-family: 'Bungee', cursive;
   font-size: clamp(2.5rem, 8vw, 6rem);
   margin: 0;
   line-height: 1;
@@ -54,7 +56,7 @@
 }
 
 .nav-btn {
-  font-family: 'Bungee';
+  font-family: 'Bungee', cursive;
   cursor: pointer;
   transition: all 0.1s ease;
   background: transparent;
@@ -78,6 +80,7 @@
   border-color: #F5F0E6;
 }
 
+/* --- PRODUCT DISPLAY LAYOUT --- */
 .product-card { 
   display: flex; 
   flex-wrap: wrap; 
@@ -128,94 +131,6 @@
   flex-direction: column;
 }
 
-.details-pane {
-  flex: 1 1 450px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  border-left: 4px solid #F5F0E6;
-  gap: 10px;
-}
-
-.product-title {
-  font-family: 'Bungee';
-  font-size: clamp(1.8rem, 4vw, 3rem);
-  margin: 0;
-  color: var(--theme-color);
-  text-align: center;
-  text-shadow: 2px 2px 0px #000;
-  height: 65px; 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.description-box {
-  font-family: 'Space Mono';
-  font-size: clamp(0.9rem, 1.1vw, 1.1rem);
-  line-height: 1.6;
-  white-space: pre-wrap;
-  padding: 25px;
-  background: #121212;
-  border: 2px dashed var(--theme-color);
-  height: 650px;
-  flex-grow: 0;
-  box-sizing: border-box;
-  text-align: left;
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.description-box::-webkit-scrollbar {
-  display: none;
-}
-
-.share-btn {
-  background: none;
-  border: none;
-  color: var(--theme-color);
-  cursor: pointer;
-  font-family: 'Space Mono';
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  margin-right: auto;
-}
-
-.order-fab {
-  position: fixed;
-  right: 30px;
-  bottom: 30px;
-  background: #1A1A1A;
-  border: 3px solid #26A5E4;
-  padding: 12px 24px;
-  box-shadow: 8px 8px 0px #000;
-  text-decoration: none;
-  z-index: 9999;
-  color: #26A5E4;
-  font-family: 'Space Mono';
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-@media (max-width: 944px) {
-  .details-pane {
-    border-left: none;
-    border-top: 4px solid #F5F0E6;
-  }
-  .product-title, .thumb-container {
-    height: auto;
-  }
-  .main-image-container, .description-box {
-    height: 500px;
-  }
-}
-
 .image-wrapper {
   width: 100%;
   height: 100%;
@@ -238,7 +153,7 @@
   background: #050505;
   border-top: 2px solid #333;
   padding: 10px 15px;
-  font-family: 'Space Mono';
+  font-family: 'Space Mono', monospace;
   text-align: left;
   display: flex;
   flex-direction: column;
@@ -263,4 +178,271 @@
 .texture-tag {
   color: #F5F0E6;
   font-weight: bold;
+}
+
+.details-pane {
+  flex: 1 1 450px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  border-left: 4px solid #F5F0E6;
+  gap: 10px;
+}
+
+.product-title {
+  font-family: 'Bungee', cursive;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  margin: 0;
+  color: var(--theme-color);
+  text-align: center;
+  text-shadow: 2px 2px 0px #000;
+  height: 65px; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.price-tag {
+  font-family: 'Space Mono', monospace;
+  color: var(--theme-color);
+  font-size: 1.6rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.description-box {
+  font-family: 'Space Mono', monospace;
+  font-size: clamp(0.9rem, 1.1vw, 1.1rem);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  padding: 25px;
+  background: #121212;
+  border: 2px dashed var(--theme-color);
+  height: 650px;
+  flex-grow: 0;
+  box-sizing: border-box;
+  text-align: left;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.description-box::-webkit-scrollbar {
+  display: none;
+}
+
+.share-btn {
+  background: none;
+  border: none;
+  color: var(--theme-color);
+  cursor: pointer;
+  font-family: 'Space Mono', monospace;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  margin-right: auto;
+}
+
+.order-fab {
+  position: fixed;
+  right: 30px;
+  bottom: 30px;
+  background: #1A1A1A;
+  border: 3px solid #26A5E4;
+  padding: 12px 24px;
+  box-shadow: 8px 8px 0px #000;
+  text-decoration: none;
+  z-index: 9999;
+  color: #26A5E4;
+  font-family: 'Space Mono', monospace;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* --- LANDING PAGE GRID --- */
+.landing-page {
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.section-title {
+  font-family: 'Bungee', cursive;
+  color: var(--theme-color);
+  text-align: center;
+  font-size: clamp(2rem, 5vw, 3rem);
+  margin-bottom: 40px;
+  text-shadow: 2px 2px 0px #000;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 30px;
+  width: 100%;
+  justify-content: center;
+}
+
+.grid-card {
+  background: #1A1A1A;
+  border: 3px solid #333;
+  text-decoration: none;
+  color: #F5F0E6;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  box-shadow: 8px 8px 0px #000;
+}
+
+.grid-card:hover {
+  border-color: var(--theme-color);
+  transform: translateY(-5px);
+  box-shadow: 12px 12px 0px #000;
+}
+
+.card-img-container {
+  width: 100%;
+  height: 250px;
+  background: #0A0A0A;
+  border-bottom: 2px solid #333;
+  padding: 15px;
+  box-sizing: border-box;
+}
+
+.card-img-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.card-details {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-details h3 {
+  font-family: 'Bungee', cursive;
+  margin: 0;
+  font-size: 1.3rem;
+  color: #F5F0E6;
+  transition: color 0.2s ease;
+}
+
+.grid-card:hover .card-details h3 {
+  color: var(--theme-color);
+}
+
+.card-price {
+  font-family: 'Space Mono', monospace;
+  color: var(--theme-color);
+  font-weight: bold;
+  font-size: 1.4rem;
+}
+
+.card-category {
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.landing-empty {
+  text-align: center;
+  font-family: 'Space Mono', monospace;
+  color: #888;
+  padding: 50px;
+  border: 2px dashed #333;
+}
+
+/* --- ENHANCED TWO-TIER NAVIGATION --- */
+.main-hubs {
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.hub-btn {
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  padding: 12px 25px;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.sub-nav {
+  background: #1A1A1A;
+  padding: 20px;
+  border: 2px dashed #333;
+  margin-bottom: 25px;
+  width: 100%;
+  max-width: 900px;
+  animation: dropDown 0.3s ease-out forwards;
+  /* Adds a subtle inner shadow for depth */
+  box-shadow: inset 0px 4px 10px rgba(0,0,0,0.5); 
+}
+
+.sub-nav .category {
+  text-decoration: none;
+  display: inline-block;
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+}
+
+@keyframes dropDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- RESPONSIVENESS (MOBILE OPTIMIZATIONS) --- */
+@media (max-width: 944px) {
+  .details-pane {
+    border-left: none;
+    border-top: 4px solid #F5F0E6;
+  }
+  .product-title, .thumb-container {
+    height: auto;
+  }
+  .main-image-container, .description-box {
+    height: 500px;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-row.main-hubs {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .hub-btn {
+    width: 100%; 
+    box-sizing: border-box;
+  }
+
+  .sub-nav {
+    padding: 15px 10px;
+  }
+  
+  .sub-nav .category {
+    width: 100%; 
+    text-align: center;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 600px) {
+  .product-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .grid-card {
+    width: 100%;
+    max-width: 340px;
+  }
 }

@@ -2,64 +2,57 @@ import { useState, useEffect } from 'react';
 import catalogueData from '../data/catalogue.json';
 
 export const useCatalogue = () => {
-  const [catalogue, setCatalogue] = useState(catalogueData);
+  const [catalogue] = useState(catalogueData);
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeProduct, setActiveProduct] = useState(null);
-  
-  const rawTheme = activeCategory && catalogueData[activeCategory]?.theme ? catalogueData[activeCategory].theme : {};
-  const activeTheme = { 
-    themeColor: rawTheme.themeColor || rawTheme.color || rawTheme.theme_color || '#00E5FF' 
-  };
+  const [activeTheme, setActiveTheme] = useState({ themeColor: '#00E5FF' });
 
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      const [hashCat, hashProd] = hash.split('/');
-      const categories = Object.keys(catalogueData);
+      const hash = window.location.hash.slice(1);
+      
+      // FIX: If there is no hash, stay on the landing page (null state).
+      // This stops the app from automatically forcing a product to load.
+      if (!hash) {
+        setActiveCategory(null);
+        setActiveProduct(null);
+        setActiveTheme({ themeColor: '#00E5FF' });
+        return;
+      }
 
-      if (hashCat && catalogueData[hashCat]) {
-        setActiveCategory(hashCat);
-        if (hashProd && catalogueData[hashCat].products[hashProd]) {
-          setActiveProduct(hashProd);
+      const [catId, prodId] = hash.split('/');
+
+      if (catalogue[catId]) {
+        setActiveCategory(catId);
+        setActiveTheme(catalogue[catId].theme || { themeColor: '#00E5FF' });
+        if (prodId && catalogue[catId].products[prodId]) {
+          setActiveProduct(prodId);
         } else {
-          setActiveProduct(Object.keys(catalogueData[hashCat].products)[0]);
+          // If a category is selected but no product, prepare for the Category Grid
+          setActiveProduct(null); 
         }
-      } else if (categories.length > 0) {
-        const firstCat = categories[0];
-        setActiveCategory(firstCat);
-        const products = Object.keys(catalogueData[firstCat].products || {});
-        if (products.length > 0) {
-          setActiveProduct(products[0]);
-        }
+      } else {
+        setActiveCategory(null);
+        setActiveProduct(null);
+        setActiveTheme({ themeColor: '#00E5FF' });
       }
     };
 
-    handleHashChange();
-
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+    handleHashChange(); // Run on initial load
 
-  useEffect(() => {
-    if (activeCategory && activeProduct) {
-      const currentHash = window.location.hash.replace('#', '');
-      const newHash = `${activeCategory}/${activeProduct}`;
-      if (currentHash !== newHash) {
-        window.location.hash = newHash;
-      }
-    }
-  }, [activeCategory, activeProduct]);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [catalogue]);
 
   const navigateTo = (categoryId, productId) => {
-    setActiveCategory(categoryId);
-    setActiveProduct(productId);
+    if (!categoryId) {
+      window.location.hash = ''; // Returns home to New Products
+    } else if (!productId) {
+      window.location.hash = categoryId; // Opens Category Grid
+    } else {
+      window.location.hash = `${categoryId}/${productId}`; // Opens specific Product
+    }
   };
 
-  return {
-    catalogue,
-    activeCategory,
-    activeProduct,
-    activeTheme, 
-    navigateTo
-  };
+  return { catalogue, activeCategory, activeProduct, activeTheme, navigateTo };
 };

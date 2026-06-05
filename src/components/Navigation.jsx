@@ -1,29 +1,63 @@
-export const Navigation = ({ catalogue, activeCategory, activeProduct, navigateTo }) => (
-  <div className="nav-container">
-    <nav className="nav-row">
-      {Object.keys(catalogue).map(catKey => (
-        <button 
-          key={catKey} 
-          className={`nav-btn category ${activeCategory === catKey ? 'active' : ''}`}
-          onClick={() => navigateTo(catKey, Object.keys(catalogue[catKey].products)[0])}
-        >
-          {catalogue[catKey].displayName}
-        </button>
-      ))}
-    </nav>
+import React from 'react';
 
-    {catalogue[activeCategory] && (
-      <nav className="nav-row product-nav">
-        {Object.keys(catalogue[activeCategory].products).map(prodKey => (
-          <button 
-            key={prodKey} 
-            className={`nav-btn product ${activeProduct === prodKey ? 'active' : ''}`}
-            onClick={() => navigateTo(activeCategory, prodKey)}
-          >
-            {catalogue[activeCategory].products[prodKey].displayName}
-          </button>
-        ))}
+export const Navigation = ({ catalogue = {}, activeCategory, activeProduct, navigateTo }) => {
+  const activeHub = activeCategory ? 'prints' : 'featured';
+  
+  const categoryKeys = Object.keys(catalogue);
+  const firstCategoryId = categoryKeys.length > 0 ? categoryKeys[0] : '';
+
+  return (
+    <div className="nav-container">
+      
+      {/* TIER 1: MAIN HUBS */}
+      <nav className="nav-row main-hubs">
+        <button 
+          className={`nav-btn hub-btn ${activeHub === 'featured' ? 'active' : ''}`}
+          onClick={() => {
+            window.location.hash = ''; 
+            if (navigateTo) navigateTo(null, null);
+          }} 
+        >
+          [ NEW PRODUCTS ]
+        </button>
+        
+        <button 
+          className={`nav-btn hub-btn ${activeHub === 'prints' ? 'active' : ''}`}
+          onClick={() => {
+            if (firstCategoryId && navigateTo) {
+              navigateTo(firstCategoryId, null); 
+            }
+          }}
+        >
+          [ THE CATALOGUE ]
+        </button>
+        
+        <button 
+          className="nav-btn hub-btn" 
+          onClick={(e) => { e.preventDefault(); alert("Colours Library Coming Soon!"); }}
+        >
+          [ COLOURS ]
+        </button>
       </nav>
-    )}
-  </div>
-);
+
+      {/* TIER 2: SUB-CATEGORIES */}
+      {activeHub === 'prints' && (
+        <nav className="nav-row sub-nav">
+          {categoryKeys.map(key => {
+            const cat = catalogue[key];
+            return (
+              <button 
+                key={key} 
+                className={`nav-btn category ${activeCategory === key ? 'active' : ''}`}
+                onClick={() => navigateTo && navigateTo(key, null)} 
+              >
+                {cat.displayName}
+              </button>
+            );
+          })}
+        </nav>
+      )}
+      
+    </div>
+  );
+};

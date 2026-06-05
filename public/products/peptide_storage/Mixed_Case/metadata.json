@@ -1,4 +1,6 @@
 {
+  "basePrice": "25.00",
+  "featured": true,
   "images": [
     {
       "filename": "printed_1.jpg",

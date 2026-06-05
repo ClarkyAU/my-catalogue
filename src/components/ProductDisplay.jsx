@@ -64,6 +64,12 @@ export const ProductDisplay = ({ product }) => {
 
       <div className="details-pane">
         <h2 className="product-title">{product.displayName}</h2>
+        
+        {/* PRICE DISPLAY */}
+        {product.price && product.price !== "0.00" && (
+          <div className="price-tag">${product.price}</div>
+        )}
+        
         <div className="description-box">{product.description}</div>
         <button onClick={handleShare} className="share-btn">
           <i className="fa-solid fa-share-nodes"></i>

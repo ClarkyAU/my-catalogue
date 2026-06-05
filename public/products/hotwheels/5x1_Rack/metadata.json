@@ -1,4 +1,6 @@
 {
+  "basePrice": "10.00",
+  "featured": true,
   "images": [
     {
       "filename": "hw5x1_printed_1.jpg",

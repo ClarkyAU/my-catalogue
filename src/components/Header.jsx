@@ -1,5 +1,12 @@
-export const Header = () => (
-  <header className="site-header">
-    <h1>CLARKY'S <br/><span>PRINTHOUSE</span></h1>
-  </header>
-);
+import React from 'react';
+
+export const Header = () => {
+  return (
+    <header className="site-header">
+      {/* The link wraps the h1, pointing to the empty hash (Home) */}
+      <a href="#" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <h1>CLARKY'S <span>PRINTHOUSE</span></h1>
+      </a>
+    </header>
+  );
+};

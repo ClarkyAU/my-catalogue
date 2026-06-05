@@ -1,4 +1,6 @@
 {
+  "basePrice": "35.00",
+  "featured": true,
   "images": [
     {
       "filename": "tc_printed_1.jpg",
