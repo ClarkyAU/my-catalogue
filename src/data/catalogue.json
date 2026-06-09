@@ -1,135 +1,145 @@
 {
-  "accessories": {
-    "displayName": "ACCESSORIES",
-    "theme": {
-      "themeColor": "#9D50BB"
-    },
-    "products": {
-      "Can_Holder": {
-        "id": "Can_Holder",
-        "displayName": "CAN HOLDER",
-        "description": "Want to be the center of attention at your next gathering?\nStand out with one of these bad boys.\nSlap a can in and enjoy easy care free sipping!\n\nPicture To Come!\n\nSelect Any Colour You Like\n\nSurface Texture - Underside only\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
-        "photos": [],
-        "price": "0.00",
-        "featured": false
-      },
-      "Trolley_Key": {
-        "id": "Trolley_Key",
-        "displayName": "TROLLEY KEY",
-        "description": "Don't carry coins becasue you're not a boomer?\nThen this little dohickey is your saviour\nSlap this bad boy in the coin slot of your trolley!\n\nPicture To Come!\n\n\nColour Options:\n - Enquire about what colours are avalible\n\nSurface Texture\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
-        "photos": [],
-        "price": "0.00",
-        "featured": false
+  "Hotwheels": {
+    "id": "Hotwheels",
+    "displayName": "Hotwheels",
+    "subCategories": {
+      "Display_Racks": {
+        "id": "Display_Racks",
+        "displayName": "Display Racks",
+        "products": {
+          "5x1_Rack": {
+            "id": "5x1_Rack",
+            "displayName": "5x1 Rack",
+            "description": "A 5-tier industrial style display rack.\nComes Flat Pack style for you to assemble.\n\nHolds:\n - 5x 1:64 model cars\n\nSelect Any Colour For:\n - Uprights\n - Platforms\n\nSurface Texture:\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Mix & Match Parts: Pick a different colour for each part for just $5 per extra colour.\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
+            "featured": true,
+            "price": "10.00",
+            "photos": [
+              {
+                "url": "/products/Hotwheels/Display_Racks/5x1_Rack/hw5x1_printed_1.jpg"
+              }
+            ]
+          }
+        }
       }
     }
   },
-  "hotwheels": {
-    "displayName": "HOTWHEELS",
-    "theme": {
-      "themeColor": "#00E5FF"
-    },
-    "products": {
-      "5x1_Rack": {
-        "id": "5x1_Rack",
-        "displayName": "5X1 RACK",
-        "description": "A 5-tier industrial style display rack.\nComes Flat Pack style for you to assemble.\n\nHolds:\n - 5x 1:64 model cars\n\nSelect Any Colour For:\n - Uprights\n - Platforms\n\nSurface Texture:\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Mix & Match Parts: Pick a different colour for each part for just $5 per extra colour.\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
-        "photos": [
-          {
-            "url": "/products/hotwheels/5x1_Rack/hw5x1_printed_1.jpg",
-            "filaments": [
-              "PLA+ Silver, PLA Black"
-            ],
-            "texture": "Standard Texture"
+  "Misc_Items": {
+    "id": "Misc_Items",
+    "displayName": "Misc Items",
+    "subCategories": {
+      "Drinks": {
+        "id": "Drinks",
+        "displayName": "Drinks",
+        "products": {
+          "Can_Holder": {
+            "id": "Can_Holder",
+            "displayName": "Can Holder",
+            "description": "Want to be the center of attention at your next gathering?\nStand out with one of these bad boys.\nSlap a can in and enjoy easy care free sipping!\n\nPicture To Come!\n\nSelect Any Colour You Like\n\nSurface Texture - Underside only\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
+            "featured": false,
+            "price": "0.00",
+            "photos": []
           }
-        ],
-        "price": "10.00",
-        "featured": true
+        }
+      },
+      "Key_Rings": {
+        "id": "Key_Rings",
+        "displayName": "Key Rings",
+        "products": {
+          "Trolley_Key": {
+            "id": "Trolley_Key",
+            "displayName": "Trolley Key",
+            "description": "Don't carry coins becasue you're not a boomer?\nThen this little dohickey is your saviour\nSlap this bad boy in the coin slot of your trolley!\n\nPicture To Come!\n\n\nColour Options:\n - Enquire about what colours are avalible\n\nSurface Texture\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
+            "featured": false,
+            "price": "0.00",
+            "photos": []
+          }
+        }
       }
     }
   },
-  "peptide_storage": {
-    "displayName": "PEPTIDE STORAGE",
-    "theme": {
-      "themeColor": "#FF007F"
-    },
-    "products": {
-      "Large_Case": {
-        "id": "Large_Case",
-        "displayName": "LARGE CASE",
-        "description": "This is the big one! \nStore all your vials in one case.\n\nHolds:\n - 54x 3ml Vials\n\nSelect Any Colour For:\n - Latches\n - Lid / Base\n - Insert\n\nSurface Texture:\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Mix & Match Parts: Pick a different colour for each part for just $5 per extra colour.\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
-        "photos": [
-          {
-            "url": "/products/peptide_storage/Large_Case/lb_printed_1.jpg",
-            "filaments": [
-              "PLA Black"
-            ],
-            "texture": "Carbon Look - Not Shown"
+  "Vial_Storage": {
+    "id": "Vial_Storage",
+    "displayName": "Vial Storage",
+    "subCategories": {
+      "3ml_Cases": {
+        "id": "3ml_Cases",
+        "displayName": "3ml Cases",
+        "products": {
+          "Large_Case_54x3ml": {
+            "id": "Large_Case_54x3ml",
+            "displayName": "Large Case 54x3ml",
+            "description": "This is the big one! \nStore all your vials in one case.\n\nHolds:\n - 54x 3ml Vials\n\nSelect Any Colour For:\n - Latches\n - Lid / Base\n - Insert\n\nSurface Texture:\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Mix & Match Parts: Pick a different colour for each part for just $5 per extra colour.\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
+            "featured": true,
+            "price": "55.00",
+            "photos": [
+              {
+                "url": "/products/Vial_Storage/3ml_Cases/Large_Case_54x3ml/lb_printed_1.jpg"
+              },
+              {
+                "url": "/products/Vial_Storage/3ml_Cases/Large_Case_54x3ml/lb_printed_2.jpg"
+              }
+            ]
           },
-          {
-            "url": "/products/peptide_storage/Large_Case/lb_printed_2.jpg",
-            "filaments": [
-              "PLA Black"
-            ],
-            "texture": "Carbon Look - Not Shown"
+          "Medium_Case_3ml_10x2": {
+            "id": "Medium_Case_3ml_10x2",
+            "displayName": "Medium Case 3ml 10x2",
+            "description": "Handy for storing your lyophilized vials in the freezer.\n\nHolds:\n - 10x 3ml Vials\n\nSelect Any Colour For:\n - Latches\n - Lid / Base\n - Insert\n\nSurface Texture:\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Mix & Match Parts: Pick a different colour for each part for just $5 per extra colour.\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
+            "featured": true,
+            "price": "20.00",
+            "photos": [
+              {
+                "url": "/products/Vial_Storage/3ml_Cases/Medium_Case_3ml_10x2/mc_printed_1.jpg"
+              }
+            ]
           }
-        ],
-        "price": "55.00",
-        "featured": true
+        }
       },
-      "Medium_Case": {
-        "id": "Medium_Case",
-        "displayName": "MEDIUM CASE",
-        "description": "Handy for storing your lyophilized vials in the freezer.\n\nHolds:\n - 10x 3ml Vials\n\nSelect Any Colour For:\n - Latches\n - Lid / Base\n - Insert\n\nSurface Texture:\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Mix & Match Parts: Pick a different colour for each part for just $5 per extra colour.\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
-        "photos": [
-          {
-            "url": "/products/peptide_storage/Medium_Case/mc_printed_1.jpg",
-            "filaments": [
-              "PLA+ White"
-            ],
-            "texture": "Carbon Look - Not Shown"
-          }
-        ],
-        "price": "20.00",
-        "featured": true
-      },
-      "Mixed_Case": {
-        "id": "Mixed_Case",
-        "displayName": "MIXED CASE",
-        "description": "Medium-sized case that fits nicely into the fridge.\n\nHolds:\n - 8x 3ml Vials\n - 6x 10ml Vials\n\nSelect Any Colour For:\n - Latches\n - Lid / Base\n - Internal Insert\n\nSurface Texture:\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Mix & Match Parts: Pick a different colour for each part for just $5 per extra colour.\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
-        "photos": [
-          {
-            "url": "/products/peptide_storage/Mixed_Case/printed_1.jpg",
-            "filaments": [
-              "PLA Black"
-            ],
-            "texture": "Carbon Look"
+      "Multi_Case": {
+        "id": "Multi_Case",
+        "displayName": "Multi Case",
+        "products": {
+          "Base_Case": {
+            "id": "Base_Case",
+            "displayName": "Base Case",
+            "description": "Medium-sized case that fits nicely into the fridge.\nThe Insert can be custom made to allow different Vials\n\nHolds:\n - 8x 3ml Vials\n - 6x 10ml Vials\n\nSelect Any Colour For:\n - Latches\n - Lid / Base\n - Internal Insert\n\nSurface Texture:\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Mix & Match Parts: Pick a different colour for each part for just $5 per extra colour.\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
+            "featured": true,
+            "price": "25.00",
+            "photos": [
+              {
+                "url": "/products/Vial_Storage/Multi_Case/Base_Case/printed_1.jpg"
+              },
+              {
+                "url": "/products/Vial_Storage/Multi_Case/Base_Case/printed_3.jpg"
+              }
+            ]
           },
-          {
-            "url": "/products/peptide_storage/Mixed_Case/printed_3.jpg",
-            "filaments": [
-              "PLA Black"
-            ],
-            "texture": "Carbon Look - Not Shown"
+          "Inserts": {
+            "id": "Inserts",
+            "displayName": "Inserts",
+            "description": "No description available.",
+            "featured": false,
+            "price": "0.00",
+            "photos": []
           }
-        ],
-        "price": "25.00",
-        "featured": true
+        }
       },
-      "Travel_Case": {
-        "id": "Travel_Case",
-        "displayName": "TRAVEL CASE",
-        "description": "Compact durable case for travel.\nLarge area to hold insulin needles and other goodies.\n\nHolds:\n - 10x 3ml Vials\n - 1x 10 Vial\n\nSelect Any Colour For:\n - Latch\n - Lid / Base\n\nSurface Texture:\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Mix & Match Parts: Pick a different colour for each part for just $5 per extra colour.\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
-        "photos": [
-          {
-            "url": "/products/peptide_storage/Travel_Case/tc_printed_1.jpg",
-            "filaments": [
-              "PLA+ White, PLA Black"
-            ],
-            "texture": "Carbon Look - Visable On Latch"
+      "Travel_Cases": {
+        "id": "Travel_Cases",
+        "displayName": "Travel Cases",
+        "products": {
+          "Travel_Case_1": {
+            "id": "Travel_Case_1",
+            "displayName": "Travel Case 1",
+            "description": "Compact durable case for travel.\nLarge area to hold insulin needles and other goodies.\n\nHolds:\n - 10x 3ml Vials\n - 1x 10 Vial\n\nSelect Any Colour For:\n - Latch\n - Lid / Base\n\nSurface Texture:\n - Carbon Fibre Look\n - Standard Textured\n\nCOLOUR OPTIONS:\n - Mix & Match Parts: Pick a different colour for each part for just $5 per extra colour.\n - Multi-Colour Inlays/Patterns: Want something custom? Hit the ORDER button and shoot me a message for a quote!",
+            "featured": true,
+            "price": "35.00",
+            "photos": [
+              {
+                "url": "/products/Vial_Storage/Travel_Cases/Travel_Case_1/tc_printed_1.jpg"
+              }
+            ]
           }
-        ],
-        "price": "35.00",
-        "featured": true
+        }
       }
     }
   }

@@ -1,156 +1,96 @@
 import fs from 'fs';
 import path from 'path';
-import sharp from 'sharp';
-import crypto from 'crypto';
+import { fileURLToPath } from 'url';
 
-const catalogueDir = path.join(process.cwd(), 'public/products'); 
-const outputDir = path.join(process.cwd(), 'src/data');
-const outputFile = path.join(outputDir, 'catalogue.json');
-const cacheFile = path.join(outputDir, '.image-cache.json');
+// --- ES MODULE WORKAROUND ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// ----------------------------
 
-// Helper to generate MD5 hash from a file buffer
-function getBufferHash(buffer) {
-  return crypto.createHash('md5').update(buffer).digest('hex');
+const directory = path.join(__dirname, 'public', 'products');
+const dataDir = path.join(__dirname, 'src', 'data');
+const outputFile = path.join(dataDir, 'catalogue.json');
+
+if (!fs.existsSync(directory)) fs.mkdirSync(directory, { recursive: true });
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+const catalogue = {};
+const categories = fs.readdirSync(directory).filter(f => fs.statSync(path.join(directory, f)).isDirectory());
+
+function parseProduct(prodPath, catId, subCatId, prodId, files, catObj) {
+  let desc = "No description available.";
+  const descFile = files.find(f => f === 'description.txt' || f === 'desc.txt');
+  if (descFile) desc = fs.readFileSync(path.join(prodPath, descFile), 'utf8');
+
+  let isFeatured = false, basePrice = "0.00", metaData = {};
+  const metaFile = files.find(f => f === 'metadata.json');
+  if (metaFile) {
+    metaData = JSON.parse(fs.readFileSync(path.join(prodPath, metaFile), 'utf8'));
+    isFeatured = metaData.featured || false;
+    basePrice = metaData.basePrice || "0.00";
+  }
+
+  const relativeProdPath = path.relative(directory, prodPath).replace(/\\/g, '/');
+
+  const photos = files.filter(f => f.match(/\.(jpg|jpeg|png|webp|gif)$/i)).map(photo => {
+    let photoData = { url: `/products/${relativeProdPath}/${photo}` };
+    if (metaData[photo]) {
+       photoData.filaments = metaData[photo].filaments || null;
+       photoData.texture = metaData[photo].texture || null;
+    }
+    return photoData;
+  });
+
+  catObj[catId].subCategories[subCatId].products[prodId] = {
+    id: prodId,
+    displayName: prodId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    description: desc,
+    featured: isFeatured,
+    price: basePrice,
+    photos: photos
+  };
 }
 
-async function scanCatalogue() {
-  console.log('🚀 Starting verbose catalogue scan...');
+categories.forEach(category => {
+  catalogue[category] = {
+    id: category,
+    displayName: category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    subCategories: {}
+  };
 
-  if (!fs.existsSync(catalogueDir)) fs.mkdirSync(catalogueDir, { recursive: true });
-  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+  const catPath = path.join(directory, category);
+  const level2Items = fs.readdirSync(catPath).filter(f => fs.statSync(path.join(catPath, f)).isDirectory());
 
-  // Load existing image cache if it exists
-  let imageCache = {};
-  if (fs.existsSync(cacheFile)) {
-    try {
-      imageCache = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
-      console.log(`📦 Loaded existing image cache with ${Object.keys(imageCache).length} entries.`);
-    } catch (e) { 
-      console.error('⚠️ Failed to read image cache, starting fresh.'); 
-    }
-  } else {
-    console.log('✨ No existing cache found. Starting fresh.');
-  }
+  level2Items.forEach(item => {
+    const itemPath = path.join(catPath, item);
+    const filesInside = fs.readdirSync(itemPath);
 
-  const categories = fs.readdirSync(catalogueDir);
-  const data = {};
-  let cacheUpdated = false;
-  
-  // Trackers for the final summary
-  let processedCount = 0;
-  let skippedCount = 0;
+    const isProduct = filesInside.some(f => fs.statSync(path.join(itemPath, f)).isFile());
 
-  for (const category of categories) {
-    const categoryPath = path.join(catalogueDir, category);
-    if (!fs.statSync(categoryPath).isDirectory()) continue;
-    
-    console.log(`\n📂 Scanning Category: [${category}]`);
-
-    let theme = { themeColor: "#00E5FF" }; 
-    const themePath = path.join(categoryPath, 'theme.json');
-    if (fs.existsSync(themePath)) {
-      try {
-        theme = JSON.parse(fs.readFileSync(themePath, 'utf8'));
-      } catch (e) { console.error(`  ⚠️ Theme error in ${category}`); }
-    }
-
-    data[category] = {
-      displayName: category.replace(/[-_]/g, ' ').toUpperCase(),
-      theme: theme, 
-      products: {}
-    };
-
-    const products = fs.readdirSync(categoryPath);
-    for (const product of products) {
-      const productPath = path.join(categoryPath, product);
-      if (!fs.statSync(productPath).isDirectory()) continue;
-      
-      console.log(`  📦 Product: [${product}]`);
-
-      const files = fs.readdirSync(productPath);
-      
-      const descFile = files.find(f => f.toLowerCase() === 'desc.txt' || f.toLowerCase() === 'description.txt');
-      const description = descFile ? fs.readFileSync(path.join(productPath, descFile), 'utf8') : "No description.";
-
-      const metaFile = files.find(f => f === 'metadata.json');
-      let imageMetadata = [];
-      let basePrice = "0.00";
-      let isFeatured = false;
-
-      if (metaFile) {
-        try {
-          const metaData = JSON.parse(fs.readFileSync(path.join(productPath, metaFile), 'utf8'));
-          imageMetadata = metaData.images || [];
-          basePrice = metaData.basePrice || "0.00";
-          isFeatured = metaData.featured || false;
-        } catch (e) { console.error(`    ⚠️ Meta error in ${product}`); }
+    if (isProduct) {
+      const subCatId = 'General';
+      if (!catalogue[category].subCategories[subCatId]) {
+        catalogue[category].subCategories[subCatId] = { id: subCatId, displayName: 'General', products: {} };
       }
-
-      const photos = [];
-      
-      for (const f of files) {
-        if (/\.(jpg|jpeg|png|webp)$/i.test(f)) {
-          const filePath = path.join(productPath, f);
-          const cacheKey = `${category}/${product}/${f}`;
-          
-          try {
-            const imageBuffer = await fs.promises.readFile(filePath);
-            const currentHash = getBufferHash(imageBuffer);
-            
-            // If hash matches the cache, skip processing
-            if (imageCache[cacheKey] !== currentHash) {
-              console.log(`    ⚙️  Optimising: ${f}`);
-              
-              const optimisedBuffer = await sharp(imageBuffer)
-                .resize({ width: 1200, withoutEnlargement: true })
-                .jpeg({ quality: 80, force: false }) 
-                .png({ quality: 80, force: false })
-                .webp({ quality: 80, force: false })
-                .toBuffer();
-                
-              await fs.promises.writeFile(filePath, optimisedBuffer);
-              
-              // Store the hash of the *newly optimised* file so it matches on the next run
-              imageCache[cacheKey] = getBufferHash(optimisedBuffer);
-              cacheUpdated = true;
-              processedCount++;
-            } else {
-              console.log(`    ⏭️  Skipped (Cached): ${f}`);
-              skippedCount++;
-            }
-            
-          } catch (error) {
-            console.error(`    ❌ Failed to process image: ${f}`, error);
-          }
-
-          const meta = imageMetadata.find(m => m.filename === f);
-          photos.push({
-            url: `/products/${category}/${product}/${f}`, 
-            filaments: meta ? (meta.filaments || []) : [],
-            texture: meta ? meta.texture : null
-          });
-        }
+      parseProduct(itemPath, category, subCatId, item, filesInside, catalogue);
+    } else {
+      const subCatId = item;
+      if (!catalogue[category].subCategories[subCatId]) {
+        catalogue[category].subCategories[subCatId] = {
+          id: subCatId,
+          displayName: subCatId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          products: {}
+        };
       }
-
-      data[category].products[product] = { 
-        id: product, 
-        displayName: product.replace(/[-_]/g, ' ').toUpperCase(), 
-        description, 
-        photos,
-        price: basePrice,
-        featured: isFeatured
-      };
+      const level3Items = filesInside.filter(f => fs.statSync(path.join(itemPath, f)).isDirectory());
+      level3Items.forEach(prodItem => {
+         const prodPath = path.join(itemPath, prodItem);
+         const prodFiles = fs.readdirSync(prodPath);
+         parseProduct(prodPath, category, subCatId, prodItem, prodFiles, catalogue);
+      });
     }
-  }
+  });
+});
 
-  fs.writeFileSync(outputFile, JSON.stringify(data, null, 2));
-  
-  if (cacheUpdated) {
-    fs.writeFileSync(cacheFile, JSON.stringify(imageCache, null, 2));
-  }
-  
-  console.log('\n✅ Scan Complete!');
-  console.log(`📊 Summary: ${processedCount} images optimised, ${skippedCount} images skipped.`);
-}
-
-scanCatalogue();
+fs.writeFileSync(outputFile, JSON.stringify(catalogue, null, 2));
+console.log('✅ Smart Scanner Complete! catalogue.json updated.');
