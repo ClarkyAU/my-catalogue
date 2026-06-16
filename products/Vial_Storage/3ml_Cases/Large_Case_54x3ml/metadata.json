@@ -1,0 +1,16 @@
+{
+  "basePrice": "55.00",
+  "featured": true,
+  "images": [
+    {
+      "filename": "lb_printed_1.jpg",
+      "filaments": ["PLA Black"],
+      "texture": "Carbon Look - Not Shown"
+    },
+    {
+      "filename": "lb_printed_2.jpg",
+      "filaments": ["PLA Black"],
+      "texture": "Carbon Look - Not Shown"
+    }
+  ]
+}
