@@ -71,21 +71,34 @@ body { margin: 0; background-color: #121212; }
 .card-price { font-family: 'Space Mono', monospace; color: var(--theme-color); font-weight: bold; font-size: 1.1rem; }
 .card-category { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: #888; text-transform: uppercase; margin-top: 5px; }
 
-/* --- MS-DOS DIRECTORY OVERLAY --- */
+/* --- CATALOGUE DIRECTORY PANEL --- */
 .dos-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #050505; color: #33FF00; font-family: 'Space Mono', monospace;
-  z-index: 10000; padding: 30px; display: flex; flex-direction: column; overflow-y: auto;
-  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.05) 2px, rgba(0,255,0,0.05) 4px);
+  position: relative;
+  width: 100%; max-width: 1400px; margin: 0 auto 35px; box-sizing: border-box;
+  background-color: #0A0A0A; color: #F5F0E6; font-family: 'Space Mono', monospace;
+  z-index: 10; display: flex; flex-direction: column;
+  max-height: 65vh; overflow: hidden;
+  border: 3px solid var(--theme-color);
+  box-shadow: 10px 10px 0px #000;
+  animation: dos-drop 0.15s ease-out;
 }
-.dos-header { display: flex; justify-content: space-between; border-bottom: 2px dashed #33FF00; padding-bottom: 15px; margin-bottom: 30px; font-weight: bold; font-size: 1.2rem; }
-.dos-close { background: none; border: none; color: #33FF00; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 1.2rem; }
-.dos-tree-section { margin-bottom: 25px; }
-.dos-dir { font-weight: bold; margin-bottom: 10px; font-size: 1.2rem; }
-.dos-item { background: none; border: none; color: #33FF00; font-family: inherit; font-size: 1rem; cursor: pointer; text-align: left; padding: 8px 0 8px 20px; width: 100%; display: block; }
-.dos-item:hover, .dos-item:active { background-color: #111; color: #fff; }
-.dos-cursor { animation: blink 1s step-end infinite; font-size: 1.5rem; font-weight: bold; }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes dos-drop { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+
+.dos-titlebar { display: flex; justify-content: space-between; align-items: center; background: var(--theme-color); color: #0A0A0A; padding: 9px 16px; flex-shrink: 0; }
+.dos-prompt { font-family: 'Bungee', cursive; font-size: 0.95rem; letter-spacing: 1px; }
+.dos-blink { animation: dos-blink 1s steps(1) infinite; }
+@keyframes dos-blink { 50% { opacity: 0; } }
+.dos-close { background: #0A0A0A; border: none; color: var(--theme-color); cursor: pointer; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.85rem; padding: 5px 12px; transition: all 0.1s ease; }
+.dos-close:hover { background: #F5F0E6; color: #0A0A0A; }
+
+.dos-content { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; align-items: start; padding: 28px; overflow-y: auto; }
+.dos-tree-section { display: flex; flex-direction: column; }
+.dos-dir { font-family: 'Bungee', cursive; font-size: 0.95rem; color: var(--theme-color); padding-bottom: 8px; margin-bottom: 12px; border-bottom: 2px solid #333; text-shadow: 2px 2px 0px #000; }
+.dos-items { display: flex; flex-direction: column; gap: 4px; }
+.dos-item { background: transparent; border: 2px solid transparent; color: #F5F0E6; font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.9rem; cursor: pointer; text-align: left; padding: 8px 12px; width: 100%; display: flex; align-items: center; gap: 10px; transition: all 0.1s ease; }
+.dos-item-marker { color: var(--theme-color); transition: color 0.1s ease; }
+.dos-item:hover, .dos-item:focus-visible { background: var(--theme-color); color: #0A0A0A; border-color: #F5F0E6; transform: translateX(4px); outline: none; }
+.dos-item:hover .dos-item-marker, .dos-item:focus-visible .dos-item-marker { color: #0A0A0A; }
 
 /* --- MOBILE RESPONSIVENESS --- */
 @media (max-width: 944px) {
