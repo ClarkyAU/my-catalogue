@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './styles/global.css';
 import { useCatalogue } from './hooks/useCatalogue';
 import { Header } from './components/Header';
 import { ProductDisplay } from './components/ProductDisplay';
 import { LandingPage } from './components/LandingPage';
 import { CategoryGrid } from './components/CategoryGrid';
-import { DirectoryOverlay } from './components/DirectoryOverlay';
+import { CascadeMenu } from './components/CascadeMenu';
 
 export default function App() {
-  const { catalogue, activeCategory, activeSubCategory, activeProduct, activeTheme, navigateTo } = useCatalogue();
-  const [isDirOpen, setIsDirOpen] = useState(false);
+  const { catalogue, loading, activeCategory, activeSubCategory, activeProduct, activeTheme, navigateTo } = useCatalogue();
 
   const currentSubCategory = activeCategory && activeSubCategory ? catalogue[activeCategory]?.subCategories[activeSubCategory] : null;
   const currentProduct = currentSubCategory && activeProduct ? currentSubCategory.products[activeProduct] : null;
@@ -24,23 +23,18 @@ export default function App() {
             <button className="nav-btn hub-btn" onClick={() => window.location.hash = ''}>
               [ NEW PRODUCTS ]
             </button>
-            <button className="nav-btn hub-btn" onClick={() => setIsDirOpen(true)}>
-              [ THE CATALOGUE ]
-            </button>
+            <CascadeMenu catalogue={catalogue} navigateTo={navigateTo} />
             <button className="nav-btn hub-btn" onClick={(e) => { e.preventDefault(); alert("Colours Library Coming Soon!"); }}>
               [ COLOURS ]
             </button>
           </nav>
         </div>
 
-        <DirectoryOverlay 
-          catalogue={catalogue} 
-          isOpen={isDirOpen} 
-          onClose={() => setIsDirOpen(false)} 
-          navigateTo={navigateTo} 
-        />
-        
-        {!activeCategory ? (
+        {loading ? (
+          <div className="landing-page" style={{ textAlign: 'center', marginTop: '60px', fontFamily: "'Space Mono', monospace", color: '#888' }}>
+            LOADING CATALOGUE...
+          </div>
+        ) : !activeCategory ? (
           <LandingPage catalogue={catalogue} />
         ) : !activeProduct ? (
           <CategoryGrid subCategory={currentSubCategory} categoryId={activeCategory} subCategoryId={activeSubCategory} />

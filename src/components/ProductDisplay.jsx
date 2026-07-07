@@ -2,9 +2,30 @@ import React, { useState, useEffect } from 'react';
 
 export const ProductDisplay = ({ product }) => {
   const [index, setIndex] = useState(0);
+  const [copied, setCopied] = useState(false);
   useEffect(() => setIndex(0), [product]);
 
   const currentPhoto = product.photos?.[index];
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const shareData = {
+      title: product.displayName,
+      text: `Check out ${product.displayName} at Clarky's Printhouse`,
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch {
+      // Share sheet dismissed or clipboard unavailable — nothing to do.
+    }
+  };
 
   return (
     <div className="product-card">
@@ -61,6 +82,10 @@ export const ProductDisplay = ({ product }) => {
           <div className="price-tag">${product.price}</div>
         )}
         <div className="description-box">{product.description}</div>
+        <button className="share-btn" onClick={handleShare}>
+          <i className="fa-solid fa-share-nodes"></i>
+          {copied ? ' LINK COPIED' : ' SHARE'}
+        </button>
       </div>
     </div>
   );
