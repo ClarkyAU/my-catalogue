@@ -2,9 +2,25 @@ import React, { useState, useEffect } from 'react';
 
 export const ProductDisplay = ({ product }) => {
   const [index, setIndex] = useState(0);
-  useEffect(() => setIndex(0), [product]);
+  const [shared, setShared] = useState(false);
+  useEffect(() => { setIndex(0); setShared(false); }, [product]);
 
   const currentPhoto = product.photos?.[index];
+  const hasPrice = product.price && product.price !== "0.00";
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const shareData = { title: `${product.displayName} — Clarky's Printhouse`, url };
+    if (navigator.share) {
+      try { await navigator.share(shareData); } catch { /* user cancelled */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShared(true);
+      setTimeout(() => setShared(false), 2000);
+    } catch { /* clipboard unavailable */ }
+  };
 
   return (
     <div className="product-card">
@@ -57,9 +73,15 @@ export const ProductDisplay = ({ product }) => {
       
       <div className="details-pane">
         <h2 className="product-title">{product.displayName}</h2>
-        {product.price && product.price !== "0.00" && (
-          <div className="price-tag">${product.price}</div>
-        )}
+
+        <div className="product-meta">
+          {hasPrice && <span className="price-tag">${product.price}</span>}
+          <button className="share-btn" onClick={handleShare} title="Share this product">
+            <i className="fa-solid fa-share-nodes"></i>
+            {shared ? 'LINK COPIED' : 'SHARE'}
+          </button>
+        </div>
+
         <div className="description-box">{product.description}</div>
       </div>
     </div>

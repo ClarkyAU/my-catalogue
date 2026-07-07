@@ -24,22 +24,24 @@ export default function App() {
             <button className="nav-btn hub-btn" onClick={() => window.location.hash = ''}>
               [ NEW PRODUCTS ]
             </button>
-            <button className="nav-btn hub-btn" onClick={() => setIsDirOpen(true)}>
-              [ THE CATALOGUE ]
-            </button>
+            <div className="hub-dropdown">
+              <button className={`nav-btn hub-btn ${isDirOpen ? 'active' : ''}`} onClick={() => setIsDirOpen(v => !v)}>
+                [ THE CATALOGUE ]
+              </button>
+
+              <DirectoryOverlay
+                catalogue={catalogue}
+                isOpen={isDirOpen}
+                onClose={() => setIsDirOpen(false)}
+                navigateTo={navigateTo}
+              />
+            </div>
             <button className="nav-btn hub-btn" onClick={(e) => { e.preventDefault(); alert("Colours Library Coming Soon!"); }}>
               [ COLOURS ]
             </button>
           </nav>
         </div>
 
-        <DirectoryOverlay 
-          catalogue={catalogue} 
-          isOpen={isDirOpen} 
-          onClose={() => setIsDirOpen(false)} 
-          navigateTo={navigateTo} 
-        />
-        
         {!activeCategory ? (
           <LandingPage catalogue={catalogue} />
         ) : !activeProduct ? (
