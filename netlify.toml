@@ -1,0 +1,17 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[dev]
+  command = "npm run dev"
+  targetPort = 5173
+
+# Pretty URL for the admin control panel.
+[[redirects]]
+  from = "/admin"
+  to = "/admin.html"
+  status = 200
