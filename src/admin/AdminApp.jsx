@@ -269,7 +269,7 @@ function SiteSettings() {
   return (
     <section className="a-settings">
       <h2 className="a-settings-title">SITE TEXT</h2>
-      <p className="a-settings-hint">The welcome message shown on the New Products home page.</p>
+      <p className="a-settings-hint">The welcome message shown on the New Products home page. Leave a field empty to hide that line.</p>
       {SETTINGS_FIELDS.map(({ key, label, rows }) => (
         <label className="a-field" key={key}>
           <span>{label}</span>
