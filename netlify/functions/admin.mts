@@ -5,6 +5,7 @@ import { db } from "../../db/index.js";
 import { categories, subcategories, products, photos } from "../../db/schema.js";
 import { requireAdmin } from "../../server/auth.js";
 import { slugify } from "../../server/catalogue.js";
+import { getSettings, setSetting, SETTINGS_DEFAULTS } from "../../server/settings.js";
 
 const PHOTO_STORE = "product-photos";
 
@@ -97,6 +98,26 @@ export default async (req: Request, _context: Context) => {
     // GET /api/admin/catalogue — full tree for the admin UI.
     if (method === "GET" && (resource === "catalogue" || !resource)) {
       return json(await adminTree());
+    }
+
+    // ---------- Site settings (editable copy) ----------
+    if (resource === "settings") {
+      // GET /api/admin/settings — current values merged with defaults.
+      if (method === "GET") {
+        return json(await getSettings());
+      }
+      // PATCH /api/admin/settings — update one or more known settings.
+      if (method === "PATCH") {
+        const updated: Record<string, string> = {};
+        for (const key of Object.keys(SETTINGS_DEFAULTS)) {
+          if (body[key] !== undefined) {
+            const value = String(body[key]);
+            await setSetting(key, value);
+            updated[key] = value;
+          }
+        }
+        return json({ ...(await getSettings()), ...updated });
+      }
     }
 
     // ---------- Categories ----------

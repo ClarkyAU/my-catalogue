@@ -5,10 +5,11 @@ import { Header } from './components/Header';
 import { ProductDisplay } from './components/ProductDisplay';
 import { LandingPage } from './components/LandingPage';
 import { CategoryGrid } from './components/CategoryGrid';
+import { CategoryPage } from './components/CategoryPage';
 import { CascadeMenu } from './components/CascadeMenu';
 
 export default function App() {
-  const { catalogue, loading, activeCategory, activeSubCategory, activeProduct, activeTheme, navigateTo } = useCatalogue();
+  const { catalogue, settings, loading, activeCategory, activeSubCategory, activeProduct, activeTheme, navigateTo } = useCatalogue();
 
   const currentSubCategory = activeCategory && activeSubCategory ? catalogue[activeCategory]?.subCategories[activeSubCategory] : null;
   const currentProduct = currentSubCategory && activeProduct ? currentSubCategory.products[activeProduct] : null;
@@ -35,7 +36,9 @@ export default function App() {
             LOADING CATALOGUE...
           </div>
         ) : !activeCategory ? (
-          <LandingPage catalogue={catalogue} />
+          <LandingPage catalogue={catalogue} intro={settings.landingIntro} subtext={settings.landingSubtext} note={settings.landingNote} />
+        ) : !activeSubCategory ? (
+          <CategoryPage category={catalogue[activeCategory]} categoryId={activeCategory} />
         ) : !activeProduct ? (
           <CategoryGrid subCategory={currentSubCategory} categoryId={activeCategory} subCategoryId={activeSubCategory} />
         ) : (
