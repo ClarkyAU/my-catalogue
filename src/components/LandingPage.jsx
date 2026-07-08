@@ -1,6 +1,14 @@
 import React from 'react';
 
 export const LandingPage = ({ catalogue, intro, subtext, note }) => {
+  // An empty field means the owner does not want that line shown at all, so we
+  // render each paragraph only when it has content (no hardcoded fallback copy)
+  // and drop the whole welcome box when every line is blank.
+  const introText = (intro || '').trim();
+  const subtextText = (subtext || '').trim();
+  const noteText = (note || '').trim();
+  const hasWelcome = introText || subtextText || noteText;
+
   const featuredProducts = [];
   
   Object.entries(catalogue).forEach(([catId, category]) => {
@@ -19,11 +27,13 @@ export const LandingPage = ({ catalogue, intro, subtext, note }) => {
   return (
     <div className="landing-page">
       <h2 className="section-title">NEW PRODUCTS</h2>
-      <div className="welcome-message" style={{ fontFamily: "'Space Mono', monospace", textAlign: 'center', color: '#F5F0E6', fontSize: '1rem', lineHeight: '1.6', padding: '25px', maxWidth: '700px', margin: '0 auto 40px auto', background: '#1A1A1A', border: '2px dashed #333', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        <p style={{ margin: 0 }}>{intro || 'I am currently working on a batch of new products, so keep an eye out for updates.'}</p>
-        <p style={{ margin: 0, color: 'var(--theme-color)', fontWeight: 'bold' }}>{subtext || 'Check out the latest releases below, or hit [ MY CATALOGUE ] above to browse every category and product.'}</p>
-        <p style={{ margin: 0, fontSize: '0.9rem', color: '#888' }}>{note || 'If there is anything you would like that is not listed, shoot me a message via the order button.'}</p>
-      </div>
+      {hasWelcome && (
+        <div className="welcome-message" style={{ fontFamily: "'Space Mono', monospace", textAlign: 'center', color: '#F5F0E6', fontSize: '1rem', lineHeight: '1.6', padding: '25px', maxWidth: '700px', margin: '0 auto 40px auto', background: '#1A1A1A', border: '2px dashed #333', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          {introText && <p style={{ margin: 0 }}>{introText}</p>}
+          {subtextText && <p style={{ margin: 0, color: 'var(--theme-color)', fontWeight: 'bold' }}>{subtextText}</p>}
+          {noteText && <p style={{ margin: 0, fontSize: '0.9rem', color: '#888' }}>{noteText}</p>}
+        </div>
+      )}
 
       {featuredProducts.length === 0 ? (
         <div className="landing-empty" style={{ textAlign: 'center', marginTop: '40px' }}>
