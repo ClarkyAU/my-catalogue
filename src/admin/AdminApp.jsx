@@ -192,6 +192,8 @@ function Dashboard({ user, onSignOut }) {
       <main className="a-main">
         {error && <p className="a-error">{error}</p>}
 
+        <SiteSettings />
+
         <form className="a-addbar" onSubmit={addCategory}>
           <input className="a-input" placeholder="New category name…" value={newCat}
             onChange={(e) => setNewCat(e.target.value)} />
@@ -210,8 +212,87 @@ function Dashboard({ user, onSignOut }) {
   );
 }
 
-/* --------------------------- Category block -------------------------- */
+/* --------------------------- Site settings --------------------------- */
 
+// The three lines of the landing-page welcome message. Editing these keeps the
+// admin in sync with exactly what the storefront shows.
+const SETTINGS_FIELDS = [
+  { key: 'landingIntro', label: 'Intro message', rows: 3 },
+  { key: 'landingSubtext', label: 'Highlighted line', rows: 2 },
+  { key: 'landingNote', label: 'Footnote', rows: 2 },
+];
+
+function SiteSettings() {
+  const [values, setValues] = useState({});
+  const [original, setOriginal] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [err, setErr] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await api('/settings');
+        const picked = {};
+        for (const { key } of SETTINGS_FIELDS) picked[key] = data[key] || '';
+        setValues(picked);
+        setOriginal(picked);
+      } catch (e) {
+        setErr(e.message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const dirty = SETTINGS_FIELDS.some(({ key }) => values[key] !== original[key]);
+
+  const save = async () => {
+    setSaving(true);
+    setErr('');
+    try {
+      const data = await api('/settings', { method: 'PATCH', body: values });
+      const picked = {};
+      for (const { key } of SETTINGS_FIELDS) picked[key] = data[key] ?? values[key];
+      setOriginal(picked);
+      setValues(picked);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="a-settings">
+      <h2 className="a-settings-title">SITE TEXT</h2>
+      <p className="a-settings-hint">The welcome message shown on the New Products home page.</p>
+      {SETTINGS_FIELDS.map(({ key, label, rows }) => (
+        <label className="a-field" key={key}>
+          <span>{label}</span>
+          <textarea
+            className="a-input a-textarea"
+            rows={rows}
+            value={values[key] || ''}
+            disabled={loading}
+            onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
+          />
+        </label>
+      ))}
+      {err && <p className="a-error">{err}</p>}
+      <div className="a-prod-actions">
+        <button className="a-btn a-btn-sm" onClick={save} disabled={loading || !dirty || saving}>
+          {saving ? 'SAVING…' : saved ? 'SAVED ✓' : 'SAVE TEXT'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/* --------------------------- Category block -------------------------- */
 function CategoryBlock({ category, reload }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(category.displayName);

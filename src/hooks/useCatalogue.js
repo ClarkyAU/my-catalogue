@@ -6,10 +6,19 @@ import fallbackCatalogue from '../data/catalogue.json';
 
 const DEFAULT_THEME = { themeColor: '#00E5FF' };
 
+// Fallback copy so the landing page always has intro text, even before the
+// settings API responds or if it is briefly unavailable.
+const DEFAULT_SETTINGS = {
+  landingIntro: 'I am currently working on a batch of new products, so keep an eye out for updates.',
+  landingSubtext: 'Check out the latest releases below, or hit [ MY CATALOGUE ] above to browse every category and product.',
+  landingNote: 'If there is anything you would like that is not listed, shoot me a message via the order button.',
+};
+
 const hasContent = (data) => data && typeof data === 'object' && Object.keys(data).length > 0;
 
 export const useCatalogue = () => {
   const [catalogue, setCatalogue] = useState({});
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeSubCategory, setActiveSubCategory] = useState(null);
@@ -31,6 +40,23 @@ export const useCatalogue = () => {
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Load editable site copy (e.g. the landing intro). Falls back to the bundled
+  // defaults on any error so the page never renders blank text.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/settings')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && hasContent(data)) setSettings({ ...DEFAULT_SETTINGS, ...data });
+      })
+      .catch(() => {
+        /* keep defaults */
       });
     return () => {
       cancelled = true;
@@ -75,5 +101,5 @@ export const useCatalogue = () => {
     window.location.hash = path;
   };
 
-  return { catalogue, loading, activeCategory, activeSubCategory, activeProduct, activeTheme, navigateTo };
+  return { catalogue, settings, loading, activeCategory, activeSubCategory, activeProduct, activeTheme, navigateTo };
 };

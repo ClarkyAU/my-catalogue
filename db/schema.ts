@@ -71,3 +71,12 @@ export const photos = pgTable("photos", {
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Editable pieces of site copy that the owner can change from the admin portal
+// (e.g. the landing-page intro message). Stored as simple key/value rows so new
+// editable strings can be added without a schema change.
+export const siteSettings = pgTable("site_settings", {
+  key: text().primaryKey(),
+  value: text().notNull().default(""),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});

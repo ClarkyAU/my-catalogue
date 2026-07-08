@@ -86,6 +86,18 @@ body {
 .a-addbar .a-input { flex: 1; }
 .a-addbar-sub { margin: 14px 0 4px; }
 
+/* ---- site settings ---- */
+.a-settings {
+  border: 3px solid var(--accent);
+  background: var(--panel);
+  box-shadow: 8px 8px 0 #000;
+  margin-bottom: 30px;
+  padding: 16px;
+}
+.a-settings-title { font-family: 'Bungee', cursive; font-size: 1.05rem; margin: 0 0 14px; }
+.a-settings-hint { color: var(--muted); font-size: 0.8rem; margin: -8px 0 16px; }
+.a-settings .a-field { margin-bottom: 14px; }
+
 /* ---- category ---- */
 .a-cat {
   border: 3px solid var(--cat-color, var(--accent));

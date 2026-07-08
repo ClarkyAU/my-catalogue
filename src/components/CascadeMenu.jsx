@@ -72,7 +72,7 @@ export const CascadeMenu = ({ catalogue, navigateTo }) => {
                 >
                   <button
                     className="cascade-cat-btn"
-                    onClick={() => setActiveCat(isActive ? null : cat.id)}
+                    onClick={() => go(cat.id)}
                     aria-expanded={isActive}
                   >
                     <span>{cat.displayName.toUpperCase()}</span>
