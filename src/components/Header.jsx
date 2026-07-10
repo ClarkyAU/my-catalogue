@@ -5,7 +5,7 @@ export const Header = () => {
     <header className="site-header">
       {/* The link wraps the h1, pointing to the empty hash (Home) */}
       <a href="#" style={{ textDecoration: 'none', color: 'inherit' }}>
-        <h1>CLARKY'S <span>PRINTHOUSE</span></h1>
+        <h1>CLARKY<span>3D</span></h1>
       </a>
     </header>
   );

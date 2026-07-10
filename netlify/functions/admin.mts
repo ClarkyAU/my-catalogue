@@ -2,9 +2,10 @@ import type { Config, Context } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "../../db/index.js";
-import { categories, subcategories, products, photos } from "../../db/schema.js";
+import { categories, subcategories, products, photos, filaments } from "../../db/schema.js";
 import { requireAdmin } from "../../server/auth.js";
 import { slugify } from "../../server/catalogue.js";
+import { listFilaments, normalizeStatus, normalizeHex } from "../../server/filaments.js";
 import { getSettings, setSetting, SETTINGS_DEFAULTS } from "../../server/settings.js";
 
 const PHOTO_STORE = "product-photos";
@@ -290,6 +291,44 @@ export default async (req: Request, _context: Context) => {
             .orderBy(asc(photos.sortOrder), asc(photos.id));
           if (next) await db.update(photos).set({ isDefault: true }).where(eq(photos.id, next.id));
         }
+        return json({ ok: true });
+      }
+    }
+
+    // ---------- Filaments (public colour library) ----------
+    if (resource === "filaments") {
+      // GET /api/admin/filaments — full list for the management UI.
+      if (method === "GET") {
+        return json(await listFilaments());
+      }
+      if (method === "POST") {
+        if (!body.name) return json({ error: "name is required" }, 400);
+        const existing = await db.select({ sortOrder: filaments.sortOrder }).from(filaments);
+        const nextOrder = existing.reduce((m, f) => Math.max(m, f.sortOrder + 1), 0);
+        const [row] = await db
+          .insert(filaments)
+          .values({
+            name: String(body.name).trim(),
+            material: body.material ? String(body.material).trim() : "",
+            hex: normalizeHex(body.hex),
+            status: normalizeStatus(body.status),
+            sortOrder: nextOrder,
+          })
+          .returning();
+        return json(row, 201);
+      }
+      if (method === "PATCH" && Number.isInteger(id)) {
+        const updates: Record<string, unknown> = {};
+        if (body.name !== undefined) updates.name = String(body.name).trim();
+        if (body.material !== undefined) updates.material = String(body.material).trim();
+        if (body.hex !== undefined) updates.hex = normalizeHex(body.hex);
+        if (body.status !== undefined) updates.status = normalizeStatus(body.status);
+        if (body.sortOrder !== undefined) updates.sortOrder = body.sortOrder;
+        const [row] = await db.update(filaments).set(updates).where(eq(filaments.id, id)).returning();
+        return row ? json(row) : json({ error: "Not found" }, 404);
+      }
+      if (method === "DELETE" && Number.isInteger(id)) {
+        await db.delete(filaments).where(eq(filaments.id, id));
         return json({ ok: true });
       }
     }

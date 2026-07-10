@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Bungee&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700&family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap');
 
 :root { --theme-color: #00E5FF; }
 
@@ -8,7 +8,7 @@ body::before {
   z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
 }
 
-body { margin: 0; background-color: #121212; }
+body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 
 .app-container {
   min-height: 100vh; color: #F5F0E6; width: 100%; padding: 40px 0; display: flex; flex-direction: column;
@@ -18,14 +18,14 @@ body { margin: 0; background-color: #121212; }
 .main-wrapper { width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }
 
 .site-header { text-align: center; margin-bottom: 40px; }
-.site-header h1 { font-family: 'Bungee', cursive; font-size: clamp(2.5rem, 8vw, 6rem); margin: 0; line-height: 1; text-shadow: 4px 4px 0px #000, 8px 8px 0px #888; }
+.site-header h1 { font-family: 'Press Start 2P', cursive; font-size: clamp(2.5rem, 8vw, 6rem); margin: 0; line-height: 1; text-shadow: 4px 4px 0px #000, 8px 8px 0px #888; }
 .site-header h1 span { color: var(--theme-color); }
 
 .nav-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
 .nav-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 25px; }
 
 .nav-btn {
-  font-family: 'Bungee', cursive; cursor: pointer; transition: all 0.1s ease; background: transparent;
+  font-family: 'Exo 2', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.1s ease; background: transparent;
   border: 2px solid var(--theme-color); color: var(--theme-color); padding: 6px 15px;
 }
 .nav-btn.category { padding: 10px 25px; border-width: 3px; border-color: #F5F0E6; color: #F5F0E6; font-size: clamp(0.8rem, 2vw, 1.2rem); box-shadow: 3px 3px 0px var(--theme-color); }
@@ -34,29 +34,30 @@ body { margin: 0; background-color: #121212; }
 .product-card { display: flex; flex-wrap: wrap; background: #1A1A1A; border: 4px solid var(--theme-color); box-shadow: 12px 12px 0px #000; align-items: stretch; }
 
 .gallery-pane { flex: 1 1 450px; background: #121212; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-.thumb-container { display: flex; gap: 10px; height: 65px; align-items: center; order: -1; }
-.thumb { width: 65px; height: 65px; object-fit: cover; cursor: pointer; border: 2px solid #333; opacity: 0.6; position: relative; z-index: 3; }
+.thumb-container { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; order: -1; }
+.thumb { width: 100px; height: 100px; object-fit: cover; cursor: pointer; border: 2px solid #333; opacity: 0.6; position: relative; z-index: 3; transition: opacity 0.1s ease, border-color 0.1s ease; }
+.thumb:hover { opacity: 1; }
 .thumb.active { border-color: var(--theme-color); opacity: 1; }
 
 .main-image-container { width: 100%; background: #0A0A0A; height: 650px; border: 2px solid #333; overflow: hidden; display: flex; flex-direction: column; position: relative; z-index: 3; }
 .image-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
 .main-img { width: 100%; flex-grow: 1; max-height: calc(100% - 70px); object-fit: contain; padding: 15px; box-sizing: border-box; }
 
-.image-caption { width: 100%; background: #050505; border-top: 2px solid #333; padding: 10px 15px; font-family: 'Space Mono', monospace; text-align: left; display: flex; flex-direction: column; gap: 2px; margin-top: auto; }
+.image-caption { width: 100%; background: #050505; border-top: 2px solid #333; padding: 10px 15px; font-family: 'Exo 2', sans-serif; text-align: left; display: flex; flex-direction: column; gap: 2px; margin-top: auto; }
 .caption-line { font-size: 0.85rem; }
 .caption-label { color: #888; text-transform: uppercase; }
 .filament-list { color: var(--theme-color); font-weight: bold; }
 .texture-tag { color: #F5F0E6; font-weight: bold; }
 
 .details-pane { flex: 1 1 450px; padding: 20px; display: flex; flex-direction: column; border-left: 4px solid #F5F0E6; gap: 10px; }
-.product-title { font-family: 'Bungee', cursive; font-size: clamp(1.8rem, 4vw, 3rem); margin: 0; color: var(--theme-color); text-align: center; text-shadow: 2px 2px 0px #000; height: 65px; display: flex; align-items: center; justify-content: center; }
-.price-tag { font-family: 'Space Mono', monospace; color: var(--theme-color); font-size: 1.6rem; font-weight: bold; text-align: center; margin-bottom: 15px; }
+.product-title { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: clamp(1.8rem, 4vw, 3rem); margin: 0; color: var(--theme-color); text-align: center; text-shadow: 2px 2px 0px #000; height: 65px; display: flex; align-items: center; justify-content: center; }
+.price-tag { font-family: 'Exo 2', sans-serif; color: var(--theme-color); font-size: 1.6rem; font-weight: bold; text-align: center; margin-bottom: 15px; }
 
-.description-box { font-family: 'Space Mono', monospace; font-size: clamp(0.9rem, 1.1vw, 1.1rem); line-height: 1.6; white-space: pre-wrap; padding: 25px; background: #121212; border: 2px dashed var(--theme-color); height: auto; flex-grow: 1; box-sizing: border-box; text-align: left; overflow: visible; }
+.description-box { font-family: 'Exo 2', sans-serif; font-size: clamp(0.9rem, 1.1vw, 1.1rem); line-height: 1.6; white-space: pre-wrap; padding: 25px; background: #121212; border: 2px dashed var(--theme-color); height: auto; flex-grow: 1; box-sizing: border-box; text-align: left; overflow: visible; position: relative; z-index: 3; }
 
 /* --- SHARE BUTTON --- */
 .share-btn {
-  font-family: 'Bungee', cursive; cursor: pointer; align-self: center; margin-top: 6px;
+  font-family: 'Exo 2', sans-serif; font-weight: 700; cursor: pointer; align-self: center; margin-top: 6px;
   background: transparent; border: 3px solid var(--theme-color); color: var(--theme-color);
   padding: 10px 28px; box-shadow: 3px 3px 0px #000; transition: all 0.1s ease;
   display: inline-flex; align-items: center; gap: 8px; font-size: clamp(0.8rem, 2vw, 1rem);
@@ -84,15 +85,15 @@ body { margin: 0; background-color: #121212; }
 }
 
 .cascade-head {
-  font-family: 'Space Mono', monospace; font-weight: bold; color: var(--theme-color);
+  font-family: 'Exo 2', sans-serif; font-weight: bold; color: var(--theme-color);
   font-size: 0.8rem; padding: 8px 12px 10px; border-bottom: 2px dashed #333; margin-bottom: 4px;
 }
-.cascade-empty { font-family: 'Space Mono', monospace; color: #888; padding: 10px 14px; font-size: 0.85rem; }
+.cascade-empty { font-family: 'Exo 2', sans-serif; color: #888; padding: 10px 14px; font-size: 0.85rem; }
 
 .cascade-cat { position: relative; }
 
 .cascade-cat-btn, .cascade-prod-btn {
-  font-family: 'Space Mono', monospace; font-weight: bold; cursor: pointer; background: transparent;
+  font-family: 'Exo 2', sans-serif; font-weight: bold; cursor: pointer; background: transparent;
   border: none; color: #F5F0E6; width: 100%; text-align: left; padding: 11px 14px;
   display: flex; align-items: center; gap: 12px; white-space: nowrap; transition: all 0.1s ease;
 }
@@ -116,10 +117,10 @@ body { margin: 0; background-color: #121212; }
   .cascade-tier-2 { position: static; margin: 4px 0 4px 16px; box-shadow: none; }
 }
 
-.order-fab { position: fixed; right: 30px; bottom: 30px; background: #1A1A1A; border: 3px solid #26A5E4; padding: 12px 24px; box-shadow: 8px 8px 0px #000; text-decoration: none; z-index: 9999; color: #26A5E4; font-family: 'Space Mono', monospace; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+.order-fab { position: fixed; right: 30px; bottom: 30px; background: #1A1A1A; border: 3px solid #26A5E4; padding: 12px 24px; box-shadow: 8px 8px 0px #000; text-decoration: none; z-index: 9999; color: #26A5E4; font-family: 'Exo 2', sans-serif; font-weight: bold; display: flex; align-items: center; gap: 10px; }
 
 .landing-page { width: 100%; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
-.section-title { font-family: 'Bungee', cursive; font-size: clamp(2rem, 5vw, 3.5rem); color: var(--theme-color); margin-bottom: 40px; text-shadow: 3px 3px 0px #000; text-align: center; }
+.section-title { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: clamp(2rem, 5vw, 3.5rem); color: var(--theme-color); margin-bottom: 40px; text-shadow: 3px 3px 0px #000; text-align: center; }
 
 .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; width: 100%; justify-content: center; }
 .grid-card { background: #1A1A1A; border: 3px solid #333; display: flex; flex-direction: column; text-decoration: none; color: #F5F0E6; transition: all 0.2s ease; box-shadow: 6px 6px 0px #000; }
@@ -128,9 +129,51 @@ body { margin: 0; background-color: #121212; }
 .card-img-container { width: 100%; aspect-ratio: 1; background: #0A0A0A; border-bottom: 2px solid #333; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; z-index: 3; }
 .card-img-container img { width: 100%; height: 100%; object-fit: cover; }
 .card-details { padding: 15px; display: flex; flex-direction: column; gap: 5px; text-align: center; }
-.card-details h3 { font-family: 'Bungee', cursive; font-size: 1.2rem; margin: 0; color: #F5F0E6; }
-.card-price { font-family: 'Space Mono', monospace; color: var(--theme-color); font-weight: bold; font-size: 1.1rem; }
-.card-category { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: #888; text-transform: uppercase; margin-top: 5px; }
+.card-details h3 { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 1.2rem; margin: 0; color: #F5F0E6; }
+.card-price { font-family: 'Exo 2', sans-serif; color: var(--theme-color); font-weight: bold; font-size: 1.1rem; }
+.card-category { font-family: 'Exo 2', sans-serif; font-size: 0.8rem; color: #888; text-transform: uppercase; margin-top: 5px; }
+
+/* --- COLOURS / FILAMENT LIBRARY --- */
+.colours-page { width: 100%; }
+.colours-message { font-family: 'Exo 2', sans-serif; color: #888; text-align: center; margin-top: 20px; }
+
+.filament-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px; width: 100%; max-width: 1200px; margin: 0 auto;
+}
+
+.filament-card {
+  background: #1A1A1A; border: 3px solid #333; box-shadow: 6px 6px 0px #000;
+  display: flex; flex-direction: column; overflow: hidden; transition: all 0.2s ease;
+}
+.filament-card:hover { border-color: var(--theme-color); transform: translateY(-4px); box-shadow: 10px 10px 0px #000; }
+
+.filament-swatch {
+  width: 100%; height: 140px; position: relative;
+  border-bottom: 3px solid #000; display: flex; align-items: center; justify-content: center;
+}
+.filament-out-badge {
+  font-family: 'Press Start 2P', cursive; font-size: 0.7rem; color: #fff;
+  background: rgba(0, 0, 0, 0.65); padding: 8px 12px; letter-spacing: 1px;
+  border: 2px solid #fff;
+}
+
+.filament-info { padding: 16px; display: flex; flex-direction: column; gap: 8px; text-align: center; }
+.filament-name { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 1.1rem; margin: 0; color: #F5F0E6; }
+.filament-material { font-family: 'Exo 2', sans-serif; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+
+.filament-status {
+  font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.75rem;
+  text-transform: uppercase; letter-spacing: 1px; padding: 5px 10px;
+  border: 2px solid currentColor; align-self: center; margin-top: 4px;
+}
+.filament-status.in-stock { color: #33FF00; }
+.filament-status.on-order { color: #FFB800; }
+.filament-status.out-of-stock { color: #ff5c5c; }
+
+/* Out-of-stock colours stay listed but are visibly dimmed. */
+.filament-card.is-out { opacity: 0.45; filter: grayscale(0.4); }
+.filament-card.is-out:hover { opacity: 0.7; transform: none; }
 
 /* --- MS-DOS DIRECTORY OVERLAY --- */
 .dos-overlay {

@@ -123,7 +123,7 @@ function LoginScreen({ onAuthed, error }) {
   return (
     <div className="a-login-wrap">
       <div className="a-login-card">
-        <h1 className="a-logo">PRINTHOUSE<span>_ADMIN</span></h1>
+        <h1 className="a-logo">CLARKY3D<span>_ADMIN</span></h1>
         <p className="a-muted">Restricted control panel</p>
 
         <button className="a-btn a-btn-google" onClick={google}>
@@ -155,6 +155,7 @@ function Dashboard({ user, onSignOut }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [newCat, setNewCat] = useState('');
+  const [page, setPage] = useState('catalogue'); // 'catalogue' | 'filaments'
 
   const reload = useCallback(async () => {
     try {
@@ -181,7 +182,21 @@ function Dashboard({ user, onSignOut }) {
   return (
     <div className="a-shell">
       <header className="a-topbar">
-        <span className="a-brand">PRINTHOUSE<span>_ADMIN</span></span>
+        <span className="a-brand">CLARKY3D<span>_ADMIN</span></span>
+        <nav className="a-nav">
+          <button
+            className={`a-nav-btn ${page === 'catalogue' ? 'is-active' : ''}`}
+            onClick={() => setPage('catalogue')}
+          >
+            CATALOGUE
+          </button>
+          <button
+            className={`a-nav-btn ${page === 'filaments' ? 'is-active' : ''}`}
+            onClick={() => setPage('filaments')}
+          >
+            FILAMENTS
+          </button>
+        </nav>
         <div className="a-topbar-right">
           <a className="a-link" href="/" target="_blank" rel="noreferrer">view site ↗</a>
           <span className="a-muted a-hide-sm">{user.email}</span>
@@ -192,20 +207,26 @@ function Dashboard({ user, onSignOut }) {
       <main className="a-main">
         {error && <p className="a-error">{error}</p>}
 
-        <SiteSettings />
-
-        <form className="a-addbar" onSubmit={addCategory}>
-          <input className="a-input" placeholder="New category name…" value={newCat}
-            onChange={(e) => setNewCat(e.target.value)} />
-          <button className="a-btn" type="submit">+ CATEGORY</button>
-        </form>
-
-        {loading ? (
-          <Splash text="LOADING…" inline />
-        ) : tree.length === 0 ? (
-          <p className="a-muted">No categories yet. Add one above to get started.</p>
+        {page === 'filaments' ? (
+          <FilamentManager />
         ) : (
-          tree.map((cat) => <CategoryBlock key={cat.id} category={cat} reload={reload} />)
+          <>
+            <SiteSettings />
+
+            <form className="a-addbar" onSubmit={addCategory}>
+              <input className="a-input" placeholder="New category name…" value={newCat}
+                onChange={(e) => setNewCat(e.target.value)} />
+              <button className="a-btn" type="submit">+ CATEGORY</button>
+            </form>
+
+            {loading ? (
+              <Splash text="LOADING…" inline />
+            ) : tree.length === 0 ? (
+              <p className="a-muted">No categories yet. Add one above to get started.</p>
+            ) : (
+              tree.map((cat) => <CategoryBlock key={cat.id} category={cat} reload={reload} />)
+            )}
+          </>
         )}
       </main>
     </div>
@@ -289,6 +310,152 @@ function SiteSettings() {
         </button>
       </div>
     </section>
+  );
+}
+
+/* ------------------------ Filament management ------------------------ */
+
+// The three stock states the storefront understands. Kept in sync with the
+// server's FILAMENT_STATUSES; anything else is coerced back to "In Stock".
+const FILAMENT_STATUSES = ['In Stock', 'Out of Stock', 'On Order'];
+
+function FilamentManager() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState('');
+
+  // New-filament form state.
+  const [name, setName] = useState('');
+  const [material, setMaterial] = useState('');
+  const [hex, setHex] = useState('#00e5ff');
+  const [status, setStatus] = useState('In Stock');
+  const [adding, setAdding] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await api('/filaments');
+      setItems(Array.isArray(data) ? data : []);
+      setErr('');
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const add = async (e) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    setAdding(true);
+    setErr('');
+    try {
+      await api('/filaments', {
+        method: 'POST',
+        body: { name: name.trim(), material: material.trim(), hex, status },
+      });
+      setName('');
+      setMaterial('');
+      setHex('#00e5ff');
+      setStatus('In Stock');
+      load();
+    } catch (e) {
+      setErr(e.message);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <section className="a-settings">
+      <h2 className="a-settings-title">FILAMENT COLOURS</h2>
+      <p className="a-settings-hint">
+        Colours shown on the public Colours page. Supplier details are never stored or shown on the site.
+      </p>
+
+      <form className="a-fil-add" onSubmit={add}>
+        <input className="a-input" placeholder="Colour name" value={name}
+          onChange={(e) => setName(e.target.value)} />
+        <input className="a-input" placeholder="Material (e.g. PLA)" value={material}
+          onChange={(e) => setMaterial(e.target.value)} />
+        <input className="a-color" type="color" value={hex}
+          onChange={(e) => setHex(e.target.value)} title="Swatch colour" />
+        <select className="a-input" value={status} onChange={(e) => setStatus(e.target.value)}>
+          {FILAMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <button className="a-btn a-btn-sm" type="submit" disabled={adding || !name.trim()}>
+          {adding ? 'ADDING…' : '+ ADD'}
+        </button>
+      </form>
+
+      {err && <p className="a-error">{err}</p>}
+
+      {loading ? (
+        <p className="a-muted">Loading…</p>
+      ) : items.length === 0 ? (
+        <p className="a-muted">No filaments yet. Add one above.</p>
+      ) : (
+        <div className="a-fil-list">
+          {items.map((f) => <FilamentRow key={f.id} filament={f} reload={load} />)}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function FilamentRow({ filament, reload }) {
+  const [name, setName] = useState(filament.name);
+  const [material, setMaterial] = useState(filament.material || '');
+  const [hex, setHex] = useState(filament.hex || '#000000');
+  const [status, setStatus] = useState(filament.status || 'In Stock');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const dirty =
+    name !== filament.name ||
+    material !== (filament.material || '') ||
+    hex !== filament.hex ||
+    status !== filament.status;
+
+  const save = async () => {
+    if (!name.trim()) return;
+    setSaving(true);
+    try {
+      await api(`/filaments/${filament.id}`, {
+        method: 'PATCH',
+        body: { name: name.trim(), material: material.trim(), hex, status },
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+      reload();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!confirm(`Delete filament "${filament.name}"?`)) return;
+    await api(`/filaments/${filament.id}`, { method: 'DELETE' });
+    reload();
+  };
+
+  return (
+    <div className="a-fil-row">
+      <span className="a-fil-swatch" style={{ background: hex }} />
+      <input className="a-input a-fil-name" value={name} onChange={(e) => setName(e.target.value)} />
+      <input className="a-input a-fil-mat" value={material} placeholder="Material"
+        onChange={(e) => setMaterial(e.target.value)} />
+      <input className="a-color" type="color" value={hex}
+        onChange={(e) => setHex(e.target.value)} title="Swatch colour" />
+      <select className="a-input a-fil-status" value={status} onChange={(e) => setStatus(e.target.value)}>
+        {FILAMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+      </select>
+      <button className="a-btn a-btn-sm" onClick={save} disabled={!dirty || saving}>
+        {saving ? '…' : saved ? '✓' : 'SAVE'}
+      </button>
+      <button className="a-btn a-btn-sm a-danger" onClick={remove}>DEL</button>
+    </div>
   );
 }
 
@@ -552,20 +719,90 @@ function PhotoGrid({ product, reload }) {
       <div className="a-photo-strip">
         {product.photos.length === 0 && <span className="a-muted">No photos yet.</span>}
         {product.photos.map((photo) => (
-          <figure key={photo.id} className={`a-photo ${photo.isDefault ? 'is-default' : ''}`}>
-            <img src={photo.url} alt="" />
-            <figcaption>
-              {photo.isDefault ? (
-                <span className="a-default-tag">★ DEFAULT</span>
-              ) : (
-                <button className="a-mini" onClick={() => setDefault(photo.id)}>set default</button>
-              )}
-              <button className="a-mini a-mini-danger" onClick={() => remove(photo.id)}>delete</button>
-            </figcaption>
-          </figure>
+          <PhotoCard
+            key={photo.id}
+            photo={photo}
+            onSetDefault={setDefault}
+            onRemove={remove}
+            reload={reload}
+          />
         ))}
       </div>
     </div>
+  );
+}
+
+/* ----------------------------- Photo card ---------------------------- */
+
+// A single photo tile: preview, default/delete controls, plus the per-image
+// print details (which filament(s) were used and any surface texture) that the
+// storefront shows as a caption under the main image.
+function PhotoCard({ photo, onSetDefault, onRemove, reload }) {
+  const initialFilaments = (photo.filaments || []).join(', ');
+  const initialTexture = photo.texture || '';
+  const [filaments, setFilaments] = useState(initialFilaments);
+  const [texture, setTexture] = useState(initialTexture);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const dirty = filaments !== initialFilaments || texture !== initialTexture;
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const list = filaments.split(',').map((s) => s.trim()).filter(Boolean);
+      const cleanTexture = texture.trim();
+      await api(`/photos/${photo.id}`, {
+        method: 'PATCH',
+        body: { filaments: list, texture: cleanTexture },
+      });
+      // Normalise the inputs to match what the server stored so the form
+      // settles back to a clean (non-dirty) state after reload.
+      setFilaments(list.join(', '));
+      setTexture(cleanTexture);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+      reload();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <figure className={`a-photo ${photo.isDefault ? 'is-default' : ''}`}>
+      <img src={photo.url} alt="" />
+      <figcaption>
+        {photo.isDefault ? (
+          <span className="a-default-tag">★ DEFAULT</span>
+        ) : (
+          <button className="a-mini" onClick={() => onSetDefault(photo.id)}>set default</button>
+        )}
+        <button className="a-mini a-mini-danger" onClick={() => onRemove(photo.id)}>delete</button>
+      </figcaption>
+      <div className="a-photo-meta">
+        <label>
+          <span>Filament(s)</span>
+          <input
+            className="a-photo-input"
+            value={filaments}
+            placeholder="e.g. Red PLA, Black PETG"
+            onChange={(e) => setFilaments(e.target.value)}
+          />
+        </label>
+        <label>
+          <span>Surface texture</span>
+          <input
+            className="a-photo-input"
+            value={texture}
+            placeholder="e.g. Carbon Fibre"
+            onChange={(e) => setTexture(e.target.value)}
+          />
+        </label>
+        <button className="a-mini a-photo-save" onClick={save} disabled={!dirty || saving}>
+          {saving ? 'saving…' : saved ? 'saved ✓' : 'save details'}
+        </button>
+      </div>
+    </figure>
   );
 }
 

@@ -80,3 +80,17 @@ export const siteSettings = pgTable("site_settings", {
   value: text().notNull().default(""),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// The filament colour library shown on the public "Colours" page and managed
+// from the admin portal. The supplier/brand is deliberately NOT stored here so
+// it can never leak to the frontend. `status` is one of a fixed set:
+// "In Stock", "Out of Stock", or "On Order".
+export const filaments = pgTable("filaments", {
+  id: serial().primaryKey(),
+  name: text().notNull(),
+  material: text().notNull().default(""),
+  hex: text().notNull().default("#000000"),
+  status: text().notNull().default("In Stock"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});

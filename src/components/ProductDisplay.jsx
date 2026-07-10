@@ -11,7 +11,7 @@ export const ProductDisplay = ({ product }) => {
     const url = window.location.href;
     const shareData = {
       title: product.displayName,
-      text: `Check out ${product.displayName} at Clarky's Printhouse`,
+      text: `Check out ${product.displayName} at Clarky3D`,
       url,
     };
     try {
