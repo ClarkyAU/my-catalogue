@@ -2,10 +2,12 @@
 
 :root { --theme-color: #00E5FF; }
 
+/* CRT scanline + RGB overlay. Sits BEHIND page content (z-index: -1) so it only
+   shows through the background and never washes over text or cards. */
 body::before {
   content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
   background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-  z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
+  z-index: -1; background-size: 100% 2px, 3px 100%; pointer-events: none;
 }
 
 body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
@@ -137,43 +139,78 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 .colours-page { width: 100%; }
 .colours-message { font-family: 'Exo 2', sans-serif; color: #888; text-align: center; margin-top: 20px; }
 
-.filament-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 24px; width: 100%; max-width: 1200px; margin: 0 auto;
+/* --- FILTER BAR --- */
+.filament-filters {
+  width: 100%; max-width: 900px; margin: 0 auto 32px; display: flex; flex-direction: column;
+  gap: 16px; background: #1A1A1A; border: 3px solid #333; box-shadow: 6px 6px 0px #000;
+  padding: 18px 20px; box-sizing: border-box;
+}
+.filter-group { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
+.filter-label {
+  font-family: 'Press Start 2P', cursive; font-size: 0.65rem; color: var(--theme-color);
+  letter-spacing: 1px; padding-top: 8px; min-width: 56px;
+}
+.filter-pills { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
+.filter-pill {
+  font-family: 'Exo 2', sans-serif; font-weight: 600; font-size: 0.75rem; cursor: pointer;
+  background: transparent; border: 2px solid #555; color: #F5F0E6; padding: 6px 14px;
+  text-transform: uppercase; letter-spacing: 1px; transition: all 0.1s ease;
+}
+.filter-pill:hover { border-color: var(--theme-color); color: var(--theme-color); }
+.filter-pill.active { background: var(--theme-color); border-color: var(--theme-color); color: #121212; }
+
+/* --- FILAMENT LIST --- */
+.filament-list-view {
+  list-style: none; margin: 0 auto; padding: 0; width: 100%; max-width: 900px;
+  display: flex; flex-direction: column; gap: 10px;
 }
 
-.filament-card {
-  background: #1A1A1A; border: 3px solid #333; box-shadow: 6px 6px 0px #000;
-  display: flex; flex-direction: column; overflow: hidden; transition: all 0.2s ease;
+.filament-row {
+  display: flex; align-items: center; gap: 18px; background: #1A1A1A;
+  border: 2px solid #333; box-shadow: 4px 4px 0px #000; padding: 12px 18px;
+  transition: border-color 0.15s ease, transform 0.15s ease;
 }
-.filament-card:hover { border-color: var(--theme-color); transform: translateY(-4px); box-shadow: 10px 10px 0px #000; }
+.filament-row:hover { border-color: var(--theme-color); transform: translateX(4px); }
 
-.filament-swatch {
-  width: 100%; height: 140px; position: relative;
-  border-bottom: 3px solid #000; display: flex; align-items: center; justify-content: center;
-}
-.filament-out-badge {
-  font-family: 'Press Start 2P', cursive; font-size: 0.7rem; color: #fff;
-  background: rgba(0, 0, 0, 0.65); padding: 8px 12px; letter-spacing: 1px;
-  border: 2px solid #fff;
+/* Colour rendered as an on-theme circle. z-index 3 lifts it above the CRT
+   scanline overlay (body::before, z-index 2) so the colour reads true. */
+.filament-dot {
+  flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%;
+  border: 3px solid #F5F0E6; box-shadow: 0 0 0 2px #000, 0 0 12px rgba(0, 0, 0, 0.6);
+  position: relative; z-index: 3;
 }
 
-.filament-info { padding: 16px; display: flex; flex-direction: column; gap: 8px; text-align: center; }
-.filament-name { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 1.1rem; margin: 0; color: #F5F0E6; }
-.filament-material { font-family: 'Exo 2', sans-serif; font-size: 0.8rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+.filament-row-main { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.filament-name { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 1.05rem; margin: 0; color: #F5F0E6; }
+.filament-material {
+  font-family: 'Exo 2', sans-serif; font-size: 0.75rem; color: #888;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+
+.filament-row-meta { display: flex; align-items: center; gap: 16px; flex: 0 0 auto; }
+.filament-hex {
+  font-family: 'Space Mono', monospace; font-size: 0.8rem; color: #666;
+  text-transform: uppercase;
+}
 
 .filament-status {
-  font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.75rem;
+  font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.7rem;
   text-transform: uppercase; letter-spacing: 1px; padding: 5px 10px;
-  border: 2px solid currentColor; align-self: center; margin-top: 4px;
+  border: 2px solid currentColor; white-space: nowrap;
 }
 .filament-status.in-stock { color: #33FF00; }
 .filament-status.on-order { color: #FFB800; }
 .filament-status.out-of-stock { color: #ff5c5c; }
 
 /* Out-of-stock colours stay listed but are visibly dimmed. */
-.filament-card.is-out { opacity: 0.45; filter: grayscale(0.4); }
-.filament-card.is-out:hover { opacity: 0.7; transform: none; }
+.filament-row.is-out { opacity: 0.5; }
+.filament-row.is-out:hover { opacity: 0.85; }
+
+@media (max-width: 560px) {
+  .filament-row { flex-wrap: wrap; gap: 12px; }
+  .filament-row-meta { width: 100%; justify-content: space-between; padding-left: 64px; box-sizing: border-box; }
+  .filter-label { min-width: 0; }
+}
 
 /* --- MS-DOS DIRECTORY OVERLAY --- */
 .dos-overlay {
