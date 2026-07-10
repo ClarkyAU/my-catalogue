@@ -7,9 +7,10 @@ import { LandingPage } from './components/LandingPage';
 import { CategoryGrid } from './components/CategoryGrid';
 import { CategoryPage } from './components/CategoryPage';
 import { CascadeMenu } from './components/CascadeMenu';
+import { ColoursPage } from './components/ColoursPage';
 
 export default function App() {
-  const { catalogue, settings, loading, activeCategory, activeSubCategory, activeProduct, activeTheme, navigateTo } = useCatalogue();
+  const { catalogue, settings, loading, activeCategory, activeSubCategory, activeProduct, activeTheme, activeColours, navigateTo } = useCatalogue();
 
   const currentSubCategory = activeCategory && activeSubCategory ? catalogue[activeCategory]?.subCategories[activeSubCategory] : null;
   const currentProduct = currentSubCategory && activeProduct ? currentSubCategory.products[activeProduct] : null;
@@ -25,7 +26,7 @@ export default function App() {
               [ NEW PRODUCTS ]
             </button>
             <CascadeMenu catalogue={catalogue} navigateTo={navigateTo} />
-            <button className="nav-btn hub-btn" onClick={(e) => { e.preventDefault(); alert("Colours Library Coming Soon!"); }}>
+            <button className="nav-btn hub-btn" onClick={() => { window.location.hash = 'colours'; }}>
               [ COLOURS ]
             </button>
           </nav>
@@ -35,6 +36,8 @@ export default function App() {
           <div className="landing-page" style={{ textAlign: 'center', marginTop: '60px', fontFamily: "'Space Mono', monospace", color: '#888' }}>
             LOADING CATALOGUE...
           </div>
+        ) : activeColours ? (
+          <ColoursPage />
         ) : !activeCategory ? (
           <LandingPage catalogue={catalogue} intro={settings.landingIntro} subtext={settings.landingSubtext} note={settings.landingNote} />
         ) : !activeSubCategory ? (

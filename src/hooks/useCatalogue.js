@@ -24,6 +24,7 @@ export const useCatalogue = () => {
   const [activeSubCategory, setActiveSubCategory] = useState(null);
   const [activeProduct, setActiveProduct] = useState(null);
   const [activeTheme, setActiveTheme] = useState(DEFAULT_THEME);
+  const [activeColours, setActiveColours] = useState(false);
 
   // Load the live catalogue from the API (backed by the database), but fall
   // back to the bundled snapshot on any error or empty response so the menu and
@@ -66,6 +67,16 @@ export const useCatalogue = () => {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1);
+
+      // Dedicated standalone page for the filament colour library.
+      if (hash === 'colours') {
+        setActiveColours(true);
+        setActiveCategory(null); setActiveSubCategory(null); setActiveProduct(null);
+        setActiveTheme(DEFAULT_THEME);
+        return;
+      }
+      setActiveColours(false);
+
       if (!hash) {
         setActiveCategory(null); setActiveSubCategory(null); setActiveProduct(null);
         setActiveTheme(DEFAULT_THEME); return;
@@ -101,5 +112,5 @@ export const useCatalogue = () => {
     window.location.hash = path;
   };
 
-  return { catalogue, settings, loading, activeCategory, activeSubCategory, activeProduct, activeTheme, navigateTo };
+  return { catalogue, settings, loading, activeCategory, activeSubCategory, activeProduct, activeTheme, activeColours, navigateTo };
 };
