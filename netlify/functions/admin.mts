@@ -33,6 +33,11 @@ function uniqueSlug(base: string, taken: Set<string>): string {
   return `${slug}_${n}`;
 }
 
+function positiveInteger(value: unknown): number | null {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 /** Full catalogue with internal numeric IDs, for the admin UI. */
 async function adminTree() {
   const [cats, subs, prods, pics] = await Promise.all([
@@ -163,16 +168,24 @@ export default async (req: Request, _context: Context) => {
     // ---------- Subcategories ----------
     if (resource === "subcategories") {
       if (method === "POST") {
-        if (!body.categoryId || !body.displayName)
+        const categoryId = positiveInteger(body.categoryId);
+        const displayName = String(body.displayName || "").trim();
+        if (!categoryId || !displayName)
           return json({ error: "categoryId and displayName are required" }, 400);
+        const [category] = await db
+          .select({ id: categories.id })
+          .from(categories)
+          .where(eq(categories.id, categoryId));
+        if (!category) return json({ error: "Category not found" }, 404);
         const existing = await db
-          .select({ slug: subcategories.slug })
+          .select({ slug: subcategories.slug, sortOrder: subcategories.sortOrder })
           .from(subcategories)
-          .where(eq(subcategories.categoryId, body.categoryId));
-        const slug = uniqueSlug(body.displayName, new Set(existing.map((r) => r.slug)));
+          .where(eq(subcategories.categoryId, categoryId));
+        const slug = uniqueSlug(displayName, new Set(existing.map((r) => r.slug)));
+        const sortOrder = existing.reduce((highest, row) => Math.max(highest, row.sortOrder), -1) + 1;
         const [row] = await db
           .insert(subcategories)
-          .values({ categoryId: body.categoryId, slug, displayName: body.displayName })
+          .values({ categoryId, slug, displayName, sortOrder })
           .returning();
         return json(row, 201);
       }
@@ -194,22 +207,31 @@ export default async (req: Request, _context: Context) => {
     // ---------- Products ----------
     if (resource === "products") {
       if (method === "POST") {
-        if (!body.subcategoryId || !body.displayName)
+        const subcategoryId = positiveInteger(body.subcategoryId);
+        const displayName = String(body.displayName || "").trim();
+        if (!subcategoryId || !displayName)
           return json({ error: "subcategoryId and displayName are required" }, 400);
+        const [subcategory] = await db
+          .select({ id: subcategories.id })
+          .from(subcategories)
+          .where(eq(subcategories.id, subcategoryId));
+        if (!subcategory) return json({ error: "Subcategory not found" }, 404);
         const existing = await db
-          .select({ slug: products.slug })
+          .select({ slug: products.slug, sortOrder: products.sortOrder })
           .from(products)
-          .where(eq(products.subcategoryId, body.subcategoryId));
-        const slug = uniqueSlug(body.displayName, new Set(existing.map((r) => r.slug)));
+          .where(eq(products.subcategoryId, subcategoryId));
+        const slug = uniqueSlug(displayName, new Set(existing.map((r) => r.slug)));
+        const sortOrder = existing.reduce((highest, row) => Math.max(highest, row.sortOrder), -1) + 1;
         const [row] = await db
           .insert(products)
           .values({
-            subcategoryId: body.subcategoryId,
+            subcategoryId,
             slug,
-            displayName: body.displayName,
+            displayName,
             description: body.description || "",
             price: normalizePrice(body.price),
             featured: Boolean(body.featured),
+            sortOrder,
           })
           .returning();
         return json(row, 201);
@@ -221,7 +243,29 @@ export default async (req: Request, _context: Context) => {
         if (body.price !== undefined) updates.price = normalizePrice(body.price);
         if (body.featured !== undefined) updates.featured = Boolean(body.featured);
         if (body.sortOrder !== undefined) updates.sortOrder = body.sortOrder;
-        if (body.subcategoryId !== undefined) updates.subcategoryId = body.subcategoryId;
+        if (body.subcategoryId !== undefined) {
+          const destinationId = positiveInteger(body.subcategoryId);
+          if (!destinationId) return json({ error: "A valid destination subcategory is required" }, 400);
+          const [current] = await db.select().from(products).where(eq(products.id, id));
+          if (!current) return json({ error: "Not found" }, 404);
+          if (destinationId !== current.subcategoryId) {
+            const [destination] = await db
+              .select({ id: subcategories.id })
+              .from(subcategories)
+              .where(eq(subcategories.id, destinationId));
+            if (!destination) return json({ error: "Destination subcategory not found" }, 404);
+            const destinationProducts = await db
+              .select({ slug: products.slug, sortOrder: products.sortOrder })
+              .from(products)
+              .where(eq(products.subcategoryId, destinationId));
+            updates.subcategoryId = destinationId;
+            updates.slug = uniqueSlug(current.slug, new Set(destinationProducts.map((row) => row.slug)));
+            updates.sortOrder = destinationProducts.reduce(
+              (highest, row) => Math.max(highest, row.sortOrder),
+              -1,
+            ) + 1;
+          }
+        }
         const [row] = await db.update(products).set(updates).where(eq(products.id, id)).returning();
         return row ? json(row) : json({ error: "Not found" }, 404);
       }

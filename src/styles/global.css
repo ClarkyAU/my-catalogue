@@ -103,9 +103,8 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 .cascade-cat.active > .cascade-cat-btn,
 .cascade-cat-btn:hover,
 .cascade-prod-btn:hover { background: var(--theme-color); color: #121212; }
-.cascade-arrow { font-size: 0.85rem; }
 
-.cascade-tier-2 {
+.cascade-tier-2, .cascade-tier-3 {
   position: absolute; top: -3px; left: calc(100% + 10px);
   background: #0A0A0A; border: 3px solid var(--theme-color); box-shadow: 8px 8px 0px #000;
   padding: 6px; min-width: 220px; max-height: 70vh; overflow-y: auto;
@@ -116,7 +115,7 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
   .cascade-wrap { display: block; width: 100%; }
   .cascade-menu { left: 0; right: 0; transform: none; min-width: 0; width: 100%; }
   .cascade-menu::before { left: 50%; transform: translateX(-50%) rotate(45deg); }
-  .cascade-tier-2 { position: static; margin: 4px 0 4px 16px; box-shadow: none; }
+  .cascade-tier-2, .cascade-tier-3 { position: static; margin: 4px 0 4px 16px; box-shadow: none; }
 }
 
 .order-fab { position: fixed; right: 30px; bottom: 30px; background: #1A1A1A; border: 3px solid #26A5E4; padding: 12px 24px; box-shadow: 8px 8px 0px #000; text-decoration: none; z-index: 9999; color: #26A5E4; font-family: 'Exo 2', sans-serif; font-weight: bold; display: flex; align-items: center; gap: 10px; }

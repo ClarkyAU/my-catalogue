@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 // Cascading catalogue menu that drops down, centered, from the catalogue button.
-// Tier 1 lists the categories; hovering (or tapping) a category flies its
-// products out to the right in tier 2. Selecting a product navigates to it.
+// It mirrors the real catalogue hierarchy: tier 1 lists the categories, tier 2
+// flies out the sub-categories of the hovered category, and tier 3 flies out the
+// products of the hovered sub-category. Selecting any level navigates to it.
 export const CascadeMenu = ({ catalogue, navigateTo }) => {
   const [open, setOpen] = useState(false);
   const [activeCat, setActiveCat] = useState(null);
+  const [activeSub, setActiveSub] = useState(null);
   const wrapRef = useRef(null);
 
   // Close the menu when clicking anywhere outside it.
@@ -15,6 +17,7 @@ export const CascadeMenu = ({ catalogue, navigateTo }) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target)) {
         setOpen(false);
         setActiveCat(null);
+        setActiveSub(null);
       }
     };
     document.addEventListener('mousedown', onDocClick);
@@ -23,23 +26,14 @@ export const CascadeMenu = ({ catalogue, navigateTo }) => {
 
   const categories = Object.values(catalogue || {});
 
-  // Flatten every product in a category (across its sub-categories) into a
-  // single list for the tier-2 flyout, keeping the sub-category id so we can
-  // build the correct navigation hash.
-  const productsFor = (cat) => {
-    const list = [];
-    Object.values(cat.subCategories || {}).forEach((sub) => {
-      Object.values(sub.products || {}).forEach((prod) => {
-        list.push({ ...prod, subId: sub.id });
-      });
-    });
-    return list;
-  };
+  const subCategoriesFor = (cat) => Object.values(cat.subCategories || {});
+  const productsFor = (sub) => Object.values(sub.products || {});
 
   const go = (catId, subId, prodId) => {
     navigateTo(catId, subId, prodId);
     setOpen(false);
     setActiveCat(null);
+    setActiveSub(null);
   };
 
   return (
@@ -49,6 +43,7 @@ export const CascadeMenu = ({ catalogue, navigateTo }) => {
         onClick={() => {
           setOpen((o) => !o);
           setActiveCat(null);
+          setActiveSub(null);
         }}
         aria-expanded={open}
       >
@@ -64,11 +59,15 @@ export const CascadeMenu = ({ catalogue, navigateTo }) => {
             )}
             {categories.map((cat) => {
               const isActive = activeCat === cat.id;
+              const subs = subCategoriesFor(cat);
               return (
                 <div
                   key={cat.id}
                   className={`cascade-cat ${isActive ? 'active' : ''}`}
-                  onMouseEnter={() => setActiveCat(cat.id)}
+                  onMouseEnter={() => {
+                    setActiveCat(cat.id);
+                    setActiveSub(null);
+                  }}
                 >
                   <button
                     className="cascade-cat-btn"
@@ -76,22 +75,45 @@ export const CascadeMenu = ({ catalogue, navigateTo }) => {
                     aria-expanded={isActive}
                   >
                     <span>{cat.displayName.toUpperCase()}</span>
-                    <span className="cascade-arrow">▸</span>
                   </button>
 
                   {isActive && (
                     <div className="cascade-tier cascade-tier-2">
-                      {productsFor(cat).map((prod) => (
-                        <button
-                          key={`${prod.subId}/${prod.id}`}
-                          className="cascade-prod-btn"
-                          onClick={() => go(cat.id, prod.subId, prod.id)}
-                        >
-                          {prod.displayName}
-                        </button>
-                      ))}
-                      {productsFor(cat).length === 0 && (
-                        <div className="cascade-empty">NO PRODUCTS</div>
+                      {subs.map((sub) => {
+                        const isSubActive = activeSub === sub.id;
+                        const prods = productsFor(sub);
+                        return (
+                          <div
+                            key={sub.id}
+                            className={`cascade-cat ${isSubActive ? 'active' : ''}`}
+                            onMouseEnter={() => setActiveSub(sub.id)}
+                          >
+                            <button
+                              className="cascade-cat-btn"
+                              onClick={() => go(cat.id, sub.id)}
+                              aria-expanded={isSubActive}
+                            >
+                              <span>{sub.displayName}</span>
+                            </button>
+
+                            {isSubActive && prods.length > 0 && (
+                              <div className="cascade-tier cascade-tier-3">
+                                {prods.map((prod) => (
+                                  <button
+                                    key={prod.id}
+                                    className="cascade-prod-btn"
+                                    onClick={() => go(cat.id, sub.id, prod.id)}
+                                  >
+                                    {prod.displayName}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                      {subs.length === 0 && (
+                        <div className="cascade-empty">NO SUB-CATEGORIES</div>
                       )}
                     </div>
                   )}
