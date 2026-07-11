@@ -225,7 +225,9 @@ function Dashboard({ user, onSignOut }) {
             ) : tree.length === 0 ? (
               <p className="a-muted">No categories yet. Add one above to get started.</p>
             ) : (
-              tree.map((cat) => <CategoryBlock key={cat.id} category={cat} reload={reload} />)
+              tree.map((cat) => (
+                <CategoryBlock key={cat.id} category={cat} categories={tree} reload={reload} />
+              ))
             )}
           </>
         )}
@@ -723,12 +725,14 @@ function FilamentPrintCard({ print, onRemove, reload }) {
 }
 
 /* --------------------------- Category block -------------------------- */
-function CategoryBlock({ category, reload }) {
+function CategoryBlock({ category, categories, reload }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(category.displayName);
   const [color, setColor] = useState(category.themeColor || '#00E5FF');
   const [newSub, setNewSub] = useState('');
   const [open, setOpen] = useState(true);
+  const [addingSub, setAddingSub] = useState(false);
+  const [error, setError] = useState('');
 
   const save = async () => {
     await api(`/categories/${category.id}`, { method: 'PATCH', body: { displayName: name, themeColor: color } });
@@ -745,9 +749,17 @@ function CategoryBlock({ category, reload }) {
   const addSub = async (e) => {
     e.preventDefault();
     if (!newSub.trim()) return;
-    await api('/subcategories', { method: 'POST', body: { categoryId: category.id, displayName: newSub.trim() } });
-    setNewSub('');
-    reload();
+    setAddingSub(true);
+    setError('');
+    try {
+      await api('/subcategories', { method: 'POST', body: { categoryId: category.id, displayName: newSub.trim() } });
+      setNewSub('');
+      await reload();
+    } catch (err) {
+      setError(err.message || 'Could not add the subcategory.');
+    } finally {
+      setAddingSub(false);
+    }
   };
 
   return (
@@ -775,13 +787,16 @@ function CategoryBlock({ category, reload }) {
       {open && (
         <div className="a-cat-body">
           {category.subcategories.map((sub) => (
-            <SubcategoryBlock key={sub.id} sub={sub} reload={reload} />
+            <SubcategoryBlock key={sub.id} sub={sub} categories={categories} reload={reload} />
           ))}
           <form className="a-addbar a-addbar-sub" onSubmit={addSub}>
             <input className="a-input" placeholder="New subcategory name…" value={newSub}
               onChange={(e) => setNewSub(e.target.value)} />
-            <button className="a-btn a-btn-sm" type="submit">+ SUBCATEGORY</button>
+            <button className="a-btn a-btn-sm" type="submit" disabled={addingSub || !newSub.trim()}>
+              {addingSub ? 'ADDING…' : '+ SUBCATEGORY'}
+            </button>
           </form>
+          {error && <p className="a-error a-action-error">{error}</p>}
         </div>
       )}
     </section>
@@ -790,7 +805,7 @@ function CategoryBlock({ category, reload }) {
 
 /* ------------------------- Subcategory block ------------------------- */
 
-function SubcategoryBlock({ sub, reload }) {
+function SubcategoryBlock({ sub, categories, reload }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(sub.displayName);
   const [adding, setAdding] = useState(false);
@@ -839,7 +854,13 @@ function SubcategoryBlock({ sub, reload }) {
 
       <div className="a-products">
         {sub.products.map((prod) => (
-          <ProductBlock key={prod.id} product={prod} reload={reload} />
+          <ProductBlock
+            key={prod.id}
+            product={prod}
+            currentSubcategoryId={sub.id}
+            categories={categories}
+            reload={reload}
+          />
         ))}
       </div>
 
@@ -859,30 +880,49 @@ function SubcategoryBlock({ sub, reload }) {
 
 /* ---------------------------- Product block -------------------------- */
 
-function ProductBlock({ product, reload }) {
+function ProductBlock({ product, currentSubcategoryId, categories, reload }) {
   const [name, setName] = useState(product.displayName);
   const [price, setPrice] = useState(product.price);
   const [featured, setFeatured] = useState(product.featured);
   const [description, setDescription] = useState(product.description || '');
+  const initialCategoryId = categories.find((category) =>
+    category.subcategories.some((subcategory) => subcategory.id === currentSubcategoryId))?.id;
+  const [categoryId, setCategoryId] = useState(initialCategoryId || categories[0]?.id || '');
+  const [subcategoryId, setSubcategoryId] = useState(currentSubcategoryId);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  const destinationSubcategories =
+    categories.find((category) => category.id === Number(categoryId))?.subcategories || [];
 
   const dirty =
     name !== product.displayName ||
     price !== product.price ||
     featured !== product.featured ||
-    description !== (product.description || '');
+    description !== (product.description || '') ||
+    subcategoryId !== currentSubcategoryId;
+
+  const selectCategory = (value) => {
+    const nextCategoryId = Number(value);
+    const nextSubcategories = categories.find((category) => category.id === nextCategoryId)?.subcategories || [];
+    setCategoryId(nextCategoryId);
+    setSubcategoryId(nextSubcategories[0]?.id || '');
+  };
 
   const save = async () => {
     setSaving(true);
+    setError('');
     try {
       await api(`/products/${product.id}`, {
         method: 'PATCH',
-        body: { displayName: name, price, featured, description },
+        body: { displayName: name, price, featured, description, subcategoryId },
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
-      reload();
+      await reload();
+    } catch (err) {
+      setError(err.message || 'Could not save the product.');
     } finally {
       setSaving(false);
     }
@@ -918,10 +958,32 @@ function ProductBlock({ product, reload }) {
           onChange={(e) => setDescription(e.target.value)} />
       </label>
 
+      <div className="a-prod-location">
+        <label className="a-field">
+          <span>Category</span>
+          <select className="a-input" value={categoryId} onChange={(e) => selectCategory(e.target.value)}>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>{category.displayName}</option>
+            ))}
+          </select>
+        </label>
+        <label className="a-field">
+          <span>Subcategory</span>
+          <select className="a-input" value={subcategoryId} onChange={(e) => setSubcategoryId(Number(e.target.value))}>
+            {destinationSubcategories.map((subcategory) => (
+              <option key={subcategory.id} value={subcategory.id}>{subcategory.displayName}</option>
+            ))}
+          </select>
+        </label>
+        <p className="a-location-note">Saving moves this product to the selected location.</p>
+      </div>
+
       <PhotoGrid product={product} reload={reload} />
 
+      {error && <p className="a-error a-action-error">{error}</p>}
+
       <div className="a-prod-actions">
-        <button className="a-btn a-btn-sm" onClick={save} disabled={!dirty || saving}>
+        <button className="a-btn a-btn-sm" onClick={save} disabled={!dirty || saving || !subcategoryId}>
           {saving ? 'SAVING…' : saved ? 'SAVED ✓' : 'SAVE CHANGES'}
         </button>
         <div className="a-spacer" />
