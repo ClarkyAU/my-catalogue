@@ -84,13 +84,35 @@ export const siteSettings = pgTable("site_settings", {
 // The filament colour library shown on the public "Colours" page and managed
 // from the admin portal. The supplier/brand is deliberately NOT stored here so
 // it can never leak to the frontend. `status` is one of a fixed set:
-// "In Stock", "Out of Stock", or "On Order".
+// "In Stock", "Out of Stock", or "On Order". `finish` describes how the colour
+// is rendered: "Standard", "Matte" and "Silk" use a single `hex`; "Marble"
+// speckles the second colour `hex2` over `hex`; "Gradient" blends the ordered
+// list in `colors` horizontally.
 export const filaments = pgTable("filaments", {
   id: serial().primaryKey(),
   name: text().notNull(),
   material: text().notNull().default(""),
+  finish: text().notNull().default("Standard"),
   hex: text().notNull().default("#000000"),
+  hex2: text(),
+  colors: jsonb().$type<string[] | null>(),
   status: text().notNull().default("In Stock"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Photos of finished prints made with a particular filament colour, uploaded
+// from the admin portal and shown as a gallery under the colour on the public
+// "Colours" page. Images live in Netlify Blobs (blobKey); the row keeps the
+// content type and an optional caption.
+export const filamentPhotos = pgTable("filament_photos", {
+  id: serial().primaryKey(),
+  filamentId: integer("filament_id")
+    .notNull()
+    .references(() => filaments.id, { onDelete: "cascade" }),
+  blobKey: text("blob_key"),
+  contentType: text("content_type"),
+  caption: text(),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });

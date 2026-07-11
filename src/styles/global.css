@@ -160,17 +160,32 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 .filter-pill.active { background: var(--theme-color); border-color: var(--theme-color); color: #121212; }
 
 /* --- FILAMENT LIST --- */
+.filament-section { width: 100%; max-width: 900px; margin: 0 auto 34px; }
+.filament-section-title {
+  font-family: 'Press Start 2P', cursive; font-size: 0.8rem; letter-spacing: 1px;
+  margin: 0 0 14px; display: flex; align-items: center; gap: 12px;
+  border-bottom: 3px solid currentColor; padding-bottom: 10px;
+}
+.filament-section-title.in-stock { color: #33FF00; }
+.filament-section-title.on-order { color: #FFB800; }
+.filament-section-title.out-of-stock { color: #ff5c5c; }
+.filament-section-count {
+  font-family: 'Space Mono', monospace; font-size: 0.7rem; color: #F5F0E6;
+  background: #000; border: 2px solid currentColor; padding: 2px 8px; margin-left: auto;
+}
+
 .filament-list-view {
-  list-style: none; margin: 0 auto; padding: 0; width: 100%; max-width: 900px;
+  list-style: none; margin: 0; padding: 0; width: 100%;
   display: flex; flex-direction: column; gap: 10px;
 }
 
 .filament-row {
-  display: flex; align-items: center; gap: 18px; background: #1A1A1A;
+  display: flex; flex-direction: column; gap: 14px; background: #1A1A1A;
   border: 2px solid #333; box-shadow: 4px 4px 0px #000; padding: 12px 18px;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 .filament-row:hover { border-color: var(--theme-color); transform: translateX(4px); }
+.filament-row-top { display: flex; align-items: center; gap: 18px; }
 
 /* Colour rendered as an on-theme circle. z-index 3 lifts it above the CRT
    scanline overlay (body::before, z-index 2) so the colour reads true. */
@@ -206,10 +221,60 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 .filament-row.is-out { opacity: 0.5; }
 .filament-row.is-out:hover { opacity: 0.85; }
 
+/* --- PRINT GALLERY (examples printed in a colour) --- */
+.filament-prints {
+  border-top: 2px dashed #333; padding-top: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.filament-prints-label {
+  font-family: 'Press Start 2P', cursive; font-size: 0.5rem; letter-spacing: 1px;
+  color: var(--theme-color);
+}
+.filament-prints-strip { display: flex; flex-wrap: wrap; gap: 10px; }
+.filament-print-thumb {
+  width: 88px; height: 88px; padding: 0; cursor: pointer; background: #000;
+  border: 2px solid #333; overflow: hidden; position: relative; z-index: 3;
+  transition: border-color 0.1s ease, transform 0.1s ease;
+}
+.filament-print-thumb:hover { border-color: var(--theme-color); transform: scale(1.04); }
+.filament-print-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* --- PRINT LIGHTBOX --- */
+.print-lightbox {
+  position: fixed; inset: 0; z-index: 10001; background: rgba(0, 0, 0, 0.9);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.print-lightbox-inner {
+  position: relative; max-width: 90vw; max-height: 90vh;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.print-lightbox-inner img {
+  max-width: 90vw; max-height: 78vh; object-fit: contain;
+  border: 3px solid #F5F0E6; box-shadow: 6px 6px 0 #000;
+}
+.print-lightbox-caption {
+  font-family: 'Exo 2', sans-serif; color: #F5F0E6; text-align: center; margin: 0;
+  max-width: 640px;
+}
+.print-lightbox-close {
+  position: absolute; top: -18px; right: -12px; width: 40px; height: 40px;
+  background: #ff5c5c; color: #121212; border: 3px solid #000; cursor: pointer;
+  font-size: 1.4rem; line-height: 1; font-weight: bold;
+}
+.print-lightbox-nav {
+  position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 64px;
+  background: var(--theme-color); color: #121212; border: 3px solid #000; cursor: pointer;
+  font-size: 2rem; line-height: 1;
+}
+.print-lightbox-nav.prev { left: -60px; }
+.print-lightbox-nav.next { right: -60px; }
+
 @media (max-width: 560px) {
-  .filament-row { flex-wrap: wrap; gap: 12px; }
+  .filament-row-top { flex-wrap: wrap; gap: 12px; }
   .filament-row-meta { width: 100%; justify-content: space-between; padding-left: 64px; box-sizing: border-box; }
   .filter-label { min-width: 0; }
+  .print-lightbox-nav.prev { left: 4px; }
+  .print-lightbox-nav.next { right: 4px; }
 }
 
 /* --- MS-DOS DIRECTORY OVERLAY --- */
