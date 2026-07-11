@@ -2,13 +2,21 @@ import type { Config, Context } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "../../db/index.js";
-import { categories, subcategories, products, photos, filaments } from "../../db/schema.js";
+import { categories, subcategories, products, photos, filaments, filamentPhotos } from "../../db/schema.js";
 import { requireAdmin } from "../../server/auth.js";
 import { slugify } from "../../server/catalogue.js";
-import { listFilaments, normalizeStatus, normalizeHex } from "../../server/filaments.js";
+import {
+  listFilaments,
+  normalizeStatus,
+  normalizeHex,
+  normalizeOptionalHex,
+  normalizeColors,
+  normalizeFinish,
+} from "../../server/filaments.js";
 import { getSettings, setSetting, SETTINGS_DEFAULTS } from "../../server/settings.js";
 
 const PHOTO_STORE = "product-photos";
+const FILAMENT_PHOTO_STORE = "filament-photos";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -301,7 +309,36 @@ export default async (req: Request, _context: Context) => {
       if (method === "GET") {
         return json(await listFilaments());
       }
-      if (method === "POST") {
+      // POST /api/admin/filaments/:id/reorder — move a colour up or down within
+      // its own stock-status group. Renumbers the whole list densely so the
+      // swap always takes effect even when older rows share sortOrder 0.
+      if (method === "POST" && Number.isInteger(id) && action === "reorder") {
+        const dir = body.direction;
+        if (dir !== "up" && dir !== "down")
+          return json({ error: "direction must be 'up' or 'down'" }, 400);
+        const all = await db
+          .select()
+          .from(filaments)
+          .orderBy(asc(filaments.sortOrder), asc(filaments.id));
+        const current = all.find((f) => f.id === id);
+        if (!current) return json({ error: "Not found" }, 404);
+        const group = all.filter((f) => f.status === current.status);
+        const idx = group.findIndex((f) => f.id === id);
+        const swapWith = dir === "up" ? group[idx - 1] : group[idx + 1];
+        if (swapWith) {
+          const orderIds = all.map((f) => f.id);
+          const a = orderIds.indexOf(current.id);
+          const b = orderIds.indexOf(swapWith.id);
+          [orderIds[a], orderIds[b]] = [orderIds[b], orderIds[a]];
+          await Promise.all(
+            orderIds.map((fid, i) =>
+              db.update(filaments).set({ sortOrder: i }).where(eq(filaments.id, fid)),
+            ),
+          );
+        }
+        return json({ ok: true });
+      }
+      if (method === "POST" && !idPart) {
         if (!body.name) return json({ error: "name is required" }, 400);
         const existing = await db.select({ sortOrder: filaments.sortOrder }).from(filaments);
         const nextOrder = existing.reduce((m, f) => Math.max(m, f.sortOrder + 1), 0);
@@ -310,7 +347,10 @@ export default async (req: Request, _context: Context) => {
           .values({
             name: String(body.name).trim(),
             material: body.material ? String(body.material).trim() : "",
+            finish: normalizeFinish(body.finish),
             hex: normalizeHex(body.hex),
+            hex2: normalizeOptionalHex(body.hex2),
+            colors: normalizeColors(body.colors),
             status: normalizeStatus(body.status),
             sortOrder: nextOrder,
           })
@@ -321,14 +361,75 @@ export default async (req: Request, _context: Context) => {
         const updates: Record<string, unknown> = {};
         if (body.name !== undefined) updates.name = String(body.name).trim();
         if (body.material !== undefined) updates.material = String(body.material).trim();
+        if (body.finish !== undefined) updates.finish = normalizeFinish(body.finish);
         if (body.hex !== undefined) updates.hex = normalizeHex(body.hex);
+        if (body.hex2 !== undefined) updates.hex2 = normalizeOptionalHex(body.hex2);
+        if (body.colors !== undefined) updates.colors = normalizeColors(body.colors);
         if (body.status !== undefined) updates.status = normalizeStatus(body.status);
         if (body.sortOrder !== undefined) updates.sortOrder = body.sortOrder;
         const [row] = await db.update(filaments).set(updates).where(eq(filaments.id, id)).returning();
         return row ? json(row) : json({ error: "Not found" }, 404);
       }
       if (method === "DELETE" && Number.isInteger(id)) {
+        await deletePrintsForFilament(id);
         await db.delete(filaments).where(eq(filaments.id, id));
+        return json({ ok: true });
+      }
+    }
+
+    // ---------- Filament print photos (example prints per colour) ----------
+    if (resource === "filament-photos") {
+      // POST /api/admin/filament-photos — upload a print image to Netlify Blobs.
+      if (method === "POST" && !idPart) {
+        if (!body.filamentId || !body.dataBase64)
+          return json({ error: "filamentId and dataBase64 are required" }, 400);
+        const [fil] = await db.select().from(filaments).where(eq(filaments.id, body.filamentId));
+        if (!fil) return json({ error: "Filament not found" }, 404);
+
+        const bytes = Buffer.from(body.dataBase64, "base64");
+        const blobKey = `${body.filamentId}/${crypto.randomUUID()}`;
+        const store = getStore(FILAMENT_PHOTO_STORE);
+        await store.set(blobKey, bytes);
+
+        const siblings = await db
+          .select()
+          .from(filamentPhotos)
+          .where(eq(filamentPhotos.filamentId, body.filamentId));
+        const nextOrder = siblings.reduce((m, p) => Math.max(m, p.sortOrder + 1), 0);
+
+        const [row] = await db
+          .insert(filamentPhotos)
+          .values({
+            filamentId: body.filamentId,
+            blobKey,
+            contentType: body.contentType || "application/octet-stream",
+            caption: body.caption ? String(body.caption).trim() : null,
+            sortOrder: nextOrder,
+          })
+          .returning();
+        return json({ ...row, url: `/api/filament-photos/${row.id}` }, 201);
+      }
+
+      // PATCH /api/admin/filament-photos/:id — edit a print's caption.
+      if (method === "PATCH" && Number.isInteger(id)) {
+        const updates: Record<string, unknown> = {};
+        if (body.caption !== undefined) updates.caption = body.caption ? String(body.caption).trim() : null;
+        if (body.sortOrder !== undefined) updates.sortOrder = body.sortOrder;
+        const [row] = await db
+          .update(filamentPhotos)
+          .set(updates)
+          .where(eq(filamentPhotos.id, id))
+          .returning();
+        return row ? json(row) : json({ error: "Not found" }, 404);
+      }
+
+      if (method === "DELETE" && Number.isInteger(id)) {
+        const [pic] = await db.select().from(filamentPhotos).where(eq(filamentPhotos.id, id));
+        if (!pic) return json({ error: "Not found" }, 404);
+        if (pic.blobKey) {
+          await getStore(FILAMENT_PHOTO_STORE).delete(pic.blobKey);
+        }
+        await db.delete(filamentPhotos).where(eq(filamentPhotos.id, id));
         return json({ ok: true });
       }
     }
@@ -370,6 +471,17 @@ async function deletePhotosForSubcategory(subcategoryId: number) {
 async function deletePhotosForCategory(categoryId: number) {
   const subs = await db.select({ id: subcategories.id }).from(subcategories).where(eq(subcategories.categoryId, categoryId));
   for (const sub of subs) await deletePhotosForSubcategory(sub.id);
+}
+
+// Remove the blobs backing a filament's print gallery before its rows cascade.
+async function deletePrintsForFilament(filamentId: number) {
+  const pics = await db
+    .select()
+    .from(filamentPhotos)
+    .where(eq(filamentPhotos.filamentId, filamentId));
+  if (pics.length === 0) return;
+  const store = getStore(FILAMENT_PHOTO_STORE);
+  await Promise.all(pics.filter((p) => p.blobKey).map((p) => store.delete(p.blobKey as string)));
 }
 
 export const config: Config = {

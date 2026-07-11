@@ -10,6 +10,7 @@ import {
 } from '@netlify/identity';
 import { api } from './api.js';
 import { fileToUpload } from './image.js';
+import { swatchStyle, FILAMENT_FINISHES, MAX_GRADIENT_COLORS, STATUS_ORDER } from '../lib/filamentSwatch.js';
 
 export function AdminApp() {
   const [booting, setBooting] = useState(true);
@@ -319,6 +320,64 @@ function SiteSettings() {
 // server's FILAMENT_STATUSES; anything else is coerced back to "In Stock".
 const FILAMENT_STATUSES = ['In Stock', 'Out of Stock', 'On Order'];
 
+const DEFAULT_GRADIENT = ['#00e5ff', '#ff00aa'];
+
+// "Solid" was the finish's original name; treat legacy rows as "Standard".
+function normFinish(finish) {
+  return finish === 'Solid' ? 'Standard' : finish || 'Standard';
+}
+
+// The count control + per-colour pickers shown for the Gradient finish. The
+// colours blend left-to-right in the order shown.
+function GradientEditor({ colors, onChange }) {
+  const list = Array.isArray(colors) && colors.length >= 2 ? colors : DEFAULT_GRADIENT;
+  const setAt = (i, v) => onChange(list.map((c, idx) => (idx === i ? v : c)));
+  const addColor = () => {
+    if (list.length < MAX_GRADIENT_COLORS) onChange([...list, '#ffffff']);
+  };
+  const removeColor = () => {
+    if (list.length > 2) onChange(list.slice(0, -1));
+  };
+  return (
+    <div className="a-grad">
+      <div className="a-grad-count">
+        <button type="button" className="a-mini" onClick={removeColor} disabled={list.length <= 2}>−</button>
+        <span>{list.length} colours</span>
+        <button type="button" className="a-mini" onClick={addColor} disabled={list.length >= MAX_GRADIENT_COLORS}>+</button>
+      </div>
+      <div className="a-grad-swatches">
+        {list.map((c, i) => (
+          <input
+            key={i}
+            className="a-color"
+            type="color"
+            value={c}
+            onChange={(e) => setAt(i, e.target.value)}
+            title={`Colour ${i + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// The finish-specific colour controls, shared by the add form and each row:
+// a primary picker plus either a speckle picker (Marble) or the gradient
+// editor (Gradient).
+function FinishColors({ finish, hex, setHex, hex2, setHex2, colors, setColors }) {
+  return (
+    <>
+      <input className="a-color" type="color" value={hex}
+        onChange={(e) => setHex(e.target.value)} title="Primary colour" />
+      {finish === 'Marble' && (
+        <input className="a-color" type="color" value={hex2}
+          onChange={(e) => setHex2(e.target.value)} title="Speckle colour" />
+      )}
+      {finish === 'Gradient' && <GradientEditor colors={colors} onChange={setColors} />}
+    </>
+  );
+}
+
 function FilamentManager() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -327,7 +386,10 @@ function FilamentManager() {
   // New-filament form state.
   const [name, setName] = useState('');
   const [material, setMaterial] = useState('');
+  const [finish, setFinish] = useState('Standard');
   const [hex, setHex] = useState('#00e5ff');
+  const [hex2, setHex2] = useState('#ff00aa');
+  const [colors, setColors] = useState(DEFAULT_GRADIENT);
   const [status, setStatus] = useState('In Stock');
   const [adding, setAdding] = useState(false);
 
@@ -353,34 +415,70 @@ function FilamentManager() {
     try {
       await api('/filaments', {
         method: 'POST',
-        body: { name: name.trim(), material: material.trim(), hex, status },
+        body: {
+          name: name.trim(),
+          material: material.trim(),
+          finish,
+          hex,
+          hex2: finish === 'Marble' ? hex2 : null,
+          colors: finish === 'Gradient' ? colors : null,
+          status,
+        },
       });
       setName('');
       setMaterial('');
+      setFinish('Standard');
       setHex('#00e5ff');
+      setHex2('#ff00aa');
+      setColors(DEFAULT_GRADIENT);
       setStatus('In Stock');
       load();
-    } catch (e) {
-      setErr(e.message);
+    } catch (e2) {
+      setErr(e2.message);
     } finally {
       setAdding(false);
     }
+  };
+
+  // Split into the same stock groups the public page shows, preserving the
+  // API's sort order within each group.
+  const groups = STATUS_ORDER.map((s) => ({
+    status: s,
+    items: items.filter((f) => f.status === s),
+  }));
+
+  // Live preview swatch for the add form.
+  const previewFilament = {
+    finish,
+    hex,
+    hex2: finish === 'Marble' ? hex2 : null,
+    colors: finish === 'Gradient' ? colors : null,
   };
 
   return (
     <section className="a-settings">
       <h2 className="a-settings-title">FILAMENT COLOURS</h2>
       <p className="a-settings-hint">
-        Colours shown on the public Colours page. Supplier details are never stored or shown on the site.
+        Colours shown on the public Colours page, grouped by stock status. Use the arrows to reorder
+        within a group. Add examples to show what has been printed in each colour. Supplier details are
+        never stored or shown on the site.
       </p>
 
       <form className="a-fil-add" onSubmit={add}>
+        <span className="a-fil-swatch" style={swatchStyle(previewFilament)} />
         <input className="a-input" placeholder="Colour name" value={name}
           onChange={(e) => setName(e.target.value)} />
         <input className="a-input" placeholder="Material (e.g. PLA)" value={material}
           onChange={(e) => setMaterial(e.target.value)} />
-        <input className="a-color" type="color" value={hex}
-          onChange={(e) => setHex(e.target.value)} title="Swatch colour" />
+        <select className="a-input a-fil-finish" value={finish} onChange={(e) => setFinish(e.target.value)}>
+          {FILAMENT_FINISHES.map((f) => <option key={f} value={f}>{f}</option>)}
+        </select>
+        <FinishColors
+          finish={finish}
+          hex={hex} setHex={setHex}
+          hex2={hex2} setHex2={setHex2}
+          colors={colors} setColors={setColors}
+        />
         <select className="a-input" value={status} onChange={(e) => setStatus(e.target.value)}>
           {FILAMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
@@ -396,26 +494,57 @@ function FilamentManager() {
       ) : items.length === 0 ? (
         <p className="a-muted">No filaments yet. Add one above.</p>
       ) : (
-        <div className="a-fil-list">
-          {items.map((f) => <FilamentRow key={f.id} filament={f} reload={load} />)}
-        </div>
+        groups.map((group) => (
+          <div className="a-fil-group" key={group.status}>
+            <h3 className="a-fil-group-title">
+              {group.status} <span>{group.items.length}</span>
+            </h3>
+            {group.items.length === 0 ? (
+              <p className="a-muted a-fil-empty">None.</p>
+            ) : (
+              <div className="a-fil-list">
+                {group.items.map((f, i) => (
+                  <FilamentRow
+                    key={f.id}
+                    filament={f}
+                    reload={load}
+                    isFirst={i === 0}
+                    isLast={i === group.items.length - 1}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ))
       )}
     </section>
   );
 }
 
-function FilamentRow({ filament, reload }) {
+function FilamentRow({ filament, reload, isFirst, isLast }) {
   const [name, setName] = useState(filament.name);
   const [material, setMaterial] = useState(filament.material || '');
+  const [finish, setFinish] = useState(normFinish(filament.finish));
   const [hex, setHex] = useState(filament.hex || '#000000');
+  const [hex2, setHex2] = useState(filament.hex2 || '#ff00aa');
+  const [colors, setColors] = useState(
+    Array.isArray(filament.colors) && filament.colors.length >= 2
+      ? filament.colors
+      : [filament.hex || '#00e5ff', '#ff00aa'],
+  );
   const [status, setStatus] = useState(filament.status || 'In Stock');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [moving, setMoving] = useState(false);
 
+  const savedColors = JSON.stringify(filament.colors || []);
   const dirty =
     name !== filament.name ||
     material !== (filament.material || '') ||
+    finish !== normFinish(filament.finish) ||
     hex !== filament.hex ||
+    (finish === 'Marble' && hex2 !== (filament.hex2 || '#ff00aa')) ||
+    (finish === 'Gradient' && JSON.stringify(colors) !== savedColors) ||
     status !== filament.status;
 
   const save = async () => {
@@ -424,7 +553,15 @@ function FilamentRow({ filament, reload }) {
     try {
       await api(`/filaments/${filament.id}`, {
         method: 'PATCH',
-        body: { name: name.trim(), material: material.trim(), hex, status },
+        body: {
+          name: name.trim(),
+          material: material.trim(),
+          finish,
+          hex,
+          hex2: finish === 'Marble' ? hex2 : null,
+          colors: finish === 'Gradient' ? colors : null,
+          status,
+        },
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
@@ -434,28 +571,154 @@ function FilamentRow({ filament, reload }) {
     }
   };
 
+  const move = async (direction) => {
+    setMoving(true);
+    try {
+      await api(`/filaments/${filament.id}/reorder`, { method: 'POST', body: { direction } });
+      await reload();
+    } finally {
+      setMoving(false);
+    }
+  };
+
   const remove = async () => {
     if (!confirm(`Delete filament "${filament.name}"?`)) return;
     await api(`/filaments/${filament.id}`, { method: 'DELETE' });
     reload();
   };
 
+  const preview = {
+    finish,
+    hex,
+    hex2: finish === 'Marble' ? hex2 : null,
+    colors: finish === 'Gradient' ? colors : null,
+  };
+
   return (
-    <div className="a-fil-row">
-      <span className="a-fil-swatch" style={{ background: hex }} />
-      <input className="a-input a-fil-name" value={name} onChange={(e) => setName(e.target.value)} />
-      <input className="a-input a-fil-mat" value={material} placeholder="Material"
-        onChange={(e) => setMaterial(e.target.value)} />
-      <input className="a-color" type="color" value={hex}
-        onChange={(e) => setHex(e.target.value)} title="Swatch colour" />
-      <select className="a-input a-fil-status" value={status} onChange={(e) => setStatus(e.target.value)}>
-        {FILAMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-      </select>
-      <button className="a-btn a-btn-sm" onClick={save} disabled={!dirty || saving}>
-        {saving ? '…' : saved ? '✓' : 'SAVE'}
-      </button>
-      <button className="a-btn a-btn-sm a-danger" onClick={remove}>DEL</button>
+    <div className="a-fil-item">
+      <div className="a-fil-row">
+        <div className="a-fil-reorder">
+          <button className="a-mini" onClick={() => move('up')} disabled={isFirst || moving} title="Move up">▲</button>
+          <button className="a-mini" onClick={() => move('down')} disabled={isLast || moving} title="Move down">▼</button>
+        </div>
+        <span className="a-fil-swatch" style={swatchStyle(preview)} />
+        <input className="a-input a-fil-name" value={name} onChange={(e) => setName(e.target.value)} />
+        <input className="a-input a-fil-mat" value={material} placeholder="Material"
+          onChange={(e) => setMaterial(e.target.value)} />
+        <select className="a-input a-fil-finish" value={finish} onChange={(e) => setFinish(e.target.value)}>
+          {FILAMENT_FINISHES.map((f) => <option key={f} value={f}>{f}</option>)}
+        </select>
+        <FinishColors
+          finish={finish}
+          hex={hex} setHex={setHex}
+          hex2={hex2} setHex2={setHex2}
+          colors={colors} setColors={setColors}
+        />
+        <select className="a-input a-fil-status" value={status} onChange={(e) => setStatus(e.target.value)}>
+          {FILAMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <button className="a-btn a-btn-sm" onClick={save} disabled={!dirty || saving}>
+          {saving ? '…' : saved ? '✓' : 'SAVE'}
+        </button>
+        <button className="a-btn a-btn-sm a-danger" onClick={remove}>DEL</button>
+      </div>
+      <FilamentPrints filament={filament} reload={reload} />
     </div>
+  );
+}
+
+/* ------------------- Filament example gallery (admin) ----------------- */
+
+// Upload / caption / delete the example prints shown under a colour on the
+// public Colours page.
+function FilamentPrints({ filament, reload }) {
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState('');
+  const prints = Array.isArray(filament.prints) ? filament.prints : [];
+
+  const onFiles = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (files.length === 0) return;
+    setUploading(true);
+    setErr('');
+    try {
+      for (const file of files) {
+        const { dataBase64, contentType } = await fileToUpload(file);
+        await api('/filament-photos', {
+          method: 'POST',
+          body: { filamentId: filament.id, dataBase64, contentType },
+        });
+      }
+      reload();
+    } catch (e2) {
+      setErr(e2.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const remove = async (id) => {
+    await api(`/filament-photos/${id}`, { method: 'DELETE' });
+    reload();
+  };
+
+  return (
+    <div className="a-fil-prints">
+      <div className="a-fil-prints-head">
+        <span>Examples</span>
+        <label className="a-btn a-btn-sm a-upload">
+          {uploading ? 'UPLOADING…' : '+ ADD EXAMPLE'}
+          <input type="file" accept="image/*" multiple hidden onChange={onFiles} disabled={uploading} />
+        </label>
+      </div>
+      {err && <p className="a-error">{err}</p>}
+      <div className="a-fil-prints-strip">
+        {prints.length === 0 && <span className="a-muted">No examples yet.</span>}
+        {prints.map((p) => (
+          <FilamentPrintCard key={p.id} print={p} onRemove={remove} reload={reload} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FilamentPrintCard({ print, onRemove, reload }) {
+  const [caption, setCaption] = useState(print.caption || '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const dirty = caption !== (print.caption || '');
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const clean = caption.trim();
+      await api(`/filament-photos/${print.id}`, { method: 'PATCH', body: { caption: clean } });
+      setCaption(clean);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+      reload();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <figure className="a-fil-print">
+      <img src={print.url} alt="" />
+      <input
+        className="a-photo-input"
+        value={caption}
+        placeholder="Caption (optional)"
+        onChange={(e) => setCaption(e.target.value)}
+      />
+      <div className="a-fil-print-actions">
+        <button className="a-mini a-photo-save" onClick={save} disabled={!dirty || saving}>
+          {saving ? 'saving…' : saved ? 'saved ✓' : 'save'}
+        </button>
+        <button className="a-mini a-mini-danger" onClick={() => onRemove(print.id)}>delete</button>
+      </div>
+    </figure>
   );
 }
 
