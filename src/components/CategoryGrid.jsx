@@ -1,12 +1,13 @@
-import React from 'react';
+import { Breadcrumb } from './Breadcrumb';
 
-export const CategoryGrid = ({ subCategory, categoryId, subCategoryId }) => {
+export const CategoryGrid = ({ subCategory, categoryId, subCategoryId, trail = [] }) => {
   if (!subCategory || !subCategory.products) return null;
   const products = Object.values(subCategory.products);
 
   return (
     <div className="landing-page">
       <h2 className="section-title">{subCategory.displayName}</h2>
+      <Breadcrumb trail={trail} />
       <div className="product-grid">
         {products.map((prod, i) => {
           const mainImg = prod.photos?.[0]?.url || prod.photos?.[0];

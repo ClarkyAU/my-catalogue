@@ -1,9 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 // Cascading catalogue menu that drops down, centered, from the catalogue button.
 // It mirrors the real catalogue hierarchy: tier 1 lists the categories and tier 2
-// flies out the sub-categories of the hovered category. Selecting either level
-// navigates to it.
+// reveals the sub-categories of a category. Each category row has two tap targets:
+// the name navigates to the category, and the caret expands/collapses its
+// sub-categories. Keeping expand on an explicit control (rather than hover) means
+// it works the same with a mouse or a single tap on touch devices.
 export const CascadeMenu = ({ catalogue, navigateTo }) => {
   const [open, setOpen] = useState(false);
   const [activeCat, setActiveCat] = useState(null);
@@ -19,7 +21,11 @@ export const CascadeMenu = ({ catalogue, navigateTo }) => {
       }
     };
     document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
+    document.addEventListener('touchstart', onDocClick);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('touchstart', onDocClick);
+    };
   }, [open]);
 
   const categories = Object.values(catalogue || {});
@@ -55,23 +61,44 @@ export const CascadeMenu = ({ catalogue, navigateTo }) => {
             {categories.map((cat) => {
               const isActive = activeCat === cat.id;
               const subs = subCategoriesFor(cat);
+              const hasSubs = subs.length > 0;
               return (
                 <div
                   key={cat.id}
                   className={`cascade-cat ${isActive ? 'active' : ''}`}
                   onMouseEnter={() => {
-                    setActiveCat(cat.id);
+                    // Desktop convenience: hovering previews the sub-categories.
+                    // Guarded to real hover devices so a touch tap's synthetic
+                    // mouseenter can't fight the caret toggle below (which would
+                    // otherwise open then instantly close it — i.e. do nothing).
+                    if (hasSubs && window.matchMedia('(hover: hover)').matches) {
+                      setActiveCat(cat.id);
+                    }
                   }}
                 >
-                  <button
-                    className="cascade-cat-btn"
-                    onClick={() => go(cat.id)}
-                    aria-expanded={isActive}
-                  >
-                    <span>{cat.displayName.toUpperCase()}</span>
-                  </button>
+                  <div className="cascade-cat-row">
+                    <button
+                      className="cascade-cat-btn"
+                      onClick={() => go(cat.id)}
+                    >
+                      <span>{cat.displayName.toUpperCase()}</span>
+                    </button>
+                    {hasSubs && (
+                      <button
+                        type="button"
+                        className="cascade-caret"
+                        onClick={() =>
+                          setActiveCat((cur) => (cur === cat.id ? null : cat.id))
+                        }
+                        aria-expanded={isActive}
+                        aria-label={`${isActive ? 'Collapse' : 'Expand'} ${cat.displayName} sub-categories`}
+                      >
+                        <span aria-hidden="true">{isActive ? '▾' : '▸'}</span>
+                      </button>
+                    )}
+                  </div>
 
-                  {isActive && (
+                  {isActive && hasSubs && (
                     <div className="cascade-tier cascade-tier-2">
                       {subs.map((sub) => (
                         <button
@@ -82,9 +109,6 @@ export const CascadeMenu = ({ catalogue, navigateTo }) => {
                           <span>{sub.displayName}</span>
                         </button>
                       ))}
-                      {subs.length === 0 && (
-                        <div className="cascade-empty">NO SUB-CATEGORIES</div>
-                      )}
                     </div>
                   )}
                 </div>
