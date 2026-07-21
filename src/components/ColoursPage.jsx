@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { swatchStyle, STATUS_ORDER } from '../lib/filamentSwatch.js';
+import { Breadcrumb } from './Breadcrumb';
 
 // Maps each stock status to a CSS modifier for its badge/heading colour.
 const STATUS_CLASS = {
@@ -14,7 +15,7 @@ const STATUS_CLASS = {
 // owner has uploaded them — a gallery of prints made in that colour. Customers
 // can narrow the whole board by material type. The supplier name is never sent
 // to or shown here.
-export const ColoursPage = () => {
+export const ColoursPage = ({ trail = [] }) => {
   const [filaments, setFilaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('All');
@@ -80,6 +81,7 @@ export const ColoursPage = () => {
   return (
     <div className="landing-page colours-page">
       <h2 className="section-title">COLOUR LIBRARY</h2>
+      <Breadcrumb trail={trail} />
 
       {!loading && filaments.length > 0 && types.length > 1 && (
         <div className="filament-filters">

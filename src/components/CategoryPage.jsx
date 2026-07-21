@@ -1,40 +1,58 @@
-import React from 'react';
+// Landing view for a top-level category. Instead of dumping every product, it
+// shows the category's sub-categories as cards, each previewing up to four of
+// its products, so shoppers can drill down one level at a time.
+import { Breadcrumb } from './Breadcrumb';
 
-// Full listing of every product in a category, flattened across its
-// sub-categories. Styled to match the NEW PRODUCTS landing grid so the whole
-// site feels consistent when a shopper clicks a category in the menu.
-export const CategoryPage = ({ category, categoryId }) => {
+const PREVIEW_LIMIT = 4;
+
+const photoUrl = (product) => product?.photos?.[0]?.url || product?.photos?.[0] || null;
+
+export const CategoryPage = ({ category, categoryId, trail = [] }) => {
   if (!category) return null;
 
-  const products = [];
-  Object.entries(category.subCategories || {}).forEach(([subId, subCat]) => {
-    Object.values(subCat.products || {}).forEach((product) => {
-      products.push({ ...product, subCategoryId: subId, subCategoryName: subCat.displayName });
-    });
-  });
+  const subCategories = Object.values(category.subCategories || {});
 
   return (
     <div className="landing-page">
       <h2 className="section-title">{category.displayName}</h2>
+      <Breadcrumb trail={trail} />
 
-      {products.length === 0 ? (
+      {subCategories.length === 0 ? (
         <div className="landing-empty" style={{ textAlign: 'center', marginTop: '40px' }}>
           <h2>NO PRODUCTS YET</h2>
           <p style={{ fontFamily: "'Space Mono', monospace" }}>Check back soon for items in this category.</p>
         </div>
       ) : (
         <div className="product-grid">
-          {products.map((prod, i) => {
-            const mainImg = prod.photos?.[0]?.url || prod.photos?.[0];
+          {subCategories.map((sub) => {
+            const products = Object.values(sub.products || {});
+            const preview = products.slice(0, PREVIEW_LIMIT);
+            // Keep the thumbnail block a balanced square: 1 up to 4 tiles, with a
+            // filler cell when there are exactly three so the grid stays even.
+            const tiles = preview.length === 3 ? [...preview, null] : preview;
+            const cellCount = Math.min(Math.max(preview.length, 1), 4);
+
             return (
-              <a key={i} href={`#${categoryId}/${prod.subCategoryId}/${prod.id}`} className="grid-card">
-                <div className="card-img-container">
-                  {mainImg ? <img src={mainImg} alt="" /> : <div className="placeholder" style={{ fontFamily: 'Space Mono', color: '#888', textAlign: 'center', paddingTop: '40%' }}>PICTURE TO COME</div>}
+              <a key={sub.id} href={`#${categoryId}/${sub.id}`} className="grid-card subcat-card">
+                <div className={`subcat-thumbs n${cellCount}`}>
+                  {preview.length === 0 ? (
+                    <div className="subcat-thumb empty">SOON</div>
+                  ) : (
+                    tiles.map((prod, i) => {
+                      const img = prod && photoUrl(prod);
+                      return (
+                        <div key={i} className="subcat-thumb">
+                          {img ? <img src={img} alt="" loading="lazy" /> : <span className="subcat-thumb-ph">□</span>}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
                 <div className="card-details">
-                  <h3>{prod.displayName}</h3>
-                  {prod.price && prod.price !== "0.00" && <span className="card-price">${prod.price}</span>}
-                  <span className="card-category">{prod.subCategoryName}</span>
+                  <h3>{sub.displayName}</h3>
+                  <span className="card-category">
+                    {products.length} {products.length === 1 ? 'ITEM' : 'ITEMS'}
+                  </span>
                 </div>
               </a>
             );

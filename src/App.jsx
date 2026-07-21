@@ -1,4 +1,3 @@
-import React from 'react';
 import './styles/global.css';
 import { useCatalogue } from './hooks/useCatalogue';
 import { Header } from './components/Header';
@@ -12,8 +11,23 @@ import { ColoursPage } from './components/ColoursPage';
 export default function App() {
   const { catalogue, settings, loading, activeCategory, activeSubCategory, activeProduct, activeTheme, activeColours, navigateTo } = useCatalogue();
 
-  const currentSubCategory = activeCategory && activeSubCategory ? catalogue[activeCategory]?.subCategories[activeSubCategory] : null;
+  const currentCategory = activeCategory ? catalogue[activeCategory] : null;
+  const currentSubCategory = activeCategory && activeSubCategory ? currentCategory?.subCategories[activeSubCategory] : null;
   const currentProduct = currentSubCategory && activeProduct ? currentSubCategory.products[activeProduct] : null;
+
+  // Path below Home for the breadcrumb, built from whatever level is active.
+  const trail = [];
+  if (currentCategory) {
+    trail.push({ label: currentCategory.displayName, hash: activeCategory });
+    if (currentSubCategory) {
+      trail.push({ label: currentSubCategory.displayName, hash: `${activeCategory}/${activeSubCategory}` });
+      if (currentProduct) {
+        trail.push({ label: currentProduct.displayName, hash: `${activeCategory}/${activeSubCategory}/${activeProduct}` });
+      }
+    }
+  } else if (activeColours) {
+    trail.push({ label: 'COLOURS', hash: 'colours' });
+  }
 
   return (
     <div className="app-container" style={{ '--theme-color': activeTheme?.themeColor || '#00E5FF' }}>
@@ -37,15 +51,15 @@ export default function App() {
             LOADING CATALOGUE...
           </div>
         ) : activeColours ? (
-          <ColoursPage />
+          <ColoursPage trail={trail} />
         ) : !activeCategory ? (
           <LandingPage catalogue={catalogue} intro={settings.landingIntro} subtext={settings.landingSubtext} note={settings.landingNote} />
         ) : !activeSubCategory ? (
-          <CategoryPage category={catalogue[activeCategory]} categoryId={activeCategory} />
+          <CategoryPage category={catalogue[activeCategory]} categoryId={activeCategory} trail={trail} />
         ) : !activeProduct ? (
-          <CategoryGrid subCategory={currentSubCategory} categoryId={activeCategory} subCategoryId={activeSubCategory} />
+          <CategoryGrid subCategory={currentSubCategory} categoryId={activeCategory} subCategoryId={activeSubCategory} trail={trail} />
         ) : (
-          currentProduct && <ProductDisplay product={currentProduct} />
+          currentProduct && <ProductDisplay product={currentProduct} trail={trail} />
         )}
         
       </div>

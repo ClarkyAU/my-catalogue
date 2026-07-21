@@ -94,15 +94,30 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 
 .cascade-cat { position: relative; }
 
+/* Category row: the name (navigates) sits left, the caret (expands) sits right. */
+.cascade-cat-row { display: flex; align-items: stretch; }
+.cascade-cat-row .cascade-cat-btn { flex: 1 1 auto; min-width: 0; }
+.cascade-cat-row .cascade-cat-btn > span { overflow: hidden; text-overflow: ellipsis; }
+
 .cascade-cat-btn, .cascade-prod-btn {
   font-family: 'Exo 2', sans-serif; font-weight: bold; cursor: pointer; background: transparent;
   border: none; color: #F5F0E6; width: 100%; text-align: left; padding: 11px 14px;
   display: flex; align-items: center; gap: 12px; white-space: nowrap; transition: all 0.1s ease;
 }
 .cascade-cat-btn { justify-content: space-between; }
-.cascade-cat.active > .cascade-cat-btn,
 .cascade-cat-btn:hover,
 .cascade-prod-btn:hover { background: var(--theme-color); color: #121212; }
+
+/* Caret is a dedicated, finger-sized tap target that toggles the sub-categories
+   without navigating. It stays reliable on touch where hover does not exist. */
+.cascade-caret {
+  flex: 0 0 auto; width: 44px; align-self: stretch; cursor: pointer; background: transparent;
+  border: none; border-left: 2px dashed #333; color: var(--theme-color);
+  font-size: 0.85rem; line-height: 1; padding: 0; transition: all 0.1s ease;
+  display: flex; align-items: center; justify-content: center;
+}
+.cascade-caret:hover,
+.cascade-cat.active .cascade-caret { background: var(--theme-color); color: #121212; }
 
 /* Second tier flies out to the right of its category and grows to fit however
    many sub-categories exist — no fixed height, no scrollbar. */
@@ -116,13 +131,34 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 /* On narrow phones there is no room for a side fly-out, so the sub-categories
    stack inline beneath their category instead. */
 @media (max-width: 768px) {
-  .cascade-wrap { display: block; width: 100%; }
-  .cascade-menu { left: 0; right: 0; transform: none; min-width: 0; width: 100%; }
-  .cascade-menu::before { left: 50%; transform: translateX(-50%) rotate(45deg); }
-  .cascade-tier-2 {
-    position: static; left: auto; top: auto; margin: 4px 0 4px 16px;
-    box-shadow: none; min-width: 0;
+  /* Catalogue button takes its own centred, full-width row within the hub nav
+     (ordered last) so its drop-down opens downward into empty space. */
+  .cascade-wrap { order: 2; flex: 0 0 100%; display: flex; justify-content: center; width: 100%; }
+
+  /* Give the drop-down its own screen-centred width, kept fairly narrow so the
+     name and its arrow don't drift far apart. */
+  .cascade-menu {
+    left: 50%; right: auto; transform: translateX(-50%); top: calc(100% + 8px);
+    width: min(300px, 90vw); min-width: 0;
   }
+  .cascade-menu::before { left: 50%; transform: translateX(-50%) rotate(45deg); }
+
+  /* Condensed rows so the open menu takes far less vertical space while its
+     targets stay comfortably tappable. */
+  .cascade-tier-1 { padding: 5px; gap: 1px; }
+  .cascade-head { font-size: 0.75rem; padding: 8px 12px 9px; margin-bottom: 2px; }
+  .cascade-cat-btn { padding: 9px 14px; font-size: 0.95rem; }
+  .cascade-caret { width: 46px; font-size: 0.95rem; }
+
+  /* Sub-categories read as a tight, indented branch of their category rather
+     than a second bordered box floating inside the first. */
+  .cascade-tier-2 {
+    position: static; left: auto; top: auto;
+    background: transparent; border: none; box-shadow: none;
+    margin: 0 0 3px 20px; padding: 0 0 0 10px;
+    border-left: 2px solid var(--theme-color); min-width: 0; gap: 0;
+  }
+  .cascade-tier-2 .cascade-cat-btn { padding: 7px 12px; font-size: 0.88rem; }
 }
 
 .order-fab { position: fixed; right: 30px; bottom: 30px; background: #1A1A1A; border: 3px solid #26A5E4; padding: 12px 24px; box-shadow: 8px 8px 0px #000; text-decoration: none; z-index: 9999; color: #26A5E4; font-family: 'Exo 2', sans-serif; font-weight: bold; display: flex; align-items: center; gap: 10px; }
@@ -130,12 +166,53 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 .landing-page { width: 100%; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
 .section-title { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: clamp(2rem, 5vw, 3.5rem); color: var(--theme-color); margin-bottom: 40px; text-shadow: 3px 3px 0px #000; text-align: center; }
 
+/* --- BREADCRUMB NAV --- */
+/* Left-aligned trail under a page title for stepping back up the hierarchy. */
+.breadcrumb {
+  align-self: flex-start; width: 100%; box-sizing: border-box;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  font-family: 'Space Mono', monospace; font-size: 0.8rem; margin-bottom: 30px;
+}
+/* Pull it up close beneath the (bottom-margined) title when it follows one. */
+.section-title + .breadcrumb { margin-top: -28px; }
+.breadcrumb-item { display: inline-flex; align-items: center; gap: 6px; }
+.breadcrumb-link {
+  color: var(--theme-color); text-decoration: none;
+  text-transform: uppercase; letter-spacing: 1px; padding: 2px 0;
+  border-bottom: 1px solid transparent; transition: border-color 0.1s ease;
+}
+.breadcrumb-link:hover { border-bottom-color: var(--theme-color); }
+.breadcrumb-current { color: #F5F0E6; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+.breadcrumb-sep { color: #555; }
+
 .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; width: 100%; justify-content: center; }
 .grid-card { background: #1A1A1A; border: 3px solid #333; display: flex; flex-direction: column; text-decoration: none; color: #F5F0E6; transition: all 0.2s ease; box-shadow: 6px 6px 0px #000; }
 .grid-card:hover { border-color: var(--theme-color); transform: translateY(-4px); box-shadow: 10px 10px 0px #000; }
 
 .card-img-container { width: 100%; aspect-ratio: 1; background: #0A0A0A; border-bottom: 2px solid #333; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; z-index: 3; }
 .card-img-container img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Sub-category preview card: a square tiling of up to four product photos that
+   sits where a single product image would on a normal grid card. */
+.subcat-thumbs {
+  width: 100%; aspect-ratio: 1; display: grid; gap: 2px;
+  background: #333; border-bottom: 2px solid #333;
+  position: relative; z-index: 3;
+}
+.subcat-thumbs.n1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.subcat-thumbs.n2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
+.subcat-thumbs.n3,
+.subcat-thumbs.n4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.subcat-thumb {
+  background: #0A0A0A; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.subcat-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.subcat-thumb-ph { color: #444; font-size: 1.6rem; line-height: 1; }
+.subcat-thumb.empty {
+  grid-column: 1 / -1; grid-row: 1 / -1;
+  font-family: 'Space Mono', monospace; font-size: 0.85rem; color: #666; letter-spacing: 2px;
+}
 .card-details { padding: 15px; display: flex; flex-direction: column; gap: 5px; text-align: center; }
 .card-details h3 { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 1.2rem; margin: 0; color: #F5F0E6; }
 .card-price { font-family: 'Exo 2', sans-serif; color: var(--theme-color); font-weight: bold; font-size: 1.1rem; }
@@ -306,10 +383,22 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
   .main-image-container { height: 500px; }
 }
 @media (max-width: 768px) {
-  .nav-row.main-hubs { flex-direction: column; gap: 10px; }
-  .hub-btn { width: 100%; box-sizing: border-box; }
+  /* Condensed hub nav: the two quick links share one centred row and the
+     catalogue button drops onto its own row below (see .cascade-wrap above),
+     instead of three full-width buttons stacked in a tall column. */
+  .nav-row.main-hubs { width: 100%; box-sizing: border-box; gap: 8px 10px; margin-bottom: 18px; }
+  .hub-btn { padding: 8px 16px; font-size: 0.85rem; box-sizing: border-box; }
 }
-@media (max-width: 600px) {
-  .product-grid { display: flex; flex-direction: column; align-items: center; }
-  .grid-card { width: 100%; max-width: 340px; }
+@media (max-width: 768px) {
+  /* Two smaller, shorter cards per row instead of one large full-width card.
+     Uses the same breakpoint as the condensed nav so it reaches devices in the
+     600–768px range too (a plain 600px cap missed them, leaving one big card). */
+  .product-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-card { width: auto; max-width: none; }
+  /* Short landscape image area so the cards aren't so tall. */
+  .card-img-container, .subcat-thumbs { aspect-ratio: 3 / 2; }
+  .card-details { padding: 8px; gap: 2px; }
+  .card-details h3 { font-size: 0.9rem; }
+  .card-price { font-size: 0.85rem; }
+  .card-category { font-size: 0.68rem; }
 }

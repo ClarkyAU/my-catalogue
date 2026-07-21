@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Breadcrumb } from './Breadcrumb';
 
-export const ProductDisplay = ({ product }) => {
+export const ProductDisplay = ({ product, trail = [] }) => {
   const [index, setIndex] = useState(0);
   const [copied, setCopied] = useState(false);
   useEffect(() => setIndex(0), [product]);
@@ -28,7 +29,9 @@ export const ProductDisplay = ({ product }) => {
   };
 
   return (
-    <div className="product-card">
+    <>
+      <Breadcrumb trail={trail} />
+      <div className="product-card">
       <div className="gallery-pane">
         <div className="main-image-container">
           {product.photos?.length > 0 ? (
@@ -88,5 +91,6 @@ export const ProductDisplay = ({ product }) => {
         </button>
       </div>
     </div>
+    </>
   );
 };
