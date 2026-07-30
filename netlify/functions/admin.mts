@@ -1,6 +1,6 @@
 import type { Config, Context } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { categories, subcategories, products, photos, filaments, filamentPhotos } from "../../db/schema.js";
 import { requireAdmin } from "../../server/auth.js";
@@ -13,7 +13,7 @@ import {
   normalizeColors,
   normalizeFinish,
 } from "../../server/filaments.js";
-import { getSettings, setSetting, SETTINGS_DEFAULTS } from "../../server/settings.js";
+import { getSettings, setSetting, SETTINGS_DEFAULTS, normalizeBadge } from "../../server/settings.js";
 
 const PHOTO_STORE = "product-photos";
 const FILAMENT_PHOTO_STORE = "filament-photos";
@@ -38,6 +38,52 @@ function positiveInteger(value: unknown): number | null {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
+/**
+ * Decode an uploaded data string into the bytes Netlify Blobs accepts (a
+ * string, ArrayBuffer or Blob). Node's Buffer is a view into a shared pool, so
+ * the backing ArrayBuffer is sliced down to exactly this upload's bytes.
+ */
+function decodeUpload(dataBase64: string): ArrayBuffer {
+  const buf = Buffer.from(dataBase64, "base64");
+  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+}
+
+/** Shape of one photo as the admin UI consumes it. */
+const photoView = (ph: typeof photos.$inferSelect) => ({
+  id: ph.id,
+  url: ph.blobKey ? `/api/photos/${ph.id}` : ph.staticUrl,
+  isDefault: ph.isDefault,
+  sortOrder: ph.sortOrder,
+  filaments: ph.filaments,
+  texture: ph.texture,
+});
+
+/** Shape of one product as the admin UI consumes it. */
+const productView = (p: typeof products.$inferSelect, pics: (typeof photos.$inferSelect)[]) => ({
+  id: p.id,
+  slug: p.slug,
+  displayName: p.displayName,
+  description: p.description,
+  price: p.price,
+  featured: p.featured,
+  badge: p.badge,
+  hidden: p.hidden,
+  sortOrder: p.sortOrder,
+  photos: pics.map(photoView),
+});
+
+/** Group rows by a foreign key, preserving the order the database returned. */
+function groupBy<T>(rows: T[], key: (row: T) => number): Map<number, T[]> {
+  const groups = new Map<number, T[]>();
+  for (const row of rows) {
+    const k = key(row);
+    const bucket = groups.get(k);
+    if (bucket) bucket.push(row);
+    else groups.set(k, [row]);
+  }
+  return groups;
+}
+
 /** Full catalogue with internal numeric IDs, for the admin UI. */
 async function adminTree() {
   const [cats, subs, prods, pics] = await Promise.all([
@@ -47,6 +93,13 @@ async function adminTree() {
     db.select().from(photos).orderBy(desc(photos.isDefault), asc(photos.sortOrder), asc(photos.id)),
   ]);
 
+  // Bucket the children once each rather than re-scanning every child list for
+  // every parent — nesting `filter` calls made this quadratic in the number of
+  // products and photos.
+  const subsByCategory = groupBy(subs, (s) => s.categoryId);
+  const prodsBySubcategory = groupBy(prods, (p) => p.subcategoryId);
+  const picsByProduct = groupBy(pics, (ph) => ph.productId);
+
   return {
     categories: cats.map((c) => ({
       id: c.id,
@@ -54,35 +107,15 @@ async function adminTree() {
       displayName: c.displayName,
       themeColor: c.themeColor,
       sortOrder: c.sortOrder,
-      subcategories: subs
-        .filter((s) => s.categoryId === c.id)
-        .map((s) => ({
-          id: s.id,
-          slug: s.slug,
-          displayName: s.displayName,
-          sortOrder: s.sortOrder,
-          products: prods
-            .filter((p) => p.subcategoryId === s.id)
-            .map((p) => ({
-              id: p.id,
-              slug: p.slug,
-              displayName: p.displayName,
-              description: p.description,
-              price: p.price,
-              featured: p.featured,
-              sortOrder: p.sortOrder,
-              photos: pics
-                .filter((ph) => ph.productId === p.id)
-                .map((ph) => ({
-                  id: ph.id,
-                  url: ph.blobKey ? `/api/photos/${ph.id}` : ph.staticUrl,
-                  isDefault: ph.isDefault,
-                  sortOrder: ph.sortOrder,
-                  filaments: ph.filaments,
-                  texture: ph.texture,
-                })),
-            })),
-        })),
+      subcategories: (subsByCategory.get(c.id) || []).map((s) => ({
+        id: s.id,
+        slug: s.slug,
+        displayName: s.displayName,
+        sortOrder: s.sortOrder,
+        products: (prodsBySubcategory.get(s.id) || []).map((p) =>
+          productView(p, picsByProduct.get(p.id) || []),
+        ),
+      })),
     })),
   };
 }
@@ -125,9 +158,7 @@ export default async (req: Request, _context: Context) => {
         const updated: Record<string, string> = {};
         for (const key of Object.keys(SETTINGS_DEFAULTS)) {
           if (body[key] !== undefined) {
-            const value = String(body[key]);
-            await setSetting(key, value);
-            updated[key] = value;
+            updated[key] = await setSetting(key, String(body[key]));
           }
         }
         return json({ ...(await getSettings()), ...updated });
@@ -231,6 +262,8 @@ export default async (req: Request, _context: Context) => {
             description: body.description || "",
             price: normalizePrice(body.price),
             featured: Boolean(body.featured),
+            badge: normalizeBadge(body.badge),
+            hidden: Boolean(body.hidden),
             sortOrder,
           })
           .returning();
@@ -242,6 +275,8 @@ export default async (req: Request, _context: Context) => {
         if (body.description !== undefined) updates.description = body.description;
         if (body.price !== undefined) updates.price = normalizePrice(body.price);
         if (body.featured !== undefined) updates.featured = Boolean(body.featured);
+        if (body.badge !== undefined) updates.badge = normalizeBadge(body.badge);
+        if (body.hidden !== undefined) updates.hidden = Boolean(body.hidden);
         if (body.sortOrder !== undefined) updates.sortOrder = body.sortOrder;
         if (body.subcategoryId !== undefined) {
           const destinationId = positiveInteger(body.subcategoryId);
@@ -294,7 +329,7 @@ export default async (req: Request, _context: Context) => {
         const [prod] = await db.select().from(products).where(eq(products.id, body.productId));
         if (!prod) return json({ error: "Product not found" }, 404);
 
-        const bytes = Buffer.from(body.dataBase64, "base64");
+        const bytes = decodeUpload(body.dataBase64);
         const blobKey = `${body.productId}/${crypto.randomUUID()}`;
         const store = getStore(PHOTO_STORE);
         await store.set(blobKey, bytes);
@@ -430,7 +465,7 @@ export default async (req: Request, _context: Context) => {
         const [fil] = await db.select().from(filaments).where(eq(filaments.id, body.filamentId));
         if (!fil) return json({ error: "Filament not found" }, 404);
 
-        const bytes = Buffer.from(body.dataBase64, "base64");
+        const bytes = decodeUpload(body.dataBase64);
         const blobKey = `${body.filamentId}/${crypto.randomUUID()}`;
         const store = getStore(FILAMENT_PHOTO_STORE);
         await store.set(blobKey, bytes);
@@ -495,11 +530,14 @@ function normalizePrice(price: unknown): string {
 async function deleteBlobsForProductIds(productIds: number[]) {
   if (productIds.length === 0) return;
   const store = getStore(PHOTO_STORE);
-  const pics = await db.select().from(photos);
+  // Ask the database for just these products' photos instead of pulling every
+  // photo row in the catalogue and filtering them in memory.
+  const pics = await db
+    .select({ blobKey: photos.blobKey })
+    .from(photos)
+    .where(inArray(photos.productId, productIds));
   await Promise.all(
-    pics
-      .filter((p) => productIds.includes(p.productId) && p.blobKey)
-      .map((p) => store.delete(p.blobKey as string)),
+    pics.filter((p) => p.blobKey).map((p) => store.delete(p.blobKey as string)),
   );
 }
 

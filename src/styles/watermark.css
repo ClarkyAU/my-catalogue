@@ -1,0 +1,94 @@
+/* --- FEATURED ITEM WATERMARK ---
+   The "NEW" / "POPULAR" mark stamped over a product's preview image on the
+   Featured Items page. Shared by the storefront and the admin portal's live
+   preview so what the owner configures is exactly what shoppers see.
+
+   The mark inherits the active category's theme colour (falling back to the
+   admin accent when previewed outside the storefront); the "popular" variant
+   uses the palette's warm accent so the two marks read differently at a glance.
+   Sizes are driven by --wm-band so one value rescales the whole thing. */
+
+.watermark {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 4;
+  --wm-color: var(--theme-color, var(--accent, #00E5FF));
+  --wm-ink: #0A0A0A;
+  --wm-band: 170px;
+}
+.watermark.is-popular { --wm-color: #FFB800; }
+
+.watermark-label {
+  position: absolute;
+  display: block;
+  box-sizing: border-box;
+  opacity: var(--wm-opacity, 0.9);
+  font-family: 'Press Start 2P', cursive;
+  line-height: 1;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/* Corner ribbon: a band cutting diagonally across one corner of the image. */
+.wm-ribbon .watermark-label {
+  width: var(--wm-band);
+  padding: 7px 0;
+  text-align: center;
+  font-size: 0.5rem;
+  background: var(--wm-color);
+  color: var(--wm-ink);
+  border-top: 2px solid #000;
+  border-bottom: 2px solid #000;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.55);
+}
+.wm-ribbon.wm-top-left .watermark-label {
+  top: calc(var(--wm-band) * 0.19); left: calc(var(--wm-band) * -0.27); transform: rotate(-45deg);
+}
+.wm-ribbon.wm-top-right .watermark-label {
+  top: calc(var(--wm-band) * 0.19); right: calc(var(--wm-band) * -0.27); transform: rotate(45deg);
+}
+.wm-ribbon.wm-bottom-left .watermark-label {
+  bottom: calc(var(--wm-band) * 0.19); left: calc(var(--wm-band) * -0.27); transform: rotate(45deg);
+}
+.wm-ribbon.wm-bottom-right .watermark-label {
+  bottom: calc(var(--wm-band) * 0.19); right: calc(var(--wm-band) * -0.27); transform: rotate(-45deg);
+}
+
+/* Pinned tag: a flat label sitting just inside one corner. */
+.wm-tag .watermark-label {
+  padding: 6px 10px;
+  font-size: 0.45rem;
+  background: var(--wm-color);
+  color: var(--wm-ink);
+  border: 2px solid #000;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.75);
+}
+.wm-tag.wm-top-left .watermark-label { top: 10px; left: 10px; }
+.wm-tag.wm-top-right .watermark-label { top: 10px; right: 10px; }
+.wm-tag.wm-bottom-left .watermark-label { bottom: 12px; left: 10px; }
+.wm-tag.wm-bottom-right .watermark-label { bottom: 12px; right: 10px; }
+
+/* Diagonal stamp: outlined type struck across the middle of the image. Always
+   centred, so the corner setting does not apply to it. */
+.wm-stamp .watermark-label {
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-12deg);
+  max-width: 88%;
+  padding: 10px 14px;
+  font-size: 0.7rem;
+  text-align: center;
+  color: var(--wm-color);
+  background: rgba(5, 5, 5, 0.35);
+  border: 3px solid var(--wm-color);
+  text-shadow: 2px 2px 0 #000;
+}
+
+/* Smaller cards on phones, so the mark scales down with them. */
+@media (max-width: 768px) {
+  .watermark { --wm-band: 124px; }
+  .wm-ribbon .watermark-label { font-size: 0.38rem; padding: 5px 0; letter-spacing: 0; }
+  .wm-tag .watermark-label { font-size: 0.36rem; padding: 4px 7px; box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.75); }
+  .wm-stamp .watermark-label { font-size: 0.5rem; padding: 7px 9px; border-width: 2px; }
+}

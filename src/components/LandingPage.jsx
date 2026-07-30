@@ -1,6 +1,8 @@
-import React from 'react';
+import { Watermark } from './Watermark';
+import { PhotoPlaceholder } from './PhotoPlaceholder';
+import { firstPhotoUrl } from '../lib/photos';
 
-export const LandingPage = ({ catalogue, intro, subtext, note }) => {
+export const LandingPage = ({ catalogue, settings, intro, subtext, note }) => {
   // An empty field means the owner does not want that line shown at all, so we
   // render each paragraph only when it has content (no hardcoded fallback copy)
   // and drop the whole welcome box when every line is blank.
@@ -10,10 +12,10 @@ export const LandingPage = ({ catalogue, intro, subtext, note }) => {
   const hasWelcome = introText || subtextText || noteText;
 
   const featuredProducts = [];
-  
+
   Object.entries(catalogue).forEach(([catId, category]) => {
     Object.entries(category.subCategories || {}).forEach(([subId, subCat]) => {
-      Object.entries(subCat.products || {}).forEach(([prodId, product]) => {
+      Object.values(subCat.products || {}).forEach((product) => {
         if (product.featured) {
           featuredProducts.push({
             ...product, categoryId: catId, subCategoryId: subId,
@@ -26,28 +28,34 @@ export const LandingPage = ({ catalogue, intro, subtext, note }) => {
 
   return (
     <div className="landing-page">
-      <h2 className="section-title">NEW PRODUCTS</h2>
+      <h2 className="section-title">FEATURED ITEMS</h2>
       {hasWelcome && (
-        <div className="welcome-message" style={{ fontFamily: "'Space Mono', monospace", textAlign: 'center', color: '#F5F0E6', fontSize: '1rem', lineHeight: '1.6', padding: '25px', maxWidth: '700px', margin: '0 auto 40px auto', background: '#1A1A1A', border: '2px dashed #333', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          {introText && <p style={{ margin: 0 }}>{introText}</p>}
-          {subtextText && <p style={{ margin: 0, color: 'var(--theme-color)', fontWeight: 'bold' }}>{subtextText}</p>}
-          {noteText && <p style={{ margin: 0, fontSize: '0.9rem', color: '#888' }}>{noteText}</p>}
+        <div className="welcome-message">
+          {introText && <p>{introText}</p>}
+          {subtextText && <p className="welcome-lead">{subtextText}</p>}
+          {noteText && <p className="welcome-note">{noteText}</p>}
         </div>
       )}
 
       {featuredProducts.length === 0 ? (
-        <div className="landing-empty" style={{ textAlign: 'center', marginTop: '40px' }}>
-          <h2>NO NEW PRODUCTS YET</h2>
-          <p style={{ fontFamily: "'Space Mono', monospace" }}>Add "featured": true to a product's metadata.json to see it here.</p>
+        <div className="landing-empty">
+          <h2>NO FEATURED ITEMS YET</h2>
+          <p>Tick "Featured" on a product in the admin portal to show it here.</p>
         </div>
       ) : (
         <div className="product-grid">
-          {featuredProducts.map((prod, i) => {
-            const mainImg = prod.photos?.[0]?.url || prod.photos?.[0];
+          {featuredProducts.map((prod) => {
+            const mainImg = firstPhotoUrl(prod);
+            const href = `#${prod.categoryId}/${prod.subCategoryId}/${prod.id}`;
             return (
-              <a key={i} href={`#${prod.categoryId}/${prod.subCategoryId}/${prod.id}`} className="grid-card">
+              <a key={href} href={href} className="grid-card">
                 <div className="card-img-container">
-                  {mainImg ? <img src={mainImg} alt="" /> : <div className="placeholder" style={{ fontFamily: 'Space Mono', color: '#888', textAlign: 'center', paddingTop: '40%' }}>PICTURE TO COME</div>}
+                  {mainImg ? (
+                    <img src={mainImg} alt="" loading="lazy" decoding="async" width="560" height="560" />
+                  ) : (
+                    <PhotoPlaceholder />
+                  )}
+                  <Watermark product={prod} settings={settings} />
                 </div>
                 <div className="card-details">
                   <h3>{prod.displayName}</h3>

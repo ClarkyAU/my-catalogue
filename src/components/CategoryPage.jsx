@@ -2,10 +2,9 @@
 // shows the category's sub-categories as cards, each previewing up to four of
 // its products, so shoppers can drill down one level at a time.
 import { Breadcrumb } from './Breadcrumb';
+import { firstPhotoUrl } from '../lib/photos';
 
 const PREVIEW_LIMIT = 4;
-
-const photoUrl = (product) => product?.photos?.[0]?.url || product?.photos?.[0] || null;
 
 export const CategoryPage = ({ category, categoryId, trail = [] }) => {
   if (!category) return null;
@@ -18,9 +17,9 @@ export const CategoryPage = ({ category, categoryId, trail = [] }) => {
       <Breadcrumb trail={trail} />
 
       {subCategories.length === 0 ? (
-        <div className="landing-empty" style={{ textAlign: 'center', marginTop: '40px' }}>
+        <div className="landing-empty">
           <h2>NO PRODUCTS YET</h2>
-          <p style={{ fontFamily: "'Space Mono', monospace" }}>Check back soon for items in this category.</p>
+          <p>Check back soon for items in this category.</p>
         </div>
       ) : (
         <div className="product-grid">
@@ -39,10 +38,14 @@ export const CategoryPage = ({ category, categoryId, trail = [] }) => {
                     <div className="subcat-thumb empty">SOON</div>
                   ) : (
                     tiles.map((prod, i) => {
-                      const img = prod && photoUrl(prod);
+                      const img = prod && firstPhotoUrl(prod);
                       return (
                         <div key={i} className="subcat-thumb">
-                          {img ? <img src={img} alt="" loading="lazy" /> : <span className="subcat-thumb-ph">□</span>}
+                          {img ? (
+                            <img src={img} alt="" loading="lazy" decoding="async" width="280" height="280" />
+                          ) : (
+                            <span className="subcat-thumb-ph">□</span>
+                          )}
                         </div>
                       );
                     })
