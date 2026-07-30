@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
-// Bundled snapshot of the catalogue. Used as a fallback so the storefront —
-// its menu, categories, and products — always renders even if the live API is
-// briefly unavailable, rather than showing an empty page.
-import fallbackCatalogue from '../data/catalogue.json';
+import { WATERMARK_DEFAULTS } from '../lib/watermark';
 
 const DEFAULT_THEME = { themeColor: '#00E5FF' };
 
 // Fallback copy so the landing page always has intro text, even before the
-// settings API responds or if it is briefly unavailable.
+// bootstrap request responds or if it is briefly unavailable. The watermark
+// defaults come from the shared module the admin preview uses too.
 const DEFAULT_SETTINGS = {
   landingIntro: 'I am currently working on a batch of new products, so keep an eye out for updates.',
   landingSubtext: 'Check out the latest releases below, or hit [ MY CATALOGUE ] above to browse every category and product.',
   landingNote: 'If there is anything you would like that is not listed, shoot me a message via the order button.',
+  ...WATERMARK_DEFAULTS,
 };
 
 const hasContent = (data) => data && typeof data === 'object' && Object.keys(data).length > 0;
@@ -20,44 +19,36 @@ export const useCatalogue = () => {
   const [catalogue, setCatalogue] = useState({});
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
   const [activeSubCategory, setActiveSubCategory] = useState(null);
   const [activeProduct, setActiveProduct] = useState(null);
   const [activeTheme, setActiveTheme] = useState(DEFAULT_THEME);
   const [activeColours, setActiveColours] = useState(false);
 
-  // Load the live catalogue from the API (backed by the database), but fall
-  // back to the bundled snapshot on any error or empty response so the menu and
-  // products never disappear.
+  // One request for both the catalogue and the editable site copy. There is no
+  // bundled fallback catalogue: a snapshot goes stale the moment the owner
+  // edits anything in the admin portal, and it has no notion of hidden
+  // listings, so falling back to it could put a withdrawn product back on the
+  // storefront. If the request fails the page says so instead.
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/catalogue')
+    fetch('/api/bootstrap')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!cancelled) setCatalogue(hasContent(data) ? data : fallbackCatalogue);
+        if (cancelled) return;
+        if (hasContent(data?.catalogue)) {
+          setCatalogue(data.catalogue);
+          if (hasContent(data.settings)) setSettings({ ...DEFAULT_SETTINGS, ...data.settings });
+        } else {
+          setFailed(true);
+        }
       })
       .catch(() => {
-        if (!cancelled) setCatalogue(fallbackCatalogue);
+        if (!cancelled) setFailed(true);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Load editable site copy (e.g. the landing intro). Falls back to the bundled
-  // defaults on any error so the page never renders blank text.
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/api/settings')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!cancelled && hasContent(data)) setSettings({ ...DEFAULT_SETTINGS, ...data });
-      })
-      .catch(() => {
-        /* keep defaults */
       });
     return () => {
       cancelled = true;
@@ -112,5 +103,5 @@ export const useCatalogue = () => {
     window.location.hash = path;
   };
 
-  return { catalogue, settings, loading, activeCategory, activeSubCategory, activeProduct, activeTheme, activeColours, navigateTo };
+  return { catalogue, settings, loading, failed, activeCategory, activeSubCategory, activeProduct, activeTheme, activeColours, navigateTo };
 };

@@ -1,10 +1,10 @@
 import { asc, desc, sql } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { categories, subcategories, products, photos } from "../db/schema.js";
-// Bundled snapshot of the original filesystem catalogue. Used only to seed an
+// Frozen snapshot of the original filesystem catalogue. Used only to seed an
 // empty database the first time the API runs, so existing products survive the
-// move from the static build to the database.
-import catalogueSeed from "../src/data/catalogue.json" with { type: "json" };
+// move from the static build to the database. Never read at request time.
+import catalogueSeed from "../src/data/seed.json" with { type: "json" };
 
 /** Turn a display name into a URL-safe slug used in the public hash routes. */
 export function slugify(input: string): string {
@@ -36,8 +36,10 @@ export async function buildCatalogue() {
       .orderBy(desc(photos.isDefault), asc(photos.sortOrder), asc(photos.id)),
   ]);
 
+  const catBySlug = new Map<number, string>();
   const tree: Record<string, any> = {};
   for (const cat of cats) {
+    catBySlug.set(cat.id, cat.slug);
     tree[cat.slug] = {
       id: cat.slug,
       displayName: cat.displayName,
@@ -46,35 +48,39 @@ export async function buildCatalogue() {
     };
   }
 
-  const subById: Record<number, { catSlug: string; slug: string }> = {};
+  const subById = new Map<number, { catSlug: string; slug: string }>();
   for (const sub of subs) {
-    const cat = cats.find((c) => c.id === sub.categoryId);
-    if (!cat) continue;
-    subById[sub.id] = { catSlug: cat.slug, slug: sub.slug };
-    tree[cat.slug].subCategories[sub.slug] = {
+    const catSlug = catBySlug.get(sub.categoryId);
+    if (!catSlug) continue;
+    subById.set(sub.id, { catSlug, slug: sub.slug });
+    tree[catSlug].subCategories[sub.slug] = {
       id: sub.slug,
       displayName: sub.displayName,
       products: {},
     };
   }
 
-  const prodById: Record<number, { catSlug: string; subSlug: string; slug: string }> = {};
+  const prodById = new Map<number, { catSlug: string; subSlug: string; slug: string }>();
   for (const prod of prods) {
-    const loc = subById[prod.subcategoryId];
+    // Listings hidden from the store are left out of the public catalogue
+    // altogether, so they vanish from the menu, grids and Featured Items.
+    if (prod.hidden) continue;
+    const loc = subById.get(prod.subcategoryId);
     if (!loc) continue;
-    prodById[prod.id] = { catSlug: loc.catSlug, subSlug: loc.slug, slug: prod.slug };
+    prodById.set(prod.id, { catSlug: loc.catSlug, subSlug: loc.slug, slug: prod.slug });
     tree[loc.catSlug].subCategories[loc.slug].products[prod.slug] = {
       id: prod.slug,
       displayName: prod.displayName,
       description: prod.description,
       featured: prod.featured,
+      badge: prod.badge,
       price: prod.price,
       photos: [],
     };
   }
 
   for (const pic of pics) {
-    const loc = prodById[pic.productId];
+    const loc = prodById.get(pic.productId);
     if (!loc) continue;
     const photo: Record<string, any> = { url: photoUrl(pic) };
     if (pic.filaments) photo.filaments = pic.filaments;
@@ -85,16 +91,24 @@ export async function buildCatalogue() {
   return tree;
 }
 
+// Seeding only ever needs to happen once per container. Remembering that we
+// already checked saves a `count(*)` on every single catalogue request.
+let seedChecked = false;
+
 /**
- * Seed the database from the bundled catalogue snapshot the first time it runs
+ * Seed the database from the frozen catalogue snapshot the first time it runs
  * against an empty database. Idempotent: does nothing once any category exists,
  * so admin edits are never overwritten.
  */
 export async function ensureSeeded(): Promise<void> {
+  if (seedChecked) return;
   const [{ count }] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(categories);
-  if (count > 0) return;
+  if (count > 0) {
+    seedChecked = true;
+    return;
+  }
 
   let catOrder = 0;
   for (const [catSlug, cat] of Object.entries(catalogueSeed as Record<string, any>)) {
@@ -149,4 +163,6 @@ export async function ensureSeeded(): Promise<void> {
       }
     }
   }
+
+  seedChecked = true;
 }

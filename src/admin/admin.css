@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700&family=Press+Start+2P&display=swap');
+/* Google Fonts are linked from admin.html rather than imported here — an
+   @import blocks on the stylesheet parsing before it can even start. */
+@import '../styles/watermark.css';
 
 :root {
   --accent: #00E5FF;
@@ -109,6 +111,27 @@ body {
 .a-settings-hint { color: var(--muted); font-size: 0.8rem; margin: -8px 0 16px; }
 .a-settings .a-field { margin-bottom: 14px; }
 
+/* ---- featured watermark ---- */
+.a-wm { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+.a-wm-controls { flex: 1 1 340px; display: flex; flex-direction: column; }
+.a-wm-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.a-wm-note { margin: 0 0 8px; }
+.a-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 0.85rem; }
+.a-toggle input { width: 22px; height: 22px; accent-color: var(--accent); flex: 0 0 auto; }
+.a-range { width: 100%; accent-color: var(--accent); margin: 8px 0 0; }
+.a-wm-preview { flex: 0 0 auto; display: flex; gap: 12px; flex-wrap: wrap; }
+.a-wm-tile { width: 190px; }
+/* Stand-in for a product photo, so the mark can be judged over real contrast. */
+.a-wm-frame {
+  position: relative; width: 190px; height: 130px; overflow: hidden;
+  border: 2px solid var(--line);
+  background: repeating-linear-gradient(45deg, #1d1d1d 0 10px, #242424 10px 20px);
+}
+.a-wm-caption {
+  display: block; margin-top: 5px; text-align: center; font-size: 0.62rem;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
+}
+
 /* ---- filament colours ---- */
 .a-fil-add { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
 .a-fil-add .a-input { flex: 1; min-width: 120px; }
@@ -168,7 +191,9 @@ select.a-input { cursor: pointer; }
 
 /* ---- subcategory ---- */
 .a-sub { border: 2px dashed var(--line); padding: 14px; margin-bottom: 16px; }
-.a-sub-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.a-sub.is-open { border-color: var(--accent); }
+.a-sub-head { display: flex; align-items: center; gap: 12px; }
+.a-sub.is-open .a-sub-head { margin-bottom: 12px; }
 .a-sub-title { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.95rem; margin: 0; color: var(--accent); }
 .a-count { font-size: 0.75rem; color: var(--muted); }
 .a-add-prod { margin-top: 8px; }
@@ -176,6 +201,14 @@ select.a-input { cursor: pointer; }
 /* ---- product ---- */
 .a-products { display: flex; flex-direction: column; gap: 16px; }
 .a-prod { background: var(--panel-2); border: 2px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+/* Listings kept off the storefront read as muted and provisional. */
+.a-prod.is-hidden { border-style: dashed; border-color: #FFB800; opacity: 0.9; }
+.a-prod-flags { display: flex; gap: 8px; flex-wrap: wrap; }
+.a-hidden-tag {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 1px; color: #FFB800;
+  border: 2px solid #FFB800; padding: 3px 7px;
+}
+.a-prod-note { margin: -4px 0 0; flex: none; }
 .a-prod-fields { display: flex; gap: 14px; flex-wrap: wrap; }
 .a-prod-location { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; padding: 12px; border: 2px dashed var(--line); }
 .a-prod-location .a-field { min-width: 190px; }
@@ -183,8 +216,13 @@ select.a-input { cursor: pointer; }
 .a-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
 .a-field > span { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
 .a-field-price { flex: 0 0 130px; }
-.a-field-featured { flex: 0 0 90px; align-items: flex-start; }
+/* The four listing ticks stay on one line together rather than each claiming a
+   column of their own. */
+.a-prod-ticks { display: flex; gap: 14px; flex: 0 0 auto; }
+.a-field-featured { flex: 0 0 84px; align-items: flex-start; }
 .a-field-featured input { width: 22px; height: 22px; accent-color: var(--accent); margin-top: 6px; }
+/* The badge ticks carry the same colours the marks use on the storefront. */
+.a-field-pop input { accent-color: #FFB800; }
 .a-prod-actions { display: flex; align-items: center; gap: 10px; }
 .a-inline-edit { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
 
@@ -224,5 +262,9 @@ select.a-input { cursor: pointer; }
   .a-hide-sm { display: none; }
   .a-prod-fields { flex-direction: column; }
   .a-prod-location { align-items: stretch; }
-  .a-field-price, .a-field-featured { flex: 1; }
+  .a-field-price { flex: 1; }
+  .a-prod-ticks { flex-wrap: wrap; }
+  .a-field-featured { flex: 0 0 72px; }
+  .a-wm-preview { width: 100%; }
+  .a-wm-tile, .a-wm-frame { width: 100%; }
 }

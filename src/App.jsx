@@ -7,9 +7,10 @@ import { CategoryGrid } from './components/CategoryGrid';
 import { CategoryPage } from './components/CategoryPage';
 import { CascadeMenu } from './components/CascadeMenu';
 import { ColoursPage } from './components/ColoursPage';
+import { TelegramIcon } from './components/Icons';
 
 export default function App() {
-  const { catalogue, settings, loading, activeCategory, activeSubCategory, activeProduct, activeTheme, activeColours, navigateTo } = useCatalogue();
+  const { catalogue, settings, loading, failed, activeCategory, activeSubCategory, activeProduct, activeTheme, activeColours, navigateTo } = useCatalogue();
 
   const currentCategory = activeCategory ? catalogue[activeCategory] : null;
   const currentSubCategory = activeCategory && activeSubCategory ? currentCategory?.subCategories[activeSubCategory] : null;
@@ -37,7 +38,7 @@ export default function App() {
         <div className="nav-container">
           <nav className="nav-row main-hubs">
             <button className="nav-btn hub-btn" onClick={() => window.location.hash = ''}>
-              [ NEW PRODUCTS ]
+              [ FEATURED ITEMS ]
             </button>
             <CascadeMenu catalogue={catalogue} navigateTo={navigateTo} />
             <button className="nav-btn hub-btn" onClick={() => { window.location.hash = 'colours'; }}>
@@ -47,24 +48,31 @@ export default function App() {
         </div>
 
         {loading ? (
-          <div className="landing-page" style={{ textAlign: 'center', marginTop: '60px', fontFamily: "'Space Mono', monospace", color: '#888' }}>
-            LOADING CATALOGUE...
-          </div>
+          <p className="app-message">LOADING CATALOGUE...</p>
         ) : activeColours ? (
           <ColoursPage trail={trail} />
+        ) : failed ? (
+          // No bundled fallback catalogue any more, so say what happened rather
+          // than showing an empty storefront or stale products.
+          <div className="landing-empty">
+            <h2>CATALOGUE UNAVAILABLE</h2>
+            <p>Could not reach the catalogue just now. Please refresh in a moment.</p>
+          </div>
         ) : !activeCategory ? (
-          <LandingPage catalogue={catalogue} intro={settings.landingIntro} subtext={settings.landingSubtext} note={settings.landingNote} />
+          <LandingPage catalogue={catalogue} settings={settings} intro={settings.landingIntro} subtext={settings.landingSubtext} note={settings.landingNote} />
         ) : !activeSubCategory ? (
           <CategoryPage category={catalogue[activeCategory]} categoryId={activeCategory} trail={trail} />
         ) : !activeProduct ? (
           <CategoryGrid subCategory={currentSubCategory} categoryId={activeCategory} subCategoryId={activeSubCategory} trail={trail} />
         ) : (
-          currentProduct && <ProductDisplay product={currentProduct} trail={trail} />
+          // Keyed on the product so the gallery remounts (and its selected photo
+          // resets) when navigating between products.
+          currentProduct && <ProductDisplay key={activeProduct} product={currentProduct} trail={trail} />
         )}
-        
+
       </div>
       <a href="https://t.me/Clarky_AU" className="order-fab" target="_blank" rel="noreferrer">
-        <i className="fa-brands fa-telegram"></i> ORDER
+        <TelegramIcon /> ORDER
       </a>
     </div>
   );

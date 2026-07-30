@@ -48,6 +48,12 @@ export const products = pgTable(
     description: text().notNull().default(""),
     price: text().notNull().default("0.00"),
     featured: boolean().notNull().default(false),
+    // Watermark stamped over the product's preview image on the Featured Items
+    // page: "none", "new" or "popular".
+    badge: text().notNull().default("none"),
+    // Hidden listings stay in the admin portal but are left out of the public
+    // catalogue entirely, so they disappear from the storefront.
+    hidden: boolean().notNull().default(false),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),

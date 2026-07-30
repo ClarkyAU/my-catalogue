@@ -1,4 +1,6 @@
 import { Breadcrumb } from './Breadcrumb';
+import { PhotoPlaceholder } from './PhotoPlaceholder';
+import { firstPhotoUrl } from '../lib/photos';
 
 export const CategoryGrid = ({ subCategory, categoryId, subCategoryId, trail = [] }) => {
   if (!subCategory || !subCategory.products) return null;
@@ -9,12 +11,16 @@ export const CategoryGrid = ({ subCategory, categoryId, subCategoryId, trail = [
       <h2 className="section-title">{subCategory.displayName}</h2>
       <Breadcrumb trail={trail} />
       <div className="product-grid">
-        {products.map((prod, i) => {
-          const mainImg = prod.photos?.[0]?.url || prod.photos?.[0];
+        {products.map((prod) => {
+          const mainImg = firstPhotoUrl(prod);
           return (
-            <a key={i} href={`#${categoryId}/${subCategoryId}/${prod.id}`} className="grid-card">
+            <a key={prod.id} href={`#${categoryId}/${subCategoryId}/${prod.id}`} className="grid-card">
               <div className="card-img-container">
-                {mainImg ? <img src={mainImg} alt="" /> : <div className="placeholder" style={{ fontFamily: 'Space Mono', color: '#888', textAlign: 'center', paddingTop: '40%' }}>PICTURE TO COME</div>}
+                {mainImg ? (
+                  <img src={mainImg} alt="" loading="lazy" decoding="async" width="560" height="560" />
+                ) : (
+                  <PhotoPlaceholder />
+                )}
               </div>
               <div className="card-details">
                 <h3>{prod.displayName}</h3>
