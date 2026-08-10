@@ -107,6 +107,16 @@ export const CartPanel = ({ open, onClose }) => {
                         {line.name}
                       </a>
                       {where && <span className="cart-line-where">{where}</span>}
+                      {/* How this one was built, above the colours, matching the
+                          order the product page asked and the order message
+                          lists. There is no swatch for these, so the choice
+                          carries the line on its own. */}
+                      {(line.options || []).map((option) => (
+                        <span key={option.name} className="cart-line-option">
+                          <span className="cart-line-part">{option.name}</span>
+                          {option.choice}
+                        </span>
+                      ))}
                       {colours.map((slot, i) => (
                         <span key={slot.part || i} className="cart-line-colour">
                           <ColourSwatch colour={slot.colour} className="cart-line-swatch" />

@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Breadcrumb } from './Breadcrumb';
 import { PhotoPlaceholder } from './PhotoPlaceholder';
 import { ColourPicker } from './ColourPicker';
+import { OptionPicker } from './OptionPicker';
 import { CartIcon, ShareIcon } from './Icons';
 import { useFitText } from '../hooks/useFitText';
 import { loadFilaments } from '../lib/filaments.js';
 import { shareUrl } from '../lib/shareLink.js';
 import { firstPhotoUrl, imageUrl, srcSet } from '../lib/photos.js';
 import { productParts } from '../lib/colourParts.js';
+import { defaultSelections, productOptions } from '../lib/productOptions.js';
 import { addToCart } from '../lib/cart.js';
 
 // The main photo is shown "contain" inside a fixed-height frame, so only a width
@@ -50,6 +52,11 @@ export const ProductDisplay = ({
   const [colours, setColours] = useState(() =>
     (parts.length ? parts : [null]).map((part) => ({ part, colour: null })),
   );
+  // The made-to-order choices this print offers beyond colour — which inlay,
+  // which lid, and so on — usually none. Each starts on the owner's first answer
+  // so there is always something concrete to put on the order.
+  const options = useMemo(() => productOptions(product), [product]);
+  const [selections, setSelections] = useState(() => defaultSelections(options));
   // Long product names shrink to fit rather than wrapping into the price.
   const titleRef = useFitText(product.displayName);
 
@@ -80,6 +87,7 @@ export const ProductDisplay = ({
       subCategoryName,
       photo: firstPhotoUrl(product),
       colours,
+      options: selections,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
@@ -188,6 +196,12 @@ export const ProductDisplay = ({
           <div className="price-tag">${product.price}</div>
         )}
         <div className="description-box">{product.description}</div>
+
+        {/* Asked before colour: which version of the print it is decides what
+            there is to colour in the first place. */}
+        {options.length > 0 && (
+          <OptionPicker options={options} value={selections} onChange={setSelections} />
+        )}
 
         {/* Always shown, even with nothing on the shelf, because the request for
             a colour we don't carry is exactly the case that needs asking. */}

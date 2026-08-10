@@ -224,6 +224,38 @@ main:focus { outline: none; }
   .colour-part-name { flex: none; }
 }
 
+/* --- MADE-TO-ORDER OPTIONS --- */
+/* The choices a print offers that are not about colour. Same dashed box as the
+   colour picker so the two read as one set of questions. The caret is a
+   background image rather than a pseudo-element, because a pseudo-element
+   cannot be attached to a <select>; the option colours are named because the
+   OS-drawn list does not inherit the page's colours everywhere. */
+.option-picker { border: 2px dashed #333; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.option-picker-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; font-family: 'Exo 2', sans-serif; }
+.option-picker-label { color: #888; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.08em; }
+.option-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.option-row { display: flex; align-items: center; gap: 12px; }
+.option-name {
+  flex: 0 0 88px; font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.8rem;
+  color: #888; text-transform: uppercase; letter-spacing: 0.06em;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.option-select {
+  flex: 1; min-width: 0; width: 100%; padding: 9px 34px 9px 12px;
+  cursor: pointer; box-sizing: border-box; appearance: none;
+  background-color: #0A0A0A; border: 2px solid #666; transition: border-color 0.1s ease;
+  font-family: 'Exo 2', sans-serif; font-size: 0.95rem; color: #F5F0E6;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path d='M0 0h10L5 6z' fill='%2300E5FF'/></svg>");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 10px 6px;
+}
+.option-select:hover { border-color: #F5F0E6; }
+.option-select option { background: #0A0A0A; color: #F5F0E6; }
+
+@media (max-width: 480px) {
+  .option-row { flex-direction: column; align-items: stretch; gap: 6px; }
+  .option-name { flex: none; }
+}
+
 /* --- ADD TO CART / SHARE BUTTONS --- */
 .product-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; margin-top: 10px; }
 
@@ -413,7 +445,9 @@ main:focus { outline: none; }
 .cart-line-name:hover { color: var(--theme-color); }
 .cart-line-where { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
 .cart-line-colour { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #F5F0E6; margin-top: 2px; }
-/* Which piece of the print this colour is for, on a multi-part line. */
+.cart-line-option { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #F5F0E6; margin-top: 2px; }
+/* Which piece of the print this colour is for, on a multi-part line, and which
+   question an extra choice answers. */
 .cart-line-part { color: #888; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; }
 
 .cart-line-swatch {

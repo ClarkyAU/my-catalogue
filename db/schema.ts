@@ -58,6 +58,13 @@ export const products = pgTable(
     // order they should be asked about (e.g. ["Lid", "Body", "Base"]). Null or
     // empty means the whole print is one colour.
     colourParts: jsonb("colour_parts").$type<string[] | null>(),
+    // Made-to-order choices this print offers that are not about colour: each
+    // entry is a question and the answers on offer, in the order they should be
+    // asked (e.g. [{ name: "Inlay", choices: ["Hex", "Honeycomb", "Blank"] }]).
+    // What a print varies by is up to the owner — an inlay for one, a lid style
+    // or a stamped logo for another — so nothing here names a specific kind of
+    // variation. Null or empty means the print is ordered as pictured.
+    options: jsonb().$type<{ name: string; choices: string[] }[] | null>(),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),

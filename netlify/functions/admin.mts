@@ -5,7 +5,7 @@ import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { categories, subcategories, products, photos, filaments, filamentPhotos } from "../../db/schema.js";
 import { requireAdmin } from "../../server/auth.js";
-import { slugify, normalizeColourParts } from "../../server/catalogue.js";
+import { slugify, normalizeColourParts, normalizeProductOptions } from "../../server/catalogue.js";
 import {
   listFilaments,
   normalizeStatus,
@@ -73,6 +73,8 @@ const productView = (p: typeof products.$inferSelect, pics: (typeof photos.$infe
   // Always an array here, even when the print is a single colour, so the editor
   // does not have to special-case null.
   colourParts: p.colourParts || [],
+  // Same again for the extra made-to-order choices.
+  options: p.options || [],
   sortOrder: p.sortOrder,
   photos: pics.map(photoView),
 });
@@ -310,6 +312,7 @@ async function handleAdminRequest(req: Request, _context: Context): Promise<Resp
             badge: normalizeBadge(body.badge),
             hidden: Boolean(body.hidden),
             colourParts: normalizeColourParts(body.colourParts),
+            options: normalizeProductOptions(body.options),
             sortOrder,
           })
           .returning();
@@ -325,6 +328,7 @@ async function handleAdminRequest(req: Request, _context: Context): Promise<Resp
         if (body.hidden !== undefined) updates.hidden = Boolean(body.hidden);
         if (body.colourParts !== undefined)
           updates.colourParts = normalizeColourParts(body.colourParts);
+        if (body.options !== undefined) updates.options = normalizeProductOptions(body.options);
         if (body.sortOrder !== undefined) updates.sortOrder = body.sortOrder;
         if (body.subcategoryId !== undefined) {
           const destinationId = positiveInteger(body.subcategoryId);

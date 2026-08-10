@@ -41,6 +41,68 @@ export function normalizeColourParts(input: unknown): string[] | null {
   return parts.length > 0 ? parts : null;
 }
 
+// A print can offer a handful of made-to-order choices beyond colour — which
+// inlay, which lid, whether a logo goes on — but a product page that asks a
+// dozen questions is a form, not a listing, so both the number of questions and
+// the answers each one offers are capped.
+export const MAX_PRODUCT_OPTIONS = 4;
+export const MAX_OPTION_CHOICES = 12;
+const MAX_OPTION_NAME = 40;
+const MAX_CHOICE_NAME = 60;
+
+/** One made-to-order choice: the question, and the answers on offer. */
+export interface ProductOption {
+  name: string;
+  choices: string[];
+}
+
+// Anything that is not text is dropped rather than coerced: these strings are
+// rendered straight into a dropdown and pasted into a chat message, and
+// "[object Object]" is not a thing anyone can order.
+function optionText(value: unknown, limit: number): string {
+  return typeof value === "string" ? value.trim().slice(0, limit) : "";
+}
+
+/**
+ * Clean the extra choices an owner typed in. Blank rows go, a repeated answer is
+ * kept once, and a question is only kept when it has a name and at least two
+ * answers — one answer is not a choice, it is a description, and an unnamed
+ * dropdown asks the customer nothing they can understand. Returns null for a
+ * print that is ordered exactly as pictured, which is most of them.
+ */
+export function normalizeProductOptions(input: unknown): ProductOption[] | null {
+  if (!Array.isArray(input)) return null;
+  const options: ProductOption[] = [];
+  const seenNames = new Set<string>();
+
+  for (const raw of input) {
+    const name = optionText((raw as ProductOption)?.name, MAX_OPTION_NAME);
+    const nameKey = name.toLowerCase();
+    if (!name || seenNames.has(nameKey)) continue;
+
+    const choices: string[] = [];
+    const seenChoices = new Set<string>();
+    const rawChoices = Array.isArray((raw as ProductOption)?.choices)
+      ? (raw as ProductOption).choices
+      : [];
+    for (const rawChoice of rawChoices) {
+      const choice = optionText(rawChoice, MAX_CHOICE_NAME);
+      const choiceKey = choice.toLowerCase();
+      if (!choice || seenChoices.has(choiceKey)) continue;
+      seenChoices.add(choiceKey);
+      choices.push(choice);
+      if (choices.length === MAX_OPTION_CHOICES) break;
+    }
+    if (choices.length < 2) continue;
+
+    seenNames.add(nameKey);
+    options.push({ name, choices });
+    if (options.length === MAX_PRODUCT_OPTIONS) break;
+  }
+
+  return options.length > 0 ? options : null;
+}
+
 /** Public URL for a photo row (Blobs-backed uploads vs. carried-over statics). */
 function photoUrl(row: { id: number; blobKey: string | null; staticUrl: string | null }): string {
   if (row.blobKey) return `/api/photos/${row.id}`;
@@ -107,6 +169,10 @@ export async function buildCatalogue() {
     // single-colour listing stays exactly the shape it was.
     const parts = normalizeColourParts(prod.colourParts);
     if (parts) listing.colourParts = parts;
+    // Likewise for the extra choices a print offers: a listing with none is the
+    // same object it has always been.
+    const options = normalizeProductOptions(prod.options);
+    if (options) listing.options = options;
     tree[loc.catSlug].subCategories[loc.slug].products[prod.slug] = listing;
   }
 

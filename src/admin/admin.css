@@ -247,6 +247,21 @@ select.a-input { cursor: pointer; }
 .a-parts-row .a-input { flex: 1; min-width: 0; }
 .a-parts .a-location-note { flex: none; margin: 0; }
 
+/* ---- other made-to-order options ---- */
+/* Same box as the parts above, but each row is a question with its answers
+   nested under it, so the shape is readable at a glance. */
+.a-options .a-parts-list { gap: 16px; }
+.a-option { display: flex; flex-direction: column; gap: 8px; }
+.a-option-choices {
+  display: flex; flex-direction: column; gap: 8px;
+  margin: 0 0 0 34px; padding: 0 0 0 12px; list-style: none;
+  border-left: 2px dashed var(--line);
+}
+.a-option-choice { display: flex; align-items: center; gap: 10px; }
+.a-option-choice .a-input { flex: 1; min-width: 0; }
+/* Aligned with the answers rather than the question, since it adds one. */
+.a-option > .a-btn { align-self: flex-start; margin-left: 34px; }
+
 /* ---- photos ---- */
 .a-photos { border-top: 2px dashed var(--line); padding-top: 12px; }
 .a-photos-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
