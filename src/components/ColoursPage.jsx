@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { swatchStyle, STATUS_ORDER } from '../lib/filamentSwatch.js';
+import { loadFilaments } from '../lib/filaments.js';
 import { Breadcrumb } from './Breadcrumb';
 
 // Maps each stock status to a CSS modifier for its badge/heading colour.
@@ -23,17 +24,11 @@ export const ColoursPage = ({ trail = [] }) => {
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/filaments')
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data) => {
-        if (!cancelled) setFilaments(Array.isArray(data) ? data : []);
-      })
-      .catch(() => {
-        if (!cancelled) setFilaments([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    loadFilaments().then((data) => {
+      if (cancelled) return;
+      setFilaments(data);
+      setLoading(false);
+    });
     return () => {
       cancelled = true;
     };

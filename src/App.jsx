@@ -1,4 +1,5 @@
 import './styles/global.css';
+import { useCallback, useState } from 'react';
 import { useCatalogue } from './hooks/useCatalogue';
 import { Header } from './components/Header';
 import { ProductDisplay } from './components/ProductDisplay';
@@ -7,14 +8,22 @@ import { CategoryGrid } from './components/CategoryGrid';
 import { CategoryPage } from './components/CategoryPage';
 import { CascadeMenu } from './components/CascadeMenu';
 import { ColoursPage } from './components/ColoursPage';
-import { TelegramIcon } from './components/Icons';
+import { CartPanel } from './components/CartPanel';
+import { CartIcon } from './components/Icons';
+import { cartCount, useCart } from './lib/cart.js';
 
 export default function App() {
   const { catalogue, settings, loading, failed, activeCategory, activeSubCategory, activeProduct, activeTheme, activeColours, navigateTo } = useCatalogue();
+  const cart = useCart();
+  const [cartOpen, setCartOpen] = useState(false);
+  const closeCart = useCallback(() => setCartOpen(false), []);
+  const count = cartCount(cart);
 
   const currentCategory = activeCategory ? catalogue[activeCategory] : null;
   const currentSubCategory = activeCategory && activeSubCategory ? currentCategory?.subCategories[activeSubCategory] : null;
   const currentProduct = currentSubCategory && activeProduct ? currentSubCategory.products[activeProduct] : null;
+
+  const productPath = currentProduct ? `${activeCategory}/${activeSubCategory}/${activeProduct}` : null;
 
   // Path below Home for the breadcrumb, built from whatever level is active.
   const trail = [];
@@ -67,13 +76,28 @@ export default function App() {
         ) : (
           // Keyed on the product so the gallery remounts (and its selected photo
           // resets) when navigating between products.
-          currentProduct && <ProductDisplay key={activeProduct} product={currentProduct} trail={trail} />
+          currentProduct && (
+            <ProductDisplay
+              key={activeProduct}
+              product={currentProduct}
+              trail={trail}
+              path={productPath}
+              categoryName={currentCategory.displayName}
+              subCategoryName={currentSubCategory.displayName}
+            />
+          )
         )}
 
       </div>
-      <a href="https://t.me/Clarky_AU" className="order-fab" target="_blank" rel="noreferrer">
-        <TelegramIcon /> ORDER
-      </a>
+      <button
+        className="order-fab"
+        onClick={() => setCartOpen(true)}
+        aria-label={count ? `Open cart, ${count} item${count === 1 ? '' : 's'}` : 'Open cart'}
+      >
+        <CartIcon /> CART
+        {count > 0 && <span className="cart-count">{count}</span>}
+      </button>
+      <CartPanel open={cartOpen} onClose={closeCart} />
     </div>
   );
 }

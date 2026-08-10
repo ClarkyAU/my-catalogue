@@ -4,7 +4,7 @@ import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { categories, subcategories, products, photos, filaments, filamentPhotos } from "../../db/schema.js";
 import { requireAdmin } from "../../server/auth.js";
-import { slugify } from "../../server/catalogue.js";
+import { slugify, normalizeColourParts } from "../../server/catalogue.js";
 import {
   listFilaments,
   normalizeStatus,
@@ -68,6 +68,9 @@ const productView = (p: typeof products.$inferSelect, pics: (typeof photos.$infe
   featured: p.featured,
   badge: p.badge,
   hidden: p.hidden,
+  // Always an array here, even when the print is a single colour, so the editor
+  // does not have to special-case null.
+  colourParts: p.colourParts || [],
   sortOrder: p.sortOrder,
   photos: pics.map(photoView),
 });
@@ -264,6 +267,7 @@ export default async (req: Request, _context: Context) => {
             featured: Boolean(body.featured),
             badge: normalizeBadge(body.badge),
             hidden: Boolean(body.hidden),
+            colourParts: normalizeColourParts(body.colourParts),
             sortOrder,
           })
           .returning();
@@ -277,6 +281,8 @@ export default async (req: Request, _context: Context) => {
         if (body.featured !== undefined) updates.featured = Boolean(body.featured);
         if (body.badge !== undefined) updates.badge = normalizeBadge(body.badge);
         if (body.hidden !== undefined) updates.hidden = Boolean(body.hidden);
+        if (body.colourParts !== undefined)
+          updates.colourParts = normalizeColourParts(body.colourParts);
         if (body.sortOrder !== undefined) updates.sortOrder = body.sortOrder;
         if (body.subcategoryId !== undefined) {
           const destinationId = positiveInteger(body.subcategoryId);

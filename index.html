@@ -4,6 +4,11 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Everything between the markers below is the site-wide default preview,
+         and is swapped for product-specific tags by the social-preview edge
+         function (netlify/edge-functions/share-preview.ts) when a link-preview
+         crawler fetches a shared product link. Keep the markers intact. -->
+    <!-- social-meta:start -->
     <title>Clarky3D</title>
     <meta
       name="description"
@@ -18,6 +23,7 @@
     />
     <meta property="og:url" content="https://print.clarkyau.com/" />
     <meta name="twitter:card" content="summary" />
+    <!-- social-meta:end -->
     <!-- Fonts load from a <link> rather than a CSS @import so the browser can
          start fetching them while the stylesheet is still downloading. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
