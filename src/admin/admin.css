@@ -226,6 +226,21 @@ select.a-input { cursor: pointer; }
 .a-prod-actions { display: flex; align-items: center; gap: 10px; }
 .a-inline-edit { display: flex; align-items: center; gap: 8px; flex: 1; flex-wrap: wrap; }
 
+/* ---- colourable parts ---- */
+.a-parts { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 2px dashed var(--line); }
+.a-parts-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.a-parts-head > span { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.a-parts-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.a-parts-row { display: flex; align-items: center; gap: 10px; }
+/* The number is the order the storefront asks the questions in, so it earns a
+   column of its own rather than living inside the field. */
+.a-parts-index {
+  flex: 0 0 24px; text-align: center; font-size: 0.7rem; font-weight: 700;
+  color: var(--muted);
+}
+.a-parts-row .a-input { flex: 1; min-width: 0; }
+.a-parts .a-location-note { flex: none; margin: 0; }
+
 /* ---- photos ---- */
 .a-photos { border-top: 2px dashed var(--line); padding-top: 12px; }
 .a-photos-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }

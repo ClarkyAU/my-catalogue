@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api } from '../api.js';
 import { useCatalogueStore } from '../useCatalogueTree.js';
+import { MAX_COLOUR_PARTS, MAX_PART_NAME, samePartList } from '../../lib/colourParts.js';
 import { PhotoGrid } from './PhotoGrid.jsx';
 
 // One product listing: its fields, the New/Popular/Featured/Hidden ticks, where
@@ -13,6 +14,9 @@ export function ProductBlock({ product, currentSubcategoryId }) {
   const [badge, setBadge] = useState(product.badge || 'none');
   const [hidden, setHidden] = useState(Boolean(product.hidden));
   const [description, setDescription] = useState(product.description || '');
+  // The pieces of this print that can each be a different colour. Empty means
+  // the whole thing prints in one colour.
+  const [parts, setParts] = useState(product.colourParts || []);
   const initialCategoryId = categories.find((category) =>
     category.subcategories.some((subcategory) => subcategory.id === currentSubcategoryId))?.id;
   const [categoryId, setCategoryId] = useState(initialCategoryId || categories[0]?.id || '');
@@ -33,7 +37,13 @@ export function ProductBlock({ product, currentSubcategoryId }) {
     badge !== (product.badge || 'none') ||
     hidden !== Boolean(product.hidden) ||
     description !== (product.description || '') ||
+    !samePartList(parts, product.colourParts || []) ||
     moving;
+
+  const setPart = (index, value) =>
+    setParts((current) => current.map((part, i) => (i === index ? value : part)));
+
+  const removePart = (index) => setParts((current) => current.filter((_, i) => i !== index));
 
   const selectCategory = (value) => {
     const nextCategoryId = Number(value);
@@ -48,10 +58,16 @@ export function ProductBlock({ product, currentSubcategoryId }) {
     try {
       const row = await api(`/products/${product.id}`, {
         method: 'PATCH',
-        body: { displayName: name, price, featured, badge, hidden, description, subcategoryId },
+        body: {
+          displayName: name, price, featured, badge, hidden, description,
+          colourParts: parts, subcategoryId,
+        },
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
+      // The server drops blank and duplicated part names, so take its word for
+      // what was stored rather than leaving a row here that was never saved.
+      setParts(row.colourParts || []);
       // Moving the product to another subcategory changes the shape of the tree,
       // so that case still needs a refetch. A plain field edit does not — the
       // saved row is enough to update this listing in place.
@@ -121,10 +137,52 @@ export function ProductBlock({ product, currentSubcategoryId }) {
           onChange={(e) => setDescription(e.target.value)} />
       </label>
 
+      <div className="a-parts">
+        <div className="a-parts-head">
+          <span>Colourable parts</span>
+          <button
+            className="a-btn a-btn-sm"
+            onClick={() => setParts((current) => [...current, ''])}
+            disabled={parts.length >= MAX_COLOUR_PARTS}
+          >
+            + ADD PART
+          </button>
+        </div>
+        {parts.length > 0 && (
+          <ol className="a-parts-list">
+            {parts.map((part, index) => (
+              // Keyed by position: these rows are a plain ordered list with no
+              // identity of their own, and the name is what is being edited.
+              <li key={index} className="a-parts-row">
+                <span className="a-parts-index">{index + 1}</span>
+                <input
+                  className="a-input"
+                  value={part}
+                  maxLength={MAX_PART_NAME}
+                  placeholder="e.g. Lid"
+                  onChange={(e) => setPart(index, e.target.value)}
+                />
+                <button
+                  className="a-btn a-btn-sm a-danger"
+                  onClick={() => removePart(index)}
+                  aria-label={`Remove part ${index + 1}`}
+                >
+                  ✕
+                </button>
+              </li>
+            ))}
+          </ol>
+        )}
+        <p className="a-location-note">
+          {parts.length > 0
+            ? 'The storefront asks for a colour for each part in this order, one at a time, and lists every choice on the order. Leave this empty for a print that comes in a single colour.'
+            : 'Only for prints made of pieces that can each be a different colour — add one row per piece (Lid, Body, Base) and the storefront will ask for a colour for each. Leave it empty for a single-colour print.'}
+        </p>
+      </div>
+
       <div className="a-prod-location">
         <label className="a-field">
-          <span>Category</span>
-          <select className="a-input" value={categoryId} onChange={(e) => selectCategory(e.target.value)}>
+          <span>Category</span>          <select className="a-input" value={categoryId} onChange={(e) => selectCategory(e.target.value)}>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>{category.displayName}</option>
             ))}

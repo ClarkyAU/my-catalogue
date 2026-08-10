@@ -54,6 +54,10 @@ export const products = pgTable(
     // Hidden listings stay in the admin portal but are left out of the public
     // catalogue entirely, so they disappear from the storefront.
     hidden: boolean().notNull().default(false),
+    // Named parts of the print that can each be a different colour, in the
+    // order they should be asked about (e.g. ["Lid", "Body", "Base"]). Null or
+    // empty means the whole print is one colour.
+    colourParts: jsonb("colour_parts").$type<string[] | null>(),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
