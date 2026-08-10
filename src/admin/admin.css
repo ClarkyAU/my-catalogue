@@ -15,6 +15,11 @@
 
 * { box-sizing: border-box; }
 
+/* One visible focus ring for the whole portal. The inputs and buttons here mark
+   themselves with a border colour, which says nothing about where the keyboard
+   is; :focus-visible keeps the ring off mouse clicks. */
+:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -54,7 +59,8 @@ body {
   font-size: 0.9rem;
   width: 100%;
 }
-.a-input:focus { outline: none; border-color: var(--accent); }
+/* Border colour is the active treatment; the focus ring above stays on top. */
+.a-input:focus { border-color: var(--accent); }
 .a-textarea { resize: vertical; line-height: 1.5; }
 .a-color { width: 46px; height: 40px; padding: 2px; border: 2px solid var(--line); background: var(--panel-2); cursor: pointer; }
 
@@ -241,6 +247,21 @@ select.a-input { cursor: pointer; }
 .a-parts-row .a-input { flex: 1; min-width: 0; }
 .a-parts .a-location-note { flex: none; margin: 0; }
 
+/* ---- other made-to-order options ---- */
+/* Same box as the parts above, but each row is a question with its answers
+   nested under it, so the shape is readable at a glance. */
+.a-options .a-parts-list { gap: 16px; }
+.a-option { display: flex; flex-direction: column; gap: 8px; }
+.a-option-choices {
+  display: flex; flex-direction: column; gap: 8px;
+  margin: 0 0 0 34px; padding: 0 0 0 12px; list-style: none;
+  border-left: 2px dashed var(--line);
+}
+.a-option-choice { display: flex; align-items: center; gap: 10px; }
+.a-option-choice .a-input { flex: 1; min-width: 0; }
+/* Aligned with the answers rather than the question, since it adds one. */
+.a-option > .a-btn { align-self: flex-start; margin-left: 34px; }
+
 /* ---- photos ---- */
 .a-photos { border-top: 2px dashed var(--line); padding-top: 12px; }
 .a-photos-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -259,7 +280,7 @@ select.a-input { cursor: pointer; }
   font-family: 'Exo 2', sans-serif; background: var(--panel-2); border: 1px solid var(--line);
   color: var(--text); padding: 5px 6px; font-size: 0.78rem; width: 100%; box-sizing: border-box;
 }
-.a-photo-input:focus { outline: none; border-color: var(--accent); }
+.a-photo-input:focus { border-color: var(--accent); }
 .a-photo-save { width: 100%; margin-top: 2px; }
 .a-mini { background: none; border: 1px solid var(--line); color: var(--muted); font-family: inherit; font-size: 0.65rem; padding: 3px; cursor: pointer; }
 .a-mini:hover { color: var(--text); border-color: var(--text); }

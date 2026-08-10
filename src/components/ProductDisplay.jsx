@@ -2,13 +2,31 @@ import { useEffect, useMemo, useState } from 'react';
 import { Breadcrumb } from './Breadcrumb';
 import { PhotoPlaceholder } from './PhotoPlaceholder';
 import { ColourPicker } from './ColourPicker';
+import { OptionPicker } from './OptionPicker';
 import { CartIcon, ShareIcon } from './Icons';
 import { useFitText } from '../hooks/useFitText';
 import { loadFilaments } from '../lib/filaments.js';
 import { shareUrl } from '../lib/shareLink.js';
-import { firstPhotoUrl } from '../lib/photos.js';
+import { firstPhotoUrl, imageUrl, srcSet } from '../lib/photos.js';
 import { productParts } from '../lib/colourParts.js';
+import { defaultSelections, productOptions } from '../lib/productOptions.js';
 import { addToCart } from '../lib/cart.js';
+
+// The main photo is shown "contain" inside a fixed-height frame, so only a width
+// is requested and the CDN keeps the aspect ratio. The thumbs are 100px squares.
+const MAIN_SIZE = { w: 1200 };
+const THUMB_SIZE = { w: 100, h: 100 };
+
+/**
+ * What the main photo shows, for anyone who cannot see it. The filament and
+ * texture are already captioned on screen for sighted visitors, so folding them
+ * into the alt text gives a screen reader the same information.
+ */
+function describePhoto(name, photo) {
+  const printedIn = photo?.filaments?.length ? ` printed in ${photo.filaments.join(', ')}` : '';
+  const texture = photo?.texture ? `, ${photo.texture} texture` : '';
+  return `${name}${printedIn}${texture}`;
+}
 
 // Rendered with a key of the active product slug, so switching products
 // remounts this and both the selected photo and the chosen colours reset for
@@ -34,10 +52,18 @@ export const ProductDisplay = ({
   const [colours, setColours] = useState(() =>
     (parts.length ? parts : [null]).map((part) => ({ part, colour: null })),
   );
+  // The made-to-order choices this print offers beyond colour — which inlay,
+  // which lid, and so on — usually none. Each starts on the owner's first answer
+  // so there is always something concrete to put on the order.
+  const options = useMemo(() => productOptions(product), [product]);
+  const [selections, setSelections] = useState(() => defaultSelections(options));
   // Long product names shrink to fit rather than wrapping into the price.
   const titleRef = useFitText(product.displayName);
 
   const currentPhoto = product.photos?.[index];
+  // Photos arrive as objects from the API, but the carried-over static data used
+  // bare URL strings, so both shapes still have to work here.
+  const mainPhotoUrl = currentPhoto?.url || currentPhoto || null;
   // The crawler-readable form of this page's URL, so a link pasted into a chat
   // previews as the product rather than the bare homepage.
   const productUrl = path ? shareUrl(path) : window.location.href;
@@ -61,6 +87,7 @@ export const ProductDisplay = ({
       subCategoryName,
       photo: firstPhotoUrl(product),
       colours,
+      options: selections,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
@@ -94,11 +121,15 @@ export const ProductDisplay = ({
           {product.photos?.length > 0 ? (
             <div className="image-wrapper">
               {/* The main photo is the largest thing on this page, so it loads
-                  eagerly at high priority while the thumbs can wait. */}
+                  eagerly at high priority while the thumbs can wait. It is the
+                  content of this page rather than decoration, so unlike the
+                  grid cards — where the product name sits in the same link —
+                  it carries a real alt describing what is pictured. */}
               <img
-                src={currentPhoto?.url || currentPhoto}
+                src={imageUrl(mainPhotoUrl, MAIN_SIZE)}
+                srcSet={srcSet(mainPhotoUrl, MAIN_SIZE)}
                 className="main-img"
-                alt=""
+                alt={describePhoto(product.displayName, currentPhoto)}
                 decoding="async"
                 fetchPriority="high"
               />
@@ -129,20 +160,33 @@ export const ProductDisplay = ({
           )}
         </div>
 
-        <div className="thumb-container">
-          {product.photos?.map((img, i) => (
-            <img
-              key={i}
-              src={img.url || img}
-              onClick={() => setIndex(i)}
-              className={`thumb ${index === i ? 'active' : ''}`}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              width="100"
-              height="100"
-            />
-          ))}
+        {/* The thumbs are buttons rather than clickable images: an <img> with an
+            onClick cannot be reached or activated from the keyboard at all. */}
+        <div className="thumb-container" role="group" aria-label={`${product.displayName} photos`}>
+          {product.photos?.map((img, i) => {
+            const url = img.url || img;
+            return (
+              <button
+                key={i}
+                type="button"
+                className={`thumb-btn ${index === i ? 'active' : ''}`}
+                onClick={() => setIndex(i)}
+                aria-pressed={index === i}
+                aria-label={`Show photo ${i + 1} of ${product.photos.length}`}
+              >
+                <img
+                  src={imageUrl(url, THUMB_SIZE)}
+                  srcSet={srcSet(url, THUMB_SIZE)}
+                  className="thumb"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  width="100"
+                  height="100"
+                />
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -152,6 +196,12 @@ export const ProductDisplay = ({
           <div className="price-tag">${product.price}</div>
         )}
         <div className="description-box">{product.description}</div>
+
+        {/* Asked before colour: which version of the print it is decides what
+            there is to colour in the first place. */}
+        {options.length > 0 && (
+          <OptionPicker options={options} value={selections} onChange={setSelections} />
+        )}
 
         {/* Always shown, even with nothing on the shelf, because the request for
             a colour we don't carry is exactly the case that needs asking. */}

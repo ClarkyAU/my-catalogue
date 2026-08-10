@@ -2,9 +2,13 @@
 // shows the category's sub-categories as cards, each previewing up to four of
 // its products, so shoppers can drill down one level at a time.
 import { Breadcrumb } from './Breadcrumb';
-import { firstPhotoUrl } from '../lib/photos';
+import { firstPhotoUrl, imageUrl, srcSet } from '../lib/photos';
 
 const PREVIEW_LIMIT = 4;
+
+// Preview tiles are small squares, so they are fetched at tile size rather than
+// pulling four full-resolution uploads per sub-category card.
+const THUMB_SIZE = { w: 280, h: 280 };
 
 export const CategoryPage = ({ category, categoryId, trail = [] }) => {
   if (!category) return null;
@@ -42,7 +46,15 @@ export const CategoryPage = ({ category, categoryId, trail = [] }) => {
                       return (
                         <div key={i} className="subcat-thumb">
                           {img ? (
-                            <img src={img} alt="" loading="lazy" decoding="async" width="280" height="280" />
+                            <img
+                              src={imageUrl(img, THUMB_SIZE)}
+                              srcSet={srcSet(img, THUMB_SIZE)}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                              width="280"
+                              height="280"
+                            />
                           ) : (
                             <span className="subcat-thumb-ph">□</span>
                           )}

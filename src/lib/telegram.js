@@ -32,12 +32,25 @@ function summariseColours(colours) {
     .join(', ');
 }
 
+/**
+ * The made-to-order choices as one short phrase, for the summarised form of a
+ * long cart: "Inlay Hex, Lid Solid".
+ */
+function summariseOptions(options) {
+  if (!options?.length) return '';
+  return options.map((option) => `${option.name} ${option.choice}`).join(', ');
+}
+
 /** One cart line as the block of text describing it. */
 function describeLine(line, numbered) {
   const heading = [numbered ? `${numbered}. ` : '', line.name, line.qty > 1 ? ` × ${line.qty}` : '']
     .join('')
     .trim();
   const out = [heading];
+
+  // How the print is built comes before what colour it is, the same order the
+  // product page asks in: "Inlay: Hex" decides what there is to colour.
+  for (const option of line.options || []) out.push(`${option.name}: ${option.choice}`);
 
   // A print whose parts are coloured separately gets a line per part, so Clarky
   // can read the order off without asking which colour went where.
@@ -89,8 +102,10 @@ export function cartMessage(cart) {
 
   if (cart.length > MAX_DETAILED_LINES) {
     const list = cart.map((line, i) => {
-      const colour = summariseColours(line.colours);
-      return `${i + 1}. ${line.name}${line.qty > 1 ? ` × ${line.qty}` : ''}${colour ? ` — ${colour}` : ''}`;
+      const detail = [summariseOptions(line.options), summariseColours(line.colours)]
+        .filter(Boolean)
+        .join(', ');
+      return `${i + 1}. ${line.name}${line.qty > 1 ? ` × ${line.qty}` : ''}${detail ? ` — ${detail}` : ''}`;
     });
     return [opening, '', ...list, '', describeTotal(cart), SHIPPING_NOTE].join('\n');
   }

@@ -2,6 +2,13 @@ import { useState } from 'react';
 import { api } from '../api.js';
 import { useCatalogueStore } from '../useCatalogueTree.js';
 import { MAX_COLOUR_PARTS, MAX_PART_NAME, samePartList } from '../../lib/colourParts.js';
+import {
+  MAX_CHOICE_NAME,
+  MAX_OPTION_CHOICES,
+  MAX_OPTION_NAME,
+  MAX_PRODUCT_OPTIONS,
+  sameOptionList,
+} from '../../lib/productOptions.js';
 import { PhotoGrid } from './PhotoGrid.jsx';
 
 // One product listing: its fields, the New/Popular/Featured/Hidden ticks, where
@@ -17,6 +24,10 @@ export function ProductBlock({ product, currentSubcategoryId }) {
   // The pieces of this print that can each be a different colour. Empty means
   // the whole thing prints in one colour.
   const [parts, setParts] = useState(product.colourParts || []);
+  // The other made-to-order choices this print offers: each row is a question
+  // (Inlay, Lid, Logo) with the answers on offer. Empty means it is ordered
+  // exactly as pictured.
+  const [options, setOptions] = useState(product.options || []);
   const initialCategoryId = categories.find((category) =>
     category.subcategories.some((subcategory) => subcategory.id === currentSubcategoryId))?.id;
   const [categoryId, setCategoryId] = useState(initialCategoryId || categories[0]?.id || '');
@@ -38,12 +49,37 @@ export function ProductBlock({ product, currentSubcategoryId }) {
     hidden !== Boolean(product.hidden) ||
     description !== (product.description || '') ||
     !samePartList(parts, product.colourParts || []) ||
+    !sameOptionList(options, product.options || []) ||
     moving;
 
   const setPart = (index, value) =>
     setParts((current) => current.map((part, i) => (i === index ? value : part)));
 
   const removePart = (index) => setParts((current) => current.filter((_, i) => i !== index));
+
+  // A question and its answers are edited in place; a new question starts with
+  // two blank answers because one answer is not a choice.
+  const patchOption = (index, changes) =>
+    setOptions((current) =>
+      current.map((option, i) => (i === index ? { ...option, ...changes } : option)),
+    );
+
+  const addOption = () =>
+    setOptions((current) => [...current, { name: '', choices: ['', ''] }]);
+
+  const removeOption = (index) =>
+    setOptions((current) => current.filter((_, i) => i !== index));
+
+  const setChoice = (index, choiceIndex, value) =>
+    patchOption(index, {
+      choices: options[index].choices.map((choice, i) => (i === choiceIndex ? value : choice)),
+    });
+
+  const addChoice = (index) =>
+    patchOption(index, { choices: [...options[index].choices, ''] });
+
+  const removeChoice = (index, choiceIndex) =>
+    patchOption(index, { choices: options[index].choices.filter((_, i) => i !== choiceIndex) });
 
   const selectCategory = (value) => {
     const nextCategoryId = Number(value);
@@ -60,7 +96,7 @@ export function ProductBlock({ product, currentSubcategoryId }) {
         method: 'PATCH',
         body: {
           displayName: name, price, featured, badge, hidden, description,
-          colourParts: parts, subcategoryId,
+          colourParts: parts, options, subcategoryId,
         },
       });
       setSaved(true);
@@ -68,6 +104,9 @@ export function ProductBlock({ product, currentSubcategoryId }) {
       // The server drops blank and duplicated part names, so take its word for
       // what was stored rather than leaving a row here that was never saved.
       setParts(row.colourParts || []);
+      // Same for a question left half-filled: it is dropped on save, and showing
+      // that straight away beats pretending it was kept.
+      setOptions(row.options || []);
       // Moving the product to another subcategory changes the shape of the tree,
       // so that case still needs a refetch. A plain field edit does not — the
       // saved row is enough to update this listing in place.
@@ -177,6 +216,80 @@ export function ProductBlock({ product, currentSubcategoryId }) {
           {parts.length > 0
             ? 'The storefront asks for a colour for each part in this order, one at a time, and lists every choice on the order. Leave this empty for a print that comes in a single colour.'
             : 'Only for prints made of pieces that can each be a different colour — add one row per piece (Lid, Body, Base) and the storefront will ask for a colour for each. Leave it empty for a single-colour print.'}
+        </p>
+      </div>
+
+      <div className="a-parts a-options">
+        <div className="a-parts-head">
+          <span>Other options</span>
+          <button
+            className="a-btn a-btn-sm"
+            onClick={addOption}
+            disabled={options.length >= MAX_PRODUCT_OPTIONS}
+          >
+            + ADD OPTION
+          </button>
+        </div>
+        {options.length > 0 && (
+          <ol className="a-parts-list">
+            {options.map((option, index) => (
+              // Keyed by position, like the parts above: a question has no
+              // identity beyond where it sits in the list.
+              <li key={index} className="a-option">
+                <div className="a-parts-row">
+                  <span className="a-parts-index">{index + 1}</span>
+                  <input
+                    className="a-input"
+                    value={option.name}
+                    maxLength={MAX_OPTION_NAME}
+                    placeholder="What is being chosen — e.g. Inlay, Lid, Logo"
+                    onChange={(e) => patchOption(index, { name: e.target.value })}
+                  />
+                  <button
+                    className="a-btn a-btn-sm a-danger"
+                    onClick={() => removeOption(index)}
+                    aria-label={`Remove option ${index + 1}`}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <ul className="a-option-choices">
+                  {option.choices.map((choice, choiceIndex) => (
+                    <li key={choiceIndex} className="a-option-choice">
+                      <input
+                        className="a-input"
+                        value={choice}
+                        maxLength={MAX_CHOICE_NAME}
+                        placeholder={choiceIndex === 0 ? 'The usual one' : 'Another to offer'}
+                        aria-label={`${option.name || `Option ${index + 1}`} choice ${choiceIndex + 1}`}
+                        onChange={(e) => setChoice(index, choiceIndex, e.target.value)}
+                      />
+                      <button
+                        className="a-btn a-btn-sm a-danger"
+                        onClick={() => removeChoice(index, choiceIndex)}
+                        disabled={option.choices.length <= 2}
+                        aria-label={`Remove choice ${choiceIndex + 1} from option ${index + 1}`}
+                      >
+                        ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  className="a-btn a-btn-sm"
+                  onClick={() => addChoice(index)}
+                  disabled={option.choices.length >= MAX_OPTION_CHOICES}
+                >
+                  + ADD CHOICE
+                </button>
+              </li>
+            ))}
+          </ol>
+        )}
+        <p className="a-location-note">
+          {options.length > 0
+            ? 'The storefront shows a dropdown per row, above the colours, and puts the answers on the order. The first choice is what a customer starts on, so put the usual build first — or lead with something like "Clarky picks" to have it come up in the chat. A row needs a name and at least two choices to be worth asking, so anything short of that is dropped when you save.'
+            : 'For prints that come in versions — a different inlay, a different lid, with or without a logo. Add a row for what is being chosen, then list the choices on offer, and the storefront asks for it on the product page. Leave it empty for a print that is ordered exactly as pictured.'}
         </p>
       </div>
 

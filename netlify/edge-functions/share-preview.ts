@@ -1,15 +1,23 @@
 import type { Config, Context } from "@netlify/edge-functions";
 
-// The storefront is a client-rendered app that routes on the URL fragment, so
-// a link-preview crawler fetching a shared link only ever sees the empty HTML
-// shell and every product previews as the same generic "Clarky3D" card. Since
-// most ordering happens by pasting a link into a Telegram chat, that is the
-// preview that matters most.
+// The storefront is a client-rendered app that routes on the URL fragment, so a
+// crawler fetching a shared link only ever sees the empty HTML shell: every
+// product previews as the same generic "Clarky3D" card, and a search engine has
+// exactly one page to index no matter how big the catalogue gets.
 //
 // Shared links therefore carry their route in a `?p=` query parameter (see
 // src/lib/shareLink.js), which does reach the server. This function reads it,
-// looks the product up in the catalogue and swaps the default social tags in
-// the shell for that product's title, description and photo.
+// looks the product up in the catalogue and swaps the default social tags in the
+// shell for that product's title, description, photo, canonical URL and
+// Product structured data.
+//
+// This used to run only for known link unfurlers, sniffed by user agent, because
+// the catalogue lookup it needs was uncached and would have made every visitor
+// wait on it. The catalogue is now held at the edge (see server/cache.ts), so
+// the rewrite runs for everyone: the user-agent allowlist could never be
+// complete, sniffing meant search engines and chat clients were served different
+// HTML for the same URL, and varying the response by user agent makes it far
+// less cacheable than varying by URL alone.
 
 const SHARE_PARAM = "p";
 
@@ -18,10 +26,6 @@ const SHARE_PARAM = "p";
 // preview, because those are the only links the storefront shares.
 const VALID_PATH = /^[A-Za-z0-9_]+(?:\/[A-Za-z0-9_]+){2}$/;
 
-// Link unfurlers, not browsers. Everyone else is passed straight through.
-const CRAWLER =
-  /telegram|facebookexternalhit|facebot|twitterbot|whatsapp|discordbot|slackbot|slack-imgproxy|linkedinbot|googlebot|bingbot|duckduckbot|yandex|redditbot|pinterest|skypeuripreview|embedly|iframely|applebot|vkshare|mastodon|bluesky|viber|flipboard|tumblr|nuzzel|quora link preview/i;
-
 // The block of tags in index.html this function replaces.
 const META_START = "<!-- social-meta:start -->";
 const META_END = "<!-- social-meta:end -->";
@@ -29,6 +33,17 @@ const META_END = "<!-- social-meta:end -->";
 // A slow catalogue must never hold a page hostage; without a preview the link
 // still works, it just looks plain.
 const CATALOGUE_TIMEOUT_MS = 3000;
+
+// Prices are stored without a currency, and every price on the site is in
+// Australian dollars. Structured data has to name one explicitly or a search
+// result will guess at the wrong dollar — this is metadata only and is never
+// rendered on the page.
+const CURRENCY = "AUD";
+
+// Kept in step with the same tags in index.html — a listing with no photo yet
+// still unfurls with the site's card rather than a blank one.
+const DEFAULT_OG_IMAGE = "/og-default.jpg";
+const DEFAULT_OG_ALT = "Clarky3D — made-to-order 3D prints";
 
 const ESCAPES: Record<string, string> = {
   "&": "&amp;",
@@ -50,6 +65,14 @@ function truncate(text: string, max: number): string {
   const lastSpace = cut.lastIndexOf(" ");
   return `${(lastSpace > max * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
+
+/**
+ * Serialise structured data for embedding in a `<script>` tag. HTML escaping
+ * cannot be used inside a script element — the parser does not decode entities
+ * there — so `<` is written as a JSON unicode escape instead, which parses back
+ * to the same character and so cannot close the block early.
+ */
+const jsonLd = (data: unknown) => JSON.stringify(data).replace(/</g, "\\u003c");
 
 interface Listing {
   product: { displayName: string; description?: string; price?: string; photos?: { url?: string }[] };
@@ -105,30 +128,62 @@ function buildMeta(listing: Listing, shareUrl: string, origin: string): string {
 
   // Uploads are stored at whatever resolution they were taken, so the preview
   // image goes through the Image CDN rather than sending an unfurler a
-  // full-resolution original.
+  // full-resolution original. A listing with no photo yet falls back to the
+  // site's own card, because this block replaces the shell's default tags
+  // wholesale and would otherwise leave the link with no image at all.
   const photo = product.photos?.[0]?.url;
   const image = photo
-    ? `${origin}/.netlify/images?url=${encodeURIComponent(photo)}&w=1200&fm=jpg&q=80`
-    : null;
+    ? `${origin}/.netlify/images?url=${encodeURIComponent(photo)}&w=1200&h=630&fit=cover&fm=jpg&q=80`
+    : `${origin}${DEFAULT_OG_IMAGE}`;
+  const imageAlt = photo ? product.displayName : DEFAULT_OG_ALT;
+
+  // Structured data, which is what turns a search result into a rich one
+  // carrying the price and photo. `price` is a plain decimal string in the
+  // database, so an unpriced listing describes the product without claiming an
+  // offer rather than advertising it as free.
+  const priced = Boolean(product.price && product.price !== "0.00");
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.displayName,
+    description: truncate(body, 500),
+    image: [image],
+    url: shareUrl,
+    category: [categoryName, subCategoryName].filter(Boolean).join(" / ") || undefined,
+    brand: { "@type": "Brand", name: "Clarky3D" },
+    offers: priced
+      ? {
+          "@type": "Offer",
+          url: shareUrl,
+          price: product.price,
+          priceCurrency: CURRENCY,
+          itemCondition: "https://schema.org/NewCondition",
+          availability: "https://schema.org/InStock",
+          seller: { "@type": "Organization", name: "Clarky3D" },
+        }
+      : undefined,
+  };
 
   const tags = [
     `<title>${escapeHtml(title)}</title>`,
     `<meta name="description" content="${escapeHtml(description)}" />`,
+    `<link rel="canonical" href="${escapeHtml(shareUrl)}" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:site_name" content="Clarky3D" />`,
     `<meta property="og:title" content="${escapeHtml(title)}" />`,
     `<meta property="og:description" content="${escapeHtml(description)}" />`,
     `<meta property="og:url" content="${escapeHtml(shareUrl)}" />`,
-    `<meta name="twitter:card" content="${image ? "summary_large_image" : "summary"}" />`,
+    `<meta property="og:image" content="${escapeHtml(image)}" />`,
+    `<meta property="og:image:width" content="1200" />`,
+    `<meta property="og:image:height" content="630" />`,
+    `<meta property="og:image:alt" content="${escapeHtml(imageAlt)}" />`,
+    `<meta name="twitter:card" content="summary_large_image" />`,
     `<meta name="twitter:title" content="${escapeHtml(title)}" />`,
     `<meta name="twitter:description" content="${escapeHtml(description)}" />`,
+    `<meta name="twitter:image" content="${escapeHtml(image)}" />`,
+    `<meta name="twitter:image:alt" content="${escapeHtml(imageAlt)}" />`,
+    `<script type="application/ld+json">${jsonLd(structuredData)}</script>`,
   ];
-
-  if (image) {
-    tags.push(`<meta property="og:image" content="${escapeHtml(image)}" />`);
-    tags.push(`<meta property="og:image:alt" content="${escapeHtml(product.displayName)}" />`);
-    tags.push(`<meta name="twitter:image" content="${escapeHtml(image)}" />`);
-  }
 
   return tags.join("\n    ");
 }
@@ -137,13 +192,6 @@ export default async (req: Request, context: Context) => {
   const url = new URL(req.url);
   const path = url.searchParams.get(SHARE_PARAM);
   if (!path || !VALID_PATH.test(path)) return;
-
-  // Only unfurlers need the rewritten head, so a real visitor following a
-  // shared link never waits on the catalogue lookup this makes. `?preview=1`
-  // forces it on for checking a card without waiting for a crawler.
-  if (!CRAWLER.test(req.headers.get("user-agent") || "") && !url.searchParams.has("preview")) {
-    return;
-  }
 
   // The catalogue lookup and the shell fetch do not depend on each other, so
   // they run together rather than one after the other. loadListing resolves to

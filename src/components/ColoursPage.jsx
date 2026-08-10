@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { swatchStyle, STATUS_ORDER } from '../lib/filamentSwatch.js';
 import { loadFilaments } from '../lib/filaments.js';
+import { imageUrl, srcSet } from '../lib/photos.js';
+import { useFocusTrap } from '../hooks/useFocusTrap.js';
 import { Breadcrumb } from './Breadcrumb';
+
+// Print thumbs are 88px squares; the lightbox shows the photo large but still
+// nowhere near the size it was uploaded at.
+const PRINT_THUMB_SIZE = { w: 88, h: 88 };
+const LIGHTBOX_SIZE = { w: 1400 };
 
 // Maps each stock status to a CSS modifier for its badge/heading colour.
 const STATUS_CLASS = {
@@ -172,7 +179,13 @@ function FilamentRow({ filament: f, onOpenPrint }) {
                 onClick={() => onOpenPrint(prints, i)}
                 title={p.caption || 'View print'}
               >
-                <img src={p.url} alt={p.caption || `Print in ${f.name}`} loading="lazy" />
+                <img
+                  src={imageUrl(p.url, PRINT_THUMB_SIZE)}
+                  srcSet={srcSet(p.url, PRINT_THUMB_SIZE)}
+                  alt={p.caption || `Print in ${f.name}`}
+                  loading="lazy"
+                  decoding="async"
+                />
               </button>
             ))}
           </div>
@@ -187,6 +200,9 @@ function FilamentRow({ filament: f, onOpenPrint }) {
 function PrintLightbox({ prints, index, onClose, onStep }) {
   const print = prints[index];
   const many = prints.length > 1;
+  // A real dialog: focus is held inside it while it is up and handed back to the
+  // thumbnail that opened it on the way out.
+  const dialogRef = useFocusTrap(true);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -200,7 +216,15 @@ function PrintLightbox({ prints, index, onClose, onStep }) {
 
   return (
     <div className="print-lightbox" onClick={onClose}>
-      <div className="print-lightbox-inner" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="print-lightbox-inner"
+        ref={dialogRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={print.caption ? `Print photo: ${print.caption}` : 'Print photo'}
+        onClick={(e) => e.stopPropagation()}
+      >
         <button className="print-lightbox-close" onClick={onClose} aria-label="Close">
           ×
         </button>
@@ -208,18 +232,22 @@ function PrintLightbox({ prints, index, onClose, onStep }) {
           <button
             className="print-lightbox-nav prev"
             onClick={() => onStep(-1)}
-            aria-label="Previous"
+            aria-label="Previous photo"
           >
             ‹
           </button>
         )}
-        <img src={print.url} alt={print.caption || 'Print'} />
+        <img
+          src={imageUrl(print.url, LIGHTBOX_SIZE)}
+          srcSet={srcSet(print.url, LIGHTBOX_SIZE)}
+          alt={print.caption || 'Print'}
+        />
         {print.caption && <p className="print-lightbox-caption">{print.caption}</p>}
         {many && (
           <button
             className="print-lightbox-nav next"
             onClick={() => onStep(1)}
-            aria-label="Next"
+            aria-label="Next photo"
           >
             ›
           </button>

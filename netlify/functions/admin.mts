@@ -1,10 +1,11 @@
 import type { Config, Context } from "@netlify/functions";
+import { purgeCache } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
 import { asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { categories, subcategories, products, photos, filaments, filamentPhotos } from "../../db/schema.js";
 import { requireAdmin } from "../../server/auth.js";
-import { slugify, normalizeColourParts } from "../../server/catalogue.js";
+import { slugify, normalizeColourParts, normalizeProductOptions } from "../../server/catalogue.js";
 import {
   listFilaments,
   normalizeStatus,
@@ -14,6 +15,7 @@ import {
   normalizeFinish,
 } from "../../server/filaments.js";
 import { getSettings, setSetting, SETTINGS_DEFAULTS, normalizeBadge } from "../../server/settings.js";
+import { CACHE_TAGS } from "../../server/cache.js";
 
 const PHOTO_STORE = "product-photos";
 const FILAMENT_PHOTO_STORE = "filament-photos";
@@ -71,6 +73,8 @@ const productView = (p: typeof products.$inferSelect, pics: (typeof photos.$infe
   // Always an array here, even when the print is a single colour, so the editor
   // does not have to special-case null.
   colourParts: p.colourParts || [],
+  // Same again for the extra made-to-order choices.
+  options: p.options || [],
   sortOrder: p.sortOrder,
   photos: pics.map(photoView),
 });
@@ -123,7 +127,47 @@ async function adminTree() {
   };
 }
 
-export default async (req: Request, _context: Context) => {
+/**
+ * Which cached responses a write to each resource makes stale. The storefront's
+ * bootstrap payload carries both the catalogue tree and the editable site copy,
+ * so a settings change invalidates it too.
+ */
+const PURGE_TAGS: Record<string, string[]> = {
+  categories: [CACHE_TAGS.catalogue],
+  subcategories: [CACHE_TAGS.catalogue],
+  products: [CACHE_TAGS.catalogue],
+  photos: [CACHE_TAGS.catalogue],
+  settings: [CACHE_TAGS.catalogue],
+  filaments: [CACHE_TAGS.filaments],
+  "filament-photos": [CACHE_TAGS.filaments],
+};
+
+const MUTATING_METHODS = new Set(["POST", "PATCH", "DELETE"]);
+
+export default async (req: Request, context: Context) => {
+  const response = await handleAdminRequest(req, context);
+
+  // The public API is cached at the edge indefinitely and invalidated here, so
+  // an edit in the admin portal shows up on the storefront within seconds. Only
+  // successful writes purge, and a purge that fails must not turn a completed
+  // edit into an error for the owner — the worst case is a stale storefront
+  // until the next write or deploy, which is recoverable; a false failure that
+  // makes them redo a save is not.
+  const rest = new URL(req.url).pathname.replace(/^\/api\/admin\/?/, "");
+  const [resource] = rest.split("/").filter(Boolean);
+  const tags = PURGE_TAGS[resource];
+  if (tags && MUTATING_METHODS.has(req.method) && response.status < 400) {
+    try {
+      await purgeCache({ tags });
+    } catch (err) {
+      console.error("Failed to purge cache after admin write", err);
+    }
+  }
+
+  return response;
+};
+
+async function handleAdminRequest(req: Request, _context: Context): Promise<Response> {
   // Every admin request must pass the Identity + allowlist gate.
   const gate = await requireAdmin();
   if (!gate.ok) return gate.response;
@@ -268,6 +312,7 @@ export default async (req: Request, _context: Context) => {
             badge: normalizeBadge(body.badge),
             hidden: Boolean(body.hidden),
             colourParts: normalizeColourParts(body.colourParts),
+            options: normalizeProductOptions(body.options),
             sortOrder,
           })
           .returning();
@@ -283,6 +328,7 @@ export default async (req: Request, _context: Context) => {
         if (body.hidden !== undefined) updates.hidden = Boolean(body.hidden);
         if (body.colourParts !== undefined)
           updates.colourParts = normalizeColourParts(body.colourParts);
+        if (body.options !== undefined) updates.options = normalizeProductOptions(body.options);
         if (body.sortOrder !== undefined) updates.sortOrder = body.sortOrder;
         if (body.subcategoryId !== undefined) {
           const destinationId = positiveInteger(body.subcategoryId);
@@ -524,7 +570,7 @@ export default async (req: Request, _context: Context) => {
     console.error("Admin API error", err);
     return json({ error: "Internal error" }, 500);
   }
-};
+}
 
 function normalizePrice(price: unknown): string {
   const n = Number(price);

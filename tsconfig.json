@@ -15,5 +15,5 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["db", "server", "netlify/functions", "drizzle.config.ts"]
+  "include": ["db", "server", "netlify/functions", "netlify/edge-functions", "drizzle.config.ts"]
 }

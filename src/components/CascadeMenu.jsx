@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 
 // Cascading catalogue menu that drops down, centered, from the catalogue button.
 // It mirrors the real catalogue hierarchy: tier 1 lists the categories and tier 2
@@ -10,23 +10,36 @@ export const CascadeMenu = ({ catalogue, navigateTo }) => {
   const [open, setOpen] = useState(false);
   const [activeCat, setActiveCat] = useState(null);
   const wrapRef = useRef(null);
+  const triggerRef = useRef(null);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setActiveCat(null);
+  }, []);
 
   // Close the menu when clicking anywhere outside it.
   useEffect(() => {
     if (!open) return;
     const onDocClick = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
-        setOpen(false);
-        setActiveCat(null);
-      }
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) close();
+    };
+    // Escape is the way out for anyone who opened this from the keyboard, and
+    // focus goes back to the button that opened it — otherwise the next Tab
+    // starts from the top of the page instead of from the menu.
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      close();
+      triggerRef.current?.focus();
     };
     document.addEventListener('mousedown', onDocClick);
     document.addEventListener('touchstart', onDocClick);
+    document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('mousedown', onDocClick);
       document.removeEventListener('touchstart', onDocClick);
+      document.removeEventListener('keydown', onKey);
     };
-  }, [open]);
+  }, [open, close]);
 
   const categories = Object.values(catalogue || {});
 
@@ -34,18 +47,19 @@ export const CascadeMenu = ({ catalogue, navigateTo }) => {
 
   const go = (catId, subId) => {
     navigateTo(catId, subId);
-    setOpen(false);
-    setActiveCat(null);
+    close();
   };
 
   return (
     <div className="cascade-wrap" ref={wrapRef}>
       <button
+        ref={triggerRef}
         className={`nav-btn hub-btn ${open ? 'active' : ''}`}
         onClick={() => {
           setOpen((o) => !o);
           setActiveCat(null);
         }}
+        aria-haspopup="true"
         aria-expanded={open}
       >
         [ MY CATALOGUE ]

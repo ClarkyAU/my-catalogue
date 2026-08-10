@@ -29,14 +29,24 @@ function colourKey(colour) {
  * Identity of a cart line. The same print in two colours is two lines, because
  * they are two different things to make — but adding the same product in the
  * same colours twice just bumps the quantity. A print whose parts are coloured
- * separately keys on the whole combination.
+ * separately keys on the whole combination, and so do the made-to-order choices
+ * it was ordered with: two of the same case with different inlays are two
+ * different things to make.
  */
-function lineKey(path, colours) {
-  if (colours.length === 0) return `${path}|any`;
-  // A print that is one colour keys on just that colour, the way it always has,
-  // so carts built before parts existed keep the keys they were saved with.
-  if (colours.length === 1 && !colours[0].part) return `${path}|${colourKey(colours[0].colour)}`;
-  return [path, ...colours.map((slot) => `${slot.part}=${colourKey(slot.colour)}`)].join('|');
+function lineKey(path, colours, options) {
+  const colourPart = () => {
+    if (colours.length === 0) return `${path}|any`;
+    // A print that is one colour keys on just that colour, the way it always
+    // has, so carts built before parts existed keep the keys they were saved
+    // with.
+    if (colours.length === 1 && !colours[0].part) return `${path}|${colourKey(colours[0].colour)}`;
+    return [path, ...colours.map((slot) => `${slot.part}=${colourKey(slot.colour)}`)].join('|');
+  };
+  const base = colourPart();
+  // Appended only when there are choices, so a line on a print that offers none
+  // keys exactly as it did before options existed.
+  if (options.length === 0) return base;
+  return [base, ...options.map((option) => `${option.name}=${option.choice}`)].join('|');
 }
 
 /**
@@ -52,13 +62,33 @@ export function normalizeColours(colours) {
 }
 
 /**
- * Lines used to carry a single `colour`. Anything saved before parts existed is
- * lifted into the new shape rather than thrown away, so a cart left open over
- * the change still opens with everything in it.
+ * The canonical form of the made-to-order choices a line was ordered with: one
+ * entry per question that was asked, in the order it was asked. Anything without
+ * both a question and an answer is dropped rather than carried into the message.
+ */
+export function normalizeOptions(options) {
+  if (!Array.isArray(options)) return [];
+  return options
+    .map((option) => ({
+      name: typeof option?.name === 'string' ? option.name.trim() : '',
+      choice: typeof option?.choice === 'string' ? option.choice.trim() : '',
+    }))
+    .filter((option) => option.name && option.choice);
+}
+
+/**
+ * Lines used to carry a single `colour`, and lines saved before a print could
+ * offer choices carry no `options` at all. Anything older is lifted into the
+ * current shape rather than thrown away, so a cart left open over either change
+ * still opens with everything in it.
  */
 function normalizeLine(line) {
-  if (Array.isArray(line.colours)) return line;
-  const lifted = { ...line, colours: normalizeColours([{ part: null, colour: line.colour }]) };
+  const withOptions = Array.isArray(line.options) ? line : { ...line, options: [] };
+  if (Array.isArray(withOptions.colours)) return withOptions;
+  const lifted = {
+    ...withOptions,
+    colours: normalizeColours([{ part: null, colour: withOptions.colour }]),
+  };
   delete lifted.colour;
   return lifted;
 }
@@ -114,16 +144,27 @@ export function colourLabel(colour) {
 }
 
 /**
- * Add a product to the cart, or add to the quantity if that exact product in
- * those exact colours is already in it. The line keeps its own copy of the name
- * and price so the cart still reads correctly on a page that no longer has the
- * catalogue in hand; `path` is what links each line back to the live product.
+ * Add a product to the cart, or add to the quantity if that exact product, in
+ * those exact colours and built the same way, is already in it. The line keeps
+ * its own copy of the name and price so the cart still reads correctly on a page
+ * that no longer has the catalogue in hand; `path` is what links each line back
+ * to the live product.
  */
-export function addToCart({ path, name, price, categoryName, subCategoryName, photo, colours }) {
+export function addToCart({
+  path,
+  name,
+  price,
+  categoryName,
+  subCategoryName,
+  photo,
+  colours,
+  options,
+}) {
   if (!path || !name) return;
 
   const picked = normalizeColours(colours);
-  const key = lineKey(path, picked);
+  const chosen = normalizeOptions(options);
+  const key = lineKey(path, picked, chosen);
   const existing = lines.find((line) => line.key === key);
 
   if (existing) {
@@ -137,7 +178,18 @@ export function addToCart({ path, name, price, categoryName, subCategoryName, ph
 
   commit([
     ...lines,
-    { key, path, name, price, categoryName, subCategoryName, photo, colours: picked, qty: 1 },
+    {
+      key,
+      path,
+      name,
+      price,
+      categoryName,
+      subCategoryName,
+      photo,
+      colours: picked,
+      options: chosen,
+      qty: 1,
+    },
   ]);
 }
 
