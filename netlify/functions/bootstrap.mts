@@ -1,6 +1,7 @@
 import type { Config } from "@netlify/functions";
 import { buildCatalogue, ensureSeeded } from "../../server/catalogue.js";
 import { getSettings } from "../../server/settings.js";
+import { CACHE_TAGS, cacheHeaders } from "../../server/cache.js";
 
 // Single public endpoint the storefront calls on startup. The catalogue and the
 // editable site copy used to be two separate requests, which meant two cold
@@ -12,7 +13,7 @@ export default async () => {
     const [catalogue, settings] = await Promise.all([buildCatalogue(), getSettings()]);
     return Response.json(
       { catalogue, settings },
-      { headers: { "cache-control": "public, max-age=0, must-revalidate" } },
+      { headers: cacheHeaders(CACHE_TAGS.catalogue) },
     );
   } catch (err) {
     console.error("Failed to load storefront bootstrap", err);

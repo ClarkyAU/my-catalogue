@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { swatchStyle } from '../lib/filamentSwatch.js';
 import { colourLabel, MAX_COLOUR_NOTE } from '../lib/cart.js';
 
@@ -29,11 +29,48 @@ const traitsOf = (filament) =>
  * The colours on the shelf by name, plus leaving it open and plus asking for one
  * we don't stock. `note` is held by the caller so a typed request survives
  * picking something else and changing your mind.
+ *
+ * Presented as a select-only combobox: the trigger keeps keyboard focus the
+ * whole time and points at the highlighted row through aria-activedescendant,
+ * which is what lets arrow keys walk a list that is not in the tab order. The
+ * rows are still buttons so a mouse and a touch screen behave exactly as before.
  */
 function ColourSelect({ inStock, colour, note, onPick, onNote, label }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
+  const listRef = useRef(null);
+  const listId = useId();
   const custom = Boolean(colour?.custom);
+
+  // One flat list of everything that can be picked, so the keyboard only has to
+  // deal with indices and the "which row is this" logic lives in one place.
+  const choices = useMemo(
+    () => [
+      { key: 'any', name: ANY_COLOUR, swatch: null, pick: null },
+      ...inStock.map((filament) => ({
+        key: `filament-${filament.id}`,
+        name: filament.name,
+        traits: traitsOf(filament),
+        swatch: filament,
+        pick: filament,
+      })),
+      { key: 'custom', name: CUSTOM_OPTION, swatch: { custom: true }, extraClass: 'custom' },
+    ],
+    [inStock],
+  );
+
+  const selected = custom
+    ? choices.length - 1
+    : colour
+      ? Math.max(
+          0,
+          choices.findIndex((choice) => choice.swatch?.id === colour.id),
+        )
+      : 0;
+
+  // Which row the arrow keys are on. Separate from `selected`, which is what has
+  // actually been chosen — moving through the list must not change the item.
+  const [active, setActive] = useState(selected);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -53,9 +90,74 @@ function ColourSelect({ inStock, colour, note, onPick, onNote, label }) {
     };
   }, [open]);
 
+  // The list scrolls once the library is longer than the panel, so the row the
+  // arrow keys are on has to be brought into view — focus is on the trigger, so
+  // the browser will not do it.
+  useEffect(() => {
+    if (!open) return;
+    listRef.current?.children[active]?.scrollIntoView({ block: 'nearest' });
+  }, [open, active]);
+
   const choose = (picked) => {
     onPick(picked);
     setOpen(false);
+  };
+
+  const chooseIndex = (index) => {
+    const choice = choices[index];
+    // The custom row carries whatever was typed before, so switching back to it
+    // does not wipe the request.
+    choose(choice.key === 'custom' ? { custom: true, note } : choice.pick);
+  };
+
+  const openAt = (index) => {
+    setActive(index);
+    setOpen(true);
+  };
+
+  const onTriggerKeyDown = (event) => {
+    const last = choices.length - 1;
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        if (!open) openAt(selected);
+        else setActive((i) => Math.min(last, i + 1));
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        if (!open) openAt(selected);
+        else setActive((i) => Math.max(0, i - 1));
+        break;
+      case 'Home':
+        if (!open) break;
+        event.preventDefault();
+        setActive(0);
+        break;
+      case 'End':
+        if (!open) break;
+        event.preventDefault();
+        setActive(last);
+        break;
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        if (!open) openAt(selected);
+        else chooseIndex(active);
+        break;
+      case 'Escape':
+        if (open) {
+          event.preventDefault();
+          setOpen(false);
+        }
+        break;
+      case 'Tab':
+        // Leaving the control leaves the list behind; the browser handles the
+        // move itself.
+        setOpen(false);
+        break;
+      default:
+        break;
+    }
   };
 
   return (
@@ -63,10 +165,14 @@ function ColourSelect({ inStock, colour, note, onPick, onNote, label }) {
       <button
         type="button"
         className={`colour-select ${open ? 'open' : ''}`}
-        aria-haspopup="true"
+        role="combobox"
+        aria-haspopup="listbox"
+        aria-controls={listId}
         aria-expanded={open}
+        aria-activedescendant={open ? `${listId}-${active}` : undefined}
         aria-label={label ? `${label} colour` : 'Print colour'}
-        onClick={() => setOpen(!open)}
+        onClick={() => (open ? setOpen(false) : openAt(selected))}
+        onKeyDown={onTriggerKeyDown}
       >
         <ColourSwatch colour={colour} />
         <span className="colour-select-label">{colourLabel(colour) || ANY_COLOUR}</span>
@@ -76,49 +182,35 @@ function ColourSelect({ inStock, colour, note, onPick, onNote, label }) {
       </button>
 
       {open && (
-        <ul className="colour-options">
-          <li>
-            <button
-              type="button"
-              className={`colour-option ${!colour ? 'active' : ''}`}
-              aria-pressed={!colour}
-              onClick={() => choose(null)}
-            >
-              <ColourSwatch colour={null} />
-              <span className="colour-option-name">{ANY_COLOUR}</span>
-            </button>
-          </li>
-
-          {inStock.map((filament) => {
-            const traits = traitsOf(filament);
-            const active = colour?.id === filament.id;
-            return (
-              <li key={filament.id}>
-                <button
-                  type="button"
-                  className={`colour-option ${active ? 'active' : ''}`}
-                  aria-pressed={active}
-                  onClick={() => choose(filament)}
-                >
-                  <ColourSwatch colour={filament} />
-                  <span className="colour-option-name">{filament.name}</span>
-                  {traits && <span className="colour-option-traits">{traits}</span>}
-                </button>
-              </li>
-            );
-          })}
-
-          <li>
-            <button
-              type="button"
-              className={`colour-option custom ${custom ? 'active' : ''}`}
-              aria-pressed={custom}
-              onClick={() => choose({ custom: true, note })}
-            >
-              <ColourSwatch colour={{ custom: true }} />
-              <span className="colour-option-name">{CUSTOM_OPTION}</span>
-            </button>
-          </li>
+        <ul
+          className="colour-options"
+          id={listId}
+          ref={listRef}
+          role="listbox"
+          aria-label={label ? `${label} colour` : 'Print colour'}
+        >
+          {choices.map((choice, i) => (
+            // The list items are scaffolding; the buttons inside them are the
+            // options as far as assistive technology is concerned.
+            <li key={choice.key} role="presentation">
+              <button
+                type="button"
+                id={`${listId}-${i}`}
+                role="option"
+                // Out of the tab order on purpose: the trigger is the one stop
+                // for this control, and it drives the list from there.
+                tabIndex={-1}
+                aria-selected={i === selected}
+                className={`colour-option ${choice.extraClass || ''} ${i === selected ? 'active' : ''} ${i === active ? 'here' : ''}`}
+                onMouseEnter={() => setActive(i)}
+                onClick={() => chooseIndex(i)}
+              >
+                <ColourSwatch colour={choice.swatch} />
+                <span className="colour-option-name">{choice.name}</span>
+                {choice.traits && <span className="colour-option-traits">{choice.traits}</span>}
+              </button>
+            </li>
+          ))}
         </ul>
       )}
 

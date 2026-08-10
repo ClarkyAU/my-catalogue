@@ -6,9 +6,25 @@ import { CartIcon, ShareIcon } from './Icons';
 import { useFitText } from '../hooks/useFitText';
 import { loadFilaments } from '../lib/filaments.js';
 import { shareUrl } from '../lib/shareLink.js';
-import { firstPhotoUrl } from '../lib/photos.js';
+import { firstPhotoUrl, imageUrl, srcSet } from '../lib/photos.js';
 import { productParts } from '../lib/colourParts.js';
 import { addToCart } from '../lib/cart.js';
+
+// The main photo is shown "contain" inside a fixed-height frame, so only a width
+// is requested and the CDN keeps the aspect ratio. The thumbs are 100px squares.
+const MAIN_SIZE = { w: 1200 };
+const THUMB_SIZE = { w: 100, h: 100 };
+
+/**
+ * What the main photo shows, for anyone who cannot see it. The filament and
+ * texture are already captioned on screen for sighted visitors, so folding them
+ * into the alt text gives a screen reader the same information.
+ */
+function describePhoto(name, photo) {
+  const printedIn = photo?.filaments?.length ? ` printed in ${photo.filaments.join(', ')}` : '';
+  const texture = photo?.texture ? `, ${photo.texture} texture` : '';
+  return `${name}${printedIn}${texture}`;
+}
 
 // Rendered with a key of the active product slug, so switching products
 // remounts this and both the selected photo and the chosen colours reset for
@@ -38,6 +54,9 @@ export const ProductDisplay = ({
   const titleRef = useFitText(product.displayName);
 
   const currentPhoto = product.photos?.[index];
+  // Photos arrive as objects from the API, but the carried-over static data used
+  // bare URL strings, so both shapes still have to work here.
+  const mainPhotoUrl = currentPhoto?.url || currentPhoto || null;
   // The crawler-readable form of this page's URL, so a link pasted into a chat
   // previews as the product rather than the bare homepage.
   const productUrl = path ? shareUrl(path) : window.location.href;
@@ -94,11 +113,15 @@ export const ProductDisplay = ({
           {product.photos?.length > 0 ? (
             <div className="image-wrapper">
               {/* The main photo is the largest thing on this page, so it loads
-                  eagerly at high priority while the thumbs can wait. */}
+                  eagerly at high priority while the thumbs can wait. It is the
+                  content of this page rather than decoration, so unlike the
+                  grid cards — where the product name sits in the same link —
+                  it carries a real alt describing what is pictured. */}
               <img
-                src={currentPhoto?.url || currentPhoto}
+                src={imageUrl(mainPhotoUrl, MAIN_SIZE)}
+                srcSet={srcSet(mainPhotoUrl, MAIN_SIZE)}
                 className="main-img"
-                alt=""
+                alt={describePhoto(product.displayName, currentPhoto)}
                 decoding="async"
                 fetchPriority="high"
               />
@@ -129,20 +152,33 @@ export const ProductDisplay = ({
           )}
         </div>
 
-        <div className="thumb-container">
-          {product.photos?.map((img, i) => (
-            <img
-              key={i}
-              src={img.url || img}
-              onClick={() => setIndex(i)}
-              className={`thumb ${index === i ? 'active' : ''}`}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              width="100"
-              height="100"
-            />
-          ))}
+        {/* The thumbs are buttons rather than clickable images: an <img> with an
+            onClick cannot be reached or activated from the keyboard at all. */}
+        <div className="thumb-container" role="group" aria-label={`${product.displayName} photos`}>
+          {product.photos?.map((img, i) => {
+            const url = img.url || img;
+            return (
+              <button
+                key={i}
+                type="button"
+                className={`thumb-btn ${index === i ? 'active' : ''}`}
+                onClick={() => setIndex(i)}
+                aria-pressed={index === i}
+                aria-label={`Show photo ${i + 1} of ${product.photos.length}`}
+              >
+                <img
+                  src={imageUrl(url, THUMB_SIZE)}
+                  srcSet={srcSet(url, THUMB_SIZE)}
+                  className="thumb"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  width="100"
+                  height="100"
+                />
+              </button>
+            );
+          })}
         </div>
       </div>
 

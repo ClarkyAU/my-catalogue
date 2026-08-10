@@ -3,6 +3,7 @@ import { getStore } from "@netlify/blobs";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { filamentPhotos } from "../../db/schema.js";
+import { immutableAssetHeaders } from "../../server/cache.js";
 
 const FILAMENT_PHOTO_STORE = "filament-photos";
 
@@ -20,10 +21,7 @@ export default async (_req: Request, context: Context) => {
   if (!blob) return new Response("Not found", { status: 404 });
 
   return new Response(blob, {
-    headers: {
-      "content-type": pic.contentType || "application/octet-stream",
-      "cache-control": "public, max-age=31536000, immutable",
-    },
+    headers: immutableAssetHeaders(pic.contentType || "application/octet-stream"),
   });
 };
 

@@ -15,6 +15,11 @@
 
 * { box-sizing: border-box; }
 
+/* One visible focus ring for the whole portal. The inputs and buttons here mark
+   themselves with a border colour, which says nothing about where the keyboard
+   is; :focus-visible keeps the ring off mouse clicks. */
+:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+
 body {
   margin: 0;
   background: var(--bg);
@@ -54,7 +59,8 @@ body {
   font-size: 0.9rem;
   width: 100%;
 }
-.a-input:focus { outline: none; border-color: var(--accent); }
+/* Border colour is the active treatment; the focus ring above stays on top. */
+.a-input:focus { border-color: var(--accent); }
 .a-textarea { resize: vertical; line-height: 1.5; }
 .a-color { width: 46px; height: 40px; padding: 2px; border: 2px solid var(--line); background: var(--panel-2); cursor: pointer; }
 
@@ -259,7 +265,7 @@ select.a-input { cursor: pointer; }
   font-family: 'Exo 2', sans-serif; background: var(--panel-2); border: 1px solid var(--line);
   color: var(--text); padding: 5px 6px; font-size: 0.78rem; width: 100%; box-sizing: border-box;
 }
-.a-photo-input:focus { outline: none; border-color: var(--accent); }
+.a-photo-input:focus { border-color: var(--accent); }
 .a-photo-save { width: 100%; margin-top: 2px; }
 .a-mini { background: none; border: 1px solid var(--line); color: var(--muted); font-family: inherit; font-size: 0.65rem; padding: 3px; cursor: pointer; }
 .a-mini:hover { color: var(--text); border-color: var(--text); }

@@ -1,6 +1,10 @@
 import { Breadcrumb } from './Breadcrumb';
 import { PhotoPlaceholder } from './PhotoPlaceholder';
-import { firstPhotoUrl } from '../lib/photos';
+import { firstPhotoUrl, imageUrl, srcSet } from '../lib/photos';
+
+// Cards are square and render at 560px at their widest, so that is the size the
+// Image CDN is asked for rather than the full-resolution upload.
+const CARD_SIZE = { w: 560, h: 560 };
 
 export const CategoryGrid = ({ subCategory, categoryId, subCategoryId, trail = [] }) => {
   if (!subCategory || !subCategory.products) return null;
@@ -17,7 +21,15 @@ export const CategoryGrid = ({ subCategory, categoryId, subCategoryId, trail = [
             <a key={prod.id} href={`#${categoryId}/${subCategoryId}/${prod.id}`} className="grid-card">
               <div className="card-img-container">
                 {mainImg ? (
-                  <img src={mainImg} alt="" loading="lazy" decoding="async" width="560" height="560" />
+                  <img
+                    src={imageUrl(mainImg, CARD_SIZE)}
+                    srcSet={srcSet(mainImg, CARD_SIZE)}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    width="560"
+                    height="560"
+                  />
                 ) : (
                   <PhotoPlaceholder />
                 )}

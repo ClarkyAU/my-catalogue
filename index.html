@@ -6,14 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- Everything between the markers below is the site-wide default preview,
          and is swapped for product-specific tags by the social-preview edge
-         function (netlify/edge-functions/share-preview.ts) when a link-preview
-         crawler fetches a shared product link. Keep the markers intact. -->
+         function (netlify/edge-functions/share-preview.ts) on any request
+         carrying a shared product link. Keep the markers intact. The app keeps
+         the title and canonical URL in step after that (src/App.jsx), since
+         routing happens client-side and never reloads this document. -->
     <!-- social-meta:start -->
     <title>Clarky3D</title>
     <meta
       name="description"
       content="Clarky3D — made-to-order 3D prints. Browse the catalogue by category, see the filament colours in stock, and order straight through Telegram."
     />
+    <link rel="canonical" href="https://print.clarkyau.com/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Clarky3D" />
     <meta property="og:title" content="Clarky3D — made-to-order 3D prints" />
@@ -22,7 +25,18 @@
       content="Browse the catalogue by category, see the filament colours in stock, and order straight through Telegram."
     />
     <meta property="og:url" content="https://print.clarkyau.com/" />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content="https://print.clarkyau.com/og-default.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Clarky3D — made-to-order 3D prints" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Clarky3D — made-to-order 3D prints" />
+    <meta
+      name="twitter:description"
+      content="Browse the catalogue by category, see the filament colours in stock, and order straight through Telegram."
+    />
+    <meta name="twitter:image" content="https://print.clarkyau.com/og-default.jpg" />
+    <meta name="twitter:image:alt" content="Clarky3D — made-to-order 3D prints" />
     <!-- social-meta:end -->
     <!-- Fonts load from a <link> rather than a CSS @import so the browser can
          start fetching them while the stylesheet is still downloading. -->

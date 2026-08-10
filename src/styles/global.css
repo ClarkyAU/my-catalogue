@@ -14,6 +14,54 @@ body::before {
 
 body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 
+/* Every interactive thing on the site signals itself with colour, opacity or a
+   border, none of which a keyboard user can see while tabbing. One ring is
+   therefore defined here for all of them, in the page's own cream so it reads
+   against both the dark background and any category's theme colour.
+   :focus-visible rather than :focus, so clicking a button does not leave a ring
+   sitting on it afterwards. */
+:focus-visible { outline: 3px solid #F5F0E6; outline-offset: 2px; }
+
+/* Borders that ARE a control — the colour dropdown, the free-text colour field,
+   the quantity stepper, the cart's close button, the colour-library filter pills
+   — are #666 rather than the #333/#555 they started at. #666 still reads as a
+   dark border on every background the site uses, and clears the 3:1 WCAG asks of
+   the edge of a control. Decorative borders are left alone: a card frame, a
+   dashed section divider, a gallery thumbnail or the image well is not what
+   identifies the thing inside it, and brightening those would redraw the site. */
+
+/* The first stop for a keyboard user, hidden until it has focus: the header, the
+   three hub buttons and the whole catalogue menu otherwise stand between them
+   and the products. Fixed rather than absolute so it is reachable from a page
+   already scrolled down. */
+.skip-link {
+  position: fixed; top: 10px; left: 10px; z-index: 10001;
+  transform: translateY(-250%);
+  background: var(--theme-color); color: #121212; border: 2px solid #F5F0E6;
+  font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.85rem;
+  letter-spacing: 0.06em; text-decoration: none; padding: 10px 18px;
+}
+.skip-link:focus { transform: translateY(0); }
+
+/* The <main> landmark the skip link jumps to takes focus programmatically, and
+   the ring above would otherwise draw a box around the entire page. */
+main:focus { outline: none; }
+
+/* Some people get motion sickness or migraines from movement on screen, and the
+   browser can be told so. Nothing here is load-bearing — the transitions are
+   hover polish and the blinking cursor is decoration — so all of it stops.
+   The CRT scanline overlay is deliberately left alone: it is a static texture,
+   not motion, and removing it would change the look of the site rather than
+   calm it down. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* The extra room at the bottom is for the floating cart button, which is fixed
    and so sits over whatever the page ends with — without it the last row of a
    grid is clipped by the button and can't be scrolled clear of it. border-box
@@ -44,9 +92,13 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 
 .gallery-pane { flex: 1 1 450px; background: #121212; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
 .thumb-container { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; order: -1; }
-.thumb { width: 100px; height: 100px; object-fit: cover; cursor: pointer; border: 2px solid #333; opacity: 0.6; position: relative; z-index: 3; transition: opacity 0.1s ease, border-color 0.1s ease; }
-.thumb:hover { opacity: 1; }
-.thumb.active { border-color: var(--theme-color); opacity: 1; }
+/* The thumb is a button wrapping the image so it can be tabbed to and pressed
+   from the keyboard; the interactive treatment therefore lives on the button and
+   the image only handles its own sizing and cropping. */
+.thumb-btn { padding: 0; background: none; cursor: pointer; border: 2px solid #333; opacity: 0.6; line-height: 0; position: relative; z-index: 3; transition: opacity 0.1s ease, border-color 0.1s ease; }
+.thumb-btn:hover { opacity: 1; }
+.thumb-btn.active { border-color: var(--theme-color); opacity: 1; }
+.thumb { width: 100px; height: 100px; object-fit: cover; display: block; }
 
 .main-image-container { width: 100%; background: #0A0A0A; height: 650px; border: 2px solid #333; overflow: hidden; display: flex; flex-direction: column; position: relative; z-index: 3; }
 .image-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
@@ -94,7 +146,7 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 .colour-select {
   display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px;
   cursor: pointer; text-align: left; box-sizing: border-box;
-  background: #0A0A0A; border: 2px solid #333; transition: border-color 0.1s ease;
+  background: #0A0A0A; border: 2px solid #666; transition: border-color 0.1s ease;
   font-family: 'Exo 2', sans-serif; font-size: 0.95rem; color: #F5F0E6;
 }
 .colour-select:hover { border-color: #F5F0E6; }
@@ -117,6 +169,10 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
   font-family: 'Exo 2', sans-serif; font-size: 0.9rem; color: #F5F0E6;
 }
 .colour-option:hover { background: #1A1A1A; }
+/* The row the arrow keys are on. Focus stays on the trigger button while the
+   list is open (see ColourPicker.jsx), so without this there is nothing on
+   screen to say which colour Enter would pick. */
+.colour-option.here { background: #1A1A1A; outline: 2px solid var(--theme-color); outline-offset: -2px; }
 .colour-option.active { color: var(--theme-color); }
 .colour-option-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Material and finish are what separate two colours with similar names. */
@@ -128,10 +184,14 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 .colour-custom-label { font-family: 'Exo 2', sans-serif; font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.06em; }
 .colour-custom-input {
   font-family: 'Exo 2', sans-serif; font-size: 0.95rem; color: #F5F0E6;
-  background: #0A0A0A; border: 2px solid #333; padding: 9px 12px; width: 100%; box-sizing: border-box;
+  background: #0A0A0A; border: 2px solid #666; padding: 9px 12px; width: 100%; box-sizing: border-box;
 }
-.colour-custom-input::placeholder { color: #555; }
-.colour-custom-input:focus { outline: none; border-color: var(--theme-color); }
+/* Dimmer than the value typed in, but still legible against the near-black
+   field — #555 on #0A0A0A was under 3:1. */
+.colour-custom-input::placeholder { color: #888; }
+/* The theme-coloured border is the hover/active treatment; the focus ring is
+   what tells a keyboard user where they are, so it stays. */
+.colour-custom-input:focus { border-color: var(--theme-color); }
 
 /* The small square standing in for a colour wherever one is shown: in the
    dropdown, on the button, and on cart lines. */
@@ -319,7 +379,7 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 }
 .cart-close {
   flex: 0 0 auto; width: 38px; height: 38px; cursor: pointer;
-  background: transparent; border: 2px solid #333; color: #F5F0E6;
+  background: transparent; border: 2px solid #666; color: #F5F0E6;
   font-size: 1.1rem; line-height: 1; transition: all 0.1s ease;
 }
 .cart-close:hover { background: #ff5c5c; border-color: #ff5c5c; color: #121212; }
@@ -371,7 +431,7 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 .cart-line-price { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 1rem; color: var(--theme-color); white-space: nowrap; }
 .cart-line-price.to-price { font-size: 0.7rem; color: #888; letter-spacing: 1px; }
 
-.qty-stepper { display: flex; align-items: stretch; border: 2px solid #333; }
+.qty-stepper { display: flex; align-items: stretch; border: 2px solid #666; }
 .qty-stepper button {
   width: 30px; cursor: pointer; background: #121212; border: none; color: var(--theme-color);
   font-family: 'Exo 2', sans-serif; font-size: 1.1rem; font-weight: 700; line-height: 1; padding: 0;
@@ -396,6 +456,9 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 .cart-total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .cart-total-label { font-family: 'Exo 2', sans-serif; font-size: 0.78rem; color: #888; text-transform: uppercase; letter-spacing: 0.08em; }
 .cart-total-value { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 1.6rem; color: var(--theme-color); }
+/* Sits beside the total without competing with it — the amount is what matters,
+   the currency is only there so nobody has to ask. */
+.cart-total-currency { font-size: 0.78rem; font-weight: 400; color: #888; letter-spacing: 0.08em; }
 /* Sits tight under the total (hence the pulled-up margin) so the two read as
    one block of money rather than a total and an unrelated remark. */
 .cart-shipping {
@@ -443,7 +506,7 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 }
 .breadcrumb-link:hover { border-bottom-color: var(--theme-color); }
 .breadcrumb-current { color: #F5F0E6; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
-.breadcrumb-sep { color: #555; }
+.breadcrumb-sep { color: #888; }
 
 .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; width: 100%; justify-content: center; }
 .grid-card { background: #1A1A1A; border: 3px solid #333; display: flex; flex-direction: column; text-decoration: none; color: #F5F0E6; transition: all 0.2s ease; box-shadow: 6px 6px 0px #000; }
@@ -521,7 +584,7 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
 .filter-pills { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
 .filter-pill {
   font-family: 'Exo 2', sans-serif; font-weight: 600; font-size: 0.75rem; cursor: pointer;
-  background: transparent; border: 2px solid #555; color: #F5F0E6; padding: 6px 14px;
+  background: transparent; border: 2px solid #666; color: #F5F0E6; padding: 6px 14px;
   text-transform: uppercase; letter-spacing: 1px; transition: all 0.1s ease;
 }
 .filter-pill:hover { border-color: var(--theme-color); color: var(--theme-color); }

@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# The admin portal is behind Netlify Identity, but there is no reason to spend
+# crawl budget on a login screen or to have it turn up in a search result.
+Disallow: /admin
+Disallow: /admin.html
+Disallow: /api/admin
+
+Sitemap: https://print.clarkyau.com/sitemap.xml

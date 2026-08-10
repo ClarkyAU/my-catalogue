@@ -1,0 +1,70 @@
+<!-- Source for public/og-default.jpg, the link-preview card used for the site
+     itself and for any product that has no photo yet. Kept here so the card can
+     be re-rendered rather than re-drawn: it is not imported by the app and is
+     not part of the build.
+
+     Regenerate with:
+       rsvg-convert -w 1200 -h 630 design/og-default.svg -o /tmp/og.png
+       convert /tmp/og.png -background '#121212' -flatten -quality 88 public/og-default.jpg
+
+     The type is set in DejaVu Sans Mono rather than the site's Press Start 2P
+     and Exo 2, which are loaded from Google Fonts at runtime and so are not
+     available to the renderer. Colours, the hard offset shadows and the CRT
+     scanline overlay all match src/styles/global.css.
+
+     Text positions are absolute because the two-tone wordmark needs each half
+     placed exactly, and a renderer-measured layout would drift with the font. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <!-- Matches .app-container's repeating-linear-gradient: two transparent
+         rows then two at 20% black. -->
+    <pattern id="scanlines" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect x="0" y="2" width="4" height="2" fill="#000000" opacity="0.2" />
+    </pattern>
+    <!-- The faint RGB column tint the CRT overlay adds on top of the scanlines. -->
+    <linearGradient id="rgb" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff0000" stop-opacity="0.06" />
+      <stop offset="0.5" stop-color="#00ff00" stop-opacity="0.02" />
+      <stop offset="1" stop-color="#0000ff" stop-opacity="0.06" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="#121212" />
+  <rect width="1200" height="630" fill="url(#rgb)" />
+
+  <!-- Card frame, following .product-card: solid cyan border over a slightly
+       lifted panel, with a hard black offset shadow behind it. -->
+  <rect x="52" y="46" width="1120" height="550" fill="#000000" />
+  <rect x="40" y="34" width="1120" height="550" fill="#1a1a1a" stroke="#00e5ff" stroke-width="4" />
+
+  <rect width="1200" height="630" fill="url(#scanlines)" />
+
+  <g font-family="DejaVu Sans Mono" font-weight="bold" text-rendering="geometricPrecision">
+    <!-- Wordmark. Drawn three times for the site header's 4px black / 8px grey
+         offset shadows, back to front. DejaVu Sans Mono advances 0.6022em per
+         character, which is what the x offsets below are measured from. -->
+    <g font-size="132">
+      <text x="290" y="308" fill="#888888">CLARKY</text>
+      <text x="767" y="308" fill="#888888">3D</text>
+      <text x="286" y="304" fill="#000000">CLARKY</text>
+      <text x="763" y="304" fill="#000000">3D</text>
+      <text x="282" y="300" fill="#f5f0e6">CLARKY</text>
+      <text x="759" y="300" fill="#00e5ff">3D</text>
+    </g>
+
+    <!-- Cyan rule, echoing the dashed dividers used through the storefront. -->
+    <line x1="282" y1="350" x2="918" y2="350" stroke="#00e5ff" stroke-width="4" />
+
+    <text x="600" y="418" font-size="40" fill="#f5f0e6" text-anchor="middle" letter-spacing="2">
+      MADE-TO-ORDER 3D PRINTS
+    </text>
+
+    <text x="600" y="482" font-size="24" fill="#888888" text-anchor="middle" letter-spacing="2">
+      BROWSE THE CATALOGUE &#183; ORDER VIA TELEGRAM
+    </text>
+
+    <text x="600" y="526" font-size="24" fill="#00e5ff" text-anchor="middle" letter-spacing="2">
+      print.clarkyau.com
+    </text>
+  </g>
+</svg>

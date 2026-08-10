@@ -1,8 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { CartIcon, TelegramIcon } from './Icons';
 import { ANY_COLOUR, ColourSwatch } from './ColourPicker';
 import { cartLink, TELEGRAM_URL } from '../lib/telegram.js';
 import { cartTotal, clearCart, colourLabel, money, removeLine, setQty, useCart } from '../lib/cart.js';
+import { imageUrl, srcSet } from '../lib/photos.js';
+import { useFocusTrap } from '../hooks/useFocusTrap.js';
+
+// Cart thumbnails are 72px squares (60px on a narrow screen), so they are
+// fetched at that size instead of pulling the full-resolution upload.
+const THUMB_SIZE = { w: 72, h: 72 };
 
 // The cart, as a panel over the storefront rather than a page of its own, so
 // nobody loses their place in the catalogue while checking what they have
@@ -11,7 +17,9 @@ import { cartTotal, clearCart, colourLabel, money, removeLine, setQty, useCart }
 export const CartPanel = ({ open, onClose }) => {
   const cart = useCart();
   const { total, unpriced, priced } = cartTotal(cart);
-  const closeRef = useRef(null);
+  // Focus starts on the close button (the panel's first control) and goes back
+  // to the cart button when the panel closes.
+  const panelRef = useFocusTrap(open);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -24,7 +32,6 @@ export const CartPanel = ({ open, onClose }) => {
     // The catalogue behind the panel should not scroll under it.
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    closeRef.current?.focus();
 
     return () => {
       document.removeEventListener('keydown', onKey);
@@ -39,6 +46,8 @@ export const CartPanel = ({ open, onClose }) => {
       {/* Clicks inside the panel are the panel's own business. */}
       <aside
         className="cart-panel"
+        ref={panelRef}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label="Your cart"
@@ -48,7 +57,7 @@ export const CartPanel = ({ open, onClose }) => {
           <h2 className="cart-title">
             <CartIcon /> YOUR CART
           </h2>
-          <button ref={closeRef} className="cart-close" onClick={onClose} aria-label="Close cart">
+          <button className="cart-close" onClick={onClose} aria-label="Close cart">
             ✕
           </button>
         </header>
@@ -81,7 +90,13 @@ export const CartPanel = ({ open, onClose }) => {
                   <li key={line.key} className="cart-line">
                     <a className="cart-line-thumb" href={`#${line.path}`} onClick={onClose}>
                       {line.photo ? (
-                        <img src={line.photo} alt="" loading="lazy" decoding="async" />
+                        <img
+                          src={imageUrl(line.photo, THUMB_SIZE)}
+                          srcSet={srcSet(line.photo, THUMB_SIZE)}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                        />
                       ) : (
                         <span className="cart-line-thumb-ph">▢</span>
                       )}
@@ -141,7 +156,20 @@ export const CartPanel = ({ open, onClose }) => {
             <footer className="cart-foot">
               <div className="cart-total">
                 <span className="cart-total-label">{unpriced ? 'TOTAL SO FAR' : 'TOTAL'}</span>
-                <span className="cart-total-value">{priced ? money(total) : 'TO CONFIRM'}</span>
+                {/* The only place on the site that names the currency. Prices
+                    are quoted in Australian dollars everywhere, but this is the
+                    figure someone is about to act on, so it is the one place
+                    worth being explicit — and it stays off "TO CONFIRM", which
+                    is not an amount. */}
+                <span className="cart-total-value">
+                  {priced ? (
+                    <>
+                      {money(total)} <span className="cart-total-currency">AUD</span>
+                    </>
+                  ) : (
+                    'TO CONFIRM'
+                  )}
+                </span>
               </div>
               {/* Postage depends on where it is going and how big the box ends
                   up, so the total above is for the prints only. */}
