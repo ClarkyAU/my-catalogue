@@ -6,7 +6,7 @@ import { useCallback, useState, useRef, useEffect } from 'react';
 // the name navigates to the category, and the caret expands/collapses its
 // sub-categories. Keeping expand on an explicit control (rather than hover) means
 // it works the same with a mouse or a single tap on touch devices.
-export const CascadeMenu = ({ catalogue, navigateTo }) => {
+export const CascadeMenu = ({ catalogue, navigateTo, active = false }) => {
   const [open, setOpen] = useState(false);
   const [activeCat, setActiveCat] = useState(null);
   const wrapRef = useRef(null);
@@ -54,7 +54,8 @@ export const CascadeMenu = ({ catalogue, navigateTo }) => {
     <div className="cascade-wrap" ref={wrapRef}>
       <button
         ref={triggerRef}
-        className={`nav-btn hub-btn ${open ? 'active' : ''}`}
+        type="button"
+        className={`nav-btn ${open || active ? 'active' : ''}`}
         onClick={() => {
           setOpen((o) => !o);
           setActiveCat(null);
@@ -62,7 +63,7 @@ export const CascadeMenu = ({ catalogue, navigateTo }) => {
         aria-haspopup="true"
         aria-expanded={open}
       >
-        [ MY CATALOGUE ]
+        Catalogue <span aria-hidden="true">▾</span>
       </button>
 
       {open && (

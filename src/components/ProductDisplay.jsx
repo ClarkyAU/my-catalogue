@@ -4,18 +4,20 @@ import { PhotoPlaceholder } from './PhotoPlaceholder';
 import { ColourPicker } from './ColourPicker';
 import { OptionPicker } from './OptionPicker';
 import { CartIcon, ShareIcon } from './Icons';
-import { useFitText } from '../hooks/useFitText';
 import { loadFilaments } from '../lib/filaments.js';
 import { shareUrl } from '../lib/shareLink.js';
 import { firstPhotoUrl, imageUrl, srcSet } from '../lib/photos.js';
 import { productParts } from '../lib/colourParts.js';
 import { defaultSelections, productOptions } from '../lib/productOptions.js';
 import { addToCart } from '../lib/cart.js';
+import { TELEGRAM_URL } from '../lib/telegram.js';
 
-// The main photo is shown "contain" inside a fixed-height frame, so only a width
-// is requested and the CDN keeps the aspect ratio. The thumbs are 100px squares.
+// The main photo is shown "contain" inside a square frame, so only a width is
+// requested and the CDN keeps the aspect ratio. The thumbs are 100px squares,
+// and the related cards below are the same square cards used everywhere else.
 const MAIN_SIZE = { w: 1200 };
 const THUMB_SIZE = { w: 100, h: 100 };
+const CARD_SIZE = { w: 560, h: 560 };
 
 /**
  * What the main photo shows, for anyone who cannot see it. The filament and
@@ -37,6 +39,9 @@ export const ProductDisplay = ({
   path,
   categoryName,
   subCategoryName,
+  categoryHref,
+  subCategoryHref,
+  related = { items: [], scope: null },
 }) => {
   const [index, setIndex] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -57,8 +62,6 @@ export const ProductDisplay = ({
   // so there is always something concrete to put on the order.
   const options = useMemo(() => productOptions(product), [product]);
   const [selections, setSelections] = useState(() => defaultSelections(options));
-  // Long product names shrink to fit rather than wrapping into the price.
-  const titleRef = useFitText(product.displayName);
 
   const currentPhoto = product.photos?.[index];
   // Photos arrive as objects from the API, but the carried-over static data used
@@ -114,111 +117,202 @@ export const ProductDisplay = ({
 
   return (
     <>
-      <Breadcrumb trail={trail} />
-      <div className="product-card">
-      <div className="gallery-pane">
-        <div className="main-image-container">
-          {product.photos?.length > 0 ? (
-            <div className="image-wrapper">
-              {/* The main photo is the largest thing on this page, so it loads
-                  eagerly at high priority while the thumbs can wait. It is the
-                  content of this page rather than decoration, so unlike the
-                  grid cards — where the product name sits in the same link —
-                  it carries a real alt describing what is pictured. */}
-              <img
-                src={imageUrl(mainPhotoUrl, MAIN_SIZE)}
-                srcSet={srcSet(mainPhotoUrl, MAIN_SIZE)}
-                className="main-img"
-                alt={describePhoto(product.displayName, currentPhoto)}
-                decoding="async"
-                fetchPriority="high"
-              />
+      {/* The trail and the share action share one row above the panels, so the
+          panels themselves start clean at the top of the split. */}
+      <div className="crumb-row">
+        <Breadcrumb trail={trail} />
+        <button type="button" className="share-btn small" onClick={handleShare}>
+          <ShareIcon />
+          {copied ? 'Link copied' : 'Share'}
+        </button>
+      </div>
 
-              {(currentPhoto?.filaments || currentPhoto?.texture) && (
-                <div className="image-caption">
-                  {currentPhoto.filaments && (
-                    <span className="caption-line">
-                      <span className="caption-label">Printed with - </span>
-                      <span className="filament-list">
-                        {currentPhoto.filaments.join(', ').toUpperCase()}
+      {/* Two independent columns rather than one welded card: the gallery is its
+          own box, and every question the detail column asks is its own box too,
+          so each reads as a separate thing to answer. */}
+      <div className="split">
+
+        <div className="panel gallery">
+          <div className="main-image-container">
+            {product.photos?.length > 0 ? (
+              <div className="image-wrapper">
+                {/* The main photo is the largest thing on this page, so it loads
+                    eagerly at high priority while the thumbs can wait. It is the
+                    content of this page rather than decoration, so unlike the
+                    grid cards — where the product name sits in the same link —
+                    it carries a real alt describing what is pictured. */}
+                <img
+                  src={imageUrl(mainPhotoUrl, MAIN_SIZE)}
+                  srcSet={srcSet(mainPhotoUrl, MAIN_SIZE)}
+                  className="main-img"
+                  alt={describePhoto(product.displayName, currentPhoto)}
+                  decoding="async"
+                  fetchPriority="high"
+                />
+
+                {(currentPhoto?.filaments || currentPhoto?.texture) && (
+                  <div className="image-caption">
+                    {currentPhoto.filaments && (
+                      <span className="caption-line">
+                        <span className="caption-label">Printed with</span>
+                        <span className="filament-list">
+                          {currentPhoto.filaments.join(', ')}
+                        </span>
                       </span>
-                    </span>
-                  )}
-                  {currentPhoto.texture && (
-                    <span className="caption-line">
-                      <span className="caption-label">Surface Texture - </span>
-                      <span className="texture-tag">
-                        {currentPhoto.texture.toUpperCase()}
+                    )}
+                    {currentPhoto.texture && (
+                      <span className="caption-line">
+                        <span className="caption-label">Surface texture</span>
+                        <span className="texture-tag">{currentPhoto.texture}</span>
                       </span>
-                    </span>
-                  )}
-                </div>
-              )}
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <PhotoPlaceholder />
+            )}
+          </div>
+
+          {/* The thumbs are buttons rather than clickable images: an <img> with an
+              onClick cannot be reached or activated from the keyboard at all. */}
+          {product.photos?.length > 1 && (
+            <div className="thumb-row" role="group" aria-label={`${product.displayName} photos`}>
+              {product.photos.map((img, i) => {
+                const url = img.url || img;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    className={`thumb-btn ${index === i ? 'active' : ''}`}
+                    onClick={() => setIndex(i)}
+                    aria-pressed={index === i}
+                    aria-label={`Show photo ${i + 1} of ${product.photos.length}`}
+                  >
+                    <img
+                      src={imageUrl(url, THUMB_SIZE)}
+                      srcSet={srcSet(url, THUMB_SIZE)}
+                      className="thumb"
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      width="100"
+                      height="100"
+                    />
+                  </button>
+                );
+              })}
             </div>
-          ) : (
-            <PhotoPlaceholder />
           )}
         </div>
 
-        {/* The thumbs are buttons rather than clickable images: an <img> with an
-            onClick cannot be reached or activated from the keyboard at all. */}
-        <div className="thumb-container" role="group" aria-label={`${product.displayName} photos`}>
-          {product.photos?.map((img, i) => {
-            const url = img.url || img;
-            return (
-              <button
-                key={i}
-                type="button"
-                className={`thumb-btn ${index === i ? 'active' : ''}`}
-                onClick={() => setIndex(i)}
-                aria-pressed={index === i}
-                aria-label={`Show photo ${i + 1} of ${product.photos.length}`}
-              >
-                <img
-                  src={imageUrl(url, THUMB_SIZE)}
-                  srcSet={srcSet(url, THUMB_SIZE)}
-                  className="thumb"
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  width="100"
-                  height="100"
-                />
-              </button>
-            );
-          })}
+        <div className="stack">
+
+          <div className="panel">
+            <h2 className="product-title">{product.displayName}</h2>
+            {product.price && product.price !== '0.00' && (
+              <p className="price-tag">${product.price}</p>
+            )}
+            {/* Nothing here is held in stock as a finished item — it is printed
+                once ordered, which is the single most useful thing to know
+                before choosing a colour. */}
+            <div className="head-meta">
+              <span className="made-to-order">Made to order</span>
+            </div>
+          </div>
+
+          {product.description && (
+            <div className="panel">
+              <div className="panel-head">
+                <span className="panel-label">ABOUT THIS PRINT</span>
+              </div>
+              <div className="description-box">{product.description}</div>
+            </div>
+          )}
+
+          {/* Asked before colour: which version of the print it is decides what
+              there is to colour in the first place. */}
+          {options.length > 0 && (
+            <OptionPicker options={options} value={selections} onChange={setSelections} />
+          )}
+
+          {/* Always shown, even with nothing on the shelf, because the request for
+              a colour we don't carry is exactly the case that needs asking. */}
+          <ColourPicker parts={parts} inStock={inStock} value={colours} onChange={setColours} />
+
+          <div className="panel">
+            <button className="order-btn wide" onClick={handleAdd}>
+              <CartIcon />
+              {added ? 'Added to cart' : 'Add to cart'}
+            </button>
+            <div className="foot-links">
+              <span>Need something different, or a colour that is not listed?</span>
+              <a href={TELEGRAM_URL} target="_blank" rel="noreferrer">
+                Message Clarky →
+              </a>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <div className="details-pane">
-        <h2 className="product-title" ref={titleRef}>{product.displayName}</h2>
-        {product.price && product.price !== "0.00" && (
-          <div className="price-tag">${product.price}</div>
-        )}
-        <div className="description-box">{product.description}</div>
-
-        {/* Asked before colour: which version of the print it is decides what
-            there is to colour in the first place. */}
-        {options.length > 0 && (
-          <OptionPicker options={options} value={selections} onChange={setSelections} />
-        )}
-
-        {/* Always shown, even with nothing on the shelf, because the request for
-            a colour we don't carry is exactly the case that needs asking. */}
-        <ColourPicker parts={parts} inStock={inStock} value={colours} onChange={setColours} />
-
-        <div className="product-actions">
-          <button className="order-btn" onClick={handleAdd}>
-            <CartIcon />
-            {added ? 'ADDED TO CART' : 'ADD TO CART'}
-          </button>
-          <button className="share-btn" onClick={handleShare}>
-            <ShareIcon />
-            {copied ? 'LINK COPIED' : 'SHARE'}
-          </button>
-        </div>
-      </div>
-    </div>
+      {related.items.length > 0 && (
+        // The row is capped at what the same shelf holds, and only widens to the
+        // rest of the category when that shelf is nearly empty — so the heading
+        // names whichever of the two the row actually came from rather than
+        // claiming more kinship than there is.
+        <section className="strip related-strip">
+          <h3 className="sub-head">
+            <a
+              className="sub-head-name"
+              href={related.scope === 'sub' ? subCategoryHref : categoryHref}
+            >
+              More from {related.scope === 'sub' ? subCategoryName : categoryName}
+              <span className="sub-head-arrow" aria-hidden="true">→</span>
+            </a>
+          </h3>
+          <div className="product-grid">
+            {related.items.map(({ key, product: item, href, subName }) => {
+              const img = firstPhotoUrl(item);
+              return (
+                // Nothing scrolls the page on a route change, and this sits at
+                // the very bottom of it — without this the next product would
+                // open already scrolled past its own photo.
+                <a key={key} href={href} className="grid-card" onClick={() => window.scrollTo(0, 0)}>
+                  <div className="card-img-container">
+                    {img ? (
+                      <img
+                        src={imageUrl(img, CARD_SIZE)}
+                        srcSet={srcSet(img, CARD_SIZE)}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        width="560"
+                        height="560"
+                      />
+                    ) : (
+                      <PhotoPlaceholder />
+                    )}
+                  </div>
+                  <div className="card-details">
+                    <h4 className="card-name">{item.displayName}</h4>
+                    <div className="card-meta">
+                      {item.price && item.price !== '0.00' && (
+                        <span className="card-price">${item.price}</span>
+                      )}
+                      {/* Only worth saying when the row reached outside this
+                          product's own section. */}
+                      {related.scope === 'category' && (
+                        <span className="card-category">{subName}</span>
+                      )}
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </>
   );
 };

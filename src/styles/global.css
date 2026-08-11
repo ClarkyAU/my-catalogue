@@ -2,7 +2,55 @@
    @import blocks on the stylesheet parsing before it can even start. */
 @import './watermark.css';
 
-:root { --theme-color: #00E5FF; }
+/* ============================================================================
+   TOKENS
+
+   Every colour and face below was previously written out as a literal, sixty-odd
+   times each, which is what made "change the theme" an expensive question. They
+   are named here instead; the rest of the file only refers to the names.
+
+   --theme-color is set per category on .app-container from the admin portal.
+   --on-accent is derived from it at runtime (src/lib/onAccent.js): anything
+   filled with the accent picks its ink from the accent's luminance, so a dark
+   category colour no longer puts near-black text on a near-black fill.
+
+   TYPE — three jobs, three faces, and the pixel one stays small:
+
+     --pixel   wordmark, section eyebrows, panel labels, the NEW/POPULAR marks.
+               Never above 0.65rem outside the wordmark, and never a sentence.
+               At that size it reads as texture rather than as a game menu.
+     --mono    the interface: nav, buttons, prices, breadcrumb, captions, field
+               labels, counters. This is what carries the retro feel now.
+     --body    anything you actually read — titles, card names, description copy.
+   ============================================================================ */
+:root {
+  --theme-color: #00E5FF;
+  --on-accent: #121212;
+
+  --bg: #121212;
+  --surface: #1A1A1A;
+  --sunken: #0A0A0A;
+  --inset: #050505;
+
+  --ink: #F5F0E6;
+  --muted: #888;
+
+  /* Decorative rules and frames. */
+  --line: #333;
+  /* Borders that ARE a control — the colour dropdown, the free-text colour
+     field, the quantity stepper, the cart's close button, the filter pills.
+     Lighter than --line on purpose: this one has to clear the 3:1 WCAG asks of
+     the edge of a control, where a card frame or a section divider does not. */
+  --line-strong: #666;
+
+  --ok: #33FF00;
+  --warn: #FFB800;
+  --danger: #ff5c5c;
+
+  --pixel: 'Press Start 2P', cursive;
+  --mono: 'Space Mono', monospace;
+  --body: 'Exo 2', sans-serif;
+}
 
 /* CRT scanline + RGB overlay. Sits BEHIND page content (z-index: -1) so it only
    shows through the background and never washes over text or cards. */
@@ -12,7 +60,7 @@ body::before {
   z-index: -1; background-size: 100% 2px, 3px 100%; pointer-events: none;
 }
 
-body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
+body { margin: 0; background-color: var(--bg); font-family: var(--body); }
 
 /* Every interactive thing on the site signals itself with colour, opacity or a
    border, none of which a keyboard user can see while tabbing. One ring is
@@ -20,32 +68,26 @@ body { margin: 0; background-color: #121212; font-family: 'Exo 2', sans-serif; }
    against both the dark background and any category's theme colour.
    :focus-visible rather than :focus, so clicking a button does not leave a ring
    sitting on it afterwards. */
-:focus-visible { outline: 3px solid #F5F0E6; outline-offset: 2px; }
-
-/* Borders that ARE a control — the colour dropdown, the free-text colour field,
-   the quantity stepper, the cart's close button, the colour-library filter pills
-   — are #666 rather than the #333/#555 they started at. #666 still reads as a
-   dark border on every background the site uses, and clears the 3:1 WCAG asks of
-   the edge of a control. Decorative borders are left alone: a card frame, a
-   dashed section divider, a gallery thumbnail or the image well is not what
-   identifies the thing inside it, and brightening those would redraw the site. */
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 
 /* The first stop for a keyboard user, hidden until it has focus: the header, the
-   three hub buttons and the whole catalogue menu otherwise stand between them
+   three nav buttons and the whole catalogue menu otherwise stand between them
    and the products. Fixed rather than absolute so it is reachable from a page
    already scrolled down. */
 .skip-link {
   position: fixed; top: 10px; left: 10px; z-index: 10001;
   transform: translateY(-250%);
-  background: var(--theme-color); color: #121212; border: 2px solid #F5F0E6;
-  font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.85rem;
-  letter-spacing: 0.06em; text-decoration: none; padding: 10px 18px;
+  background: var(--theme-color); color: var(--on-accent); border: 2px solid var(--ink);
+  font-family: var(--mono); font-weight: 700; font-size: 0.8rem;
+  letter-spacing: 1px; text-transform: uppercase; text-decoration: none; padding: 10px 18px;
 }
 .skip-link:focus { transform: translateY(0); }
 
 /* The <main> landmark the skip link jumps to takes focus programmatically, and
-   the ring above would otherwise draw a box around the entire page. */
+   the ring above would otherwise draw a box around the entire page. The margin
+   keeps the sticky bar from covering the top of it when focus scrolls there. */
 main:focus { outline: none; }
+main { scroll-margin-top: 96px; }
 
 /* Some people get motion sickness or migraines from movement on screen, and the
    browser can be told so. Nothing here is load-bearing — the transitions are
@@ -62,62 +104,114 @@ main:focus { outline: none; }
   }
 }
 
-/* The extra room at the bottom is for the floating cart button, which is fixed
-   and so sits over whatever the page ends with — without it the last row of a
-   grid is clipped by the button and can't be scrolled clear of it. border-box
-   keeps that padding inside the 100vh, so a short page still doesn't scroll. */
 .app-container {
   min-height: 100vh; box-sizing: border-box;
-  color: #F5F0E6; width: 100%; padding: 40px 0 130px; display: flex; flex-direction: column;
+  color: var(--ink); width: 100%; padding: 0 0 90px; display: flex; flex-direction: column;
   background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.2) 2px, rgba(0,0,0,0.2) 4px);
 }
 
 .main-wrapper { width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }
 
-.site-header { text-align: center; margin-bottom: 40px; }
-.site-header h1 { font-family: 'Press Start 2P', cursive; font-size: clamp(2.5rem, 8vw, 6rem); margin: 0; line-height: 1; text-shadow: 4px 4px 0px #000, 8px 8px 0px #888; }
-.site-header h1 span { color: var(--theme-color); }
+/* ============================================================================
+   HEADER — wordmark left, nav and cart right, a rule underneath.
 
-.nav-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
-.nav-row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 25px; }
+   The bar sticks to the top of the window, which is what lets the cart live in
+   it: the cart used to be a floating button so it was always one tap away, and
+   a sticky bar keeps that promise without parking a control on top of the page
+   the customer is reading.
+   ============================================================================ */
+.site-header {
+  position: sticky; top: 0; z-index: 9000;
+  background: var(--bg); border-bottom: 2px solid var(--line);
+}
+.header-inner {
+  width: 100%; max-width: 1400px; margin: 0 auto; padding: 16px 20px; box-sizing: border-box;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
+}
+
+/* The one place the pixel face runs at any size. */
+.wordmark {
+  font-family: var(--pixel); font-size: clamp(0.95rem, 2.2vw, 1.3rem);
+  line-height: 1; color: var(--ink); text-decoration: none; text-shadow: 3px 3px 0px #000;
+}
+.wordmark span { color: var(--theme-color); }
+
+.topnav { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 
 .nav-btn {
-  font-family: 'Exo 2', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.1s ease; background: transparent;
-  border: 2px solid var(--theme-color); color: var(--theme-color); padding: 6px 15px;
+  font-family: var(--mono); font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.1s ease;
+  background: transparent; border: 2px solid var(--line); color: var(--ink); padding: 7px 14px;
 }
-.nav-btn.category { padding: 10px 25px; border-width: 3px; border-color: #F5F0E6; color: #F5F0E6; font-size: clamp(0.8rem, 2vw, 1.2rem); box-shadow: 3px 3px 0px var(--theme-color); }
-.nav-btn.active { background-color: var(--theme-color); color: #121212; border-color: #F5F0E6; }
+.nav-btn:hover { border-color: var(--theme-color); color: var(--theme-color); }
+.nav-btn.active { border-color: var(--theme-color); color: var(--theme-color); box-shadow: 3px 3px 0px #000; }
 
-.product-card { display: flex; flex-wrap: wrap; background: #1A1A1A; border: 4px solid var(--theme-color); box-shadow: 12px 12px 0px #000; align-items: stretch; }
+/* The one filled control in the bar, because it is the one that leads to an
+   order rather than to another page. */
+.cart-btn {
+  display: inline-flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.1s ease;
+  font-family: var(--mono); font-weight: 700; font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase;
+  background: var(--surface); border: 2px solid var(--theme-color); color: var(--theme-color);
+  padding: 7px 14px; box-shadow: 4px 4px 0px #000;
+}
+.cart-btn:hover { box-shadow: 6px 6px 0px #000; }
+.cart-btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0px #000; }
+.cart-count {
+  min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box;
+  background: var(--theme-color); color: var(--on-accent); border: 2px solid #000;
+  font-family: var(--mono); font-size: 0.72rem; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
 
-.gallery-pane { flex: 1 1 450px; background: #121212; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-.thumb-container { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; order: -1; }
-/* The thumb is a button wrapping the image so it can be tabbed to and pressed
-   from the keyboard; the interactive treatment therefore lives on the button and
-   the image only handles its own sizing and cropping. */
-.thumb-btn { padding: 0; background: none; cursor: pointer; border: 2px solid #333; opacity: 0.6; line-height: 0; position: relative; z-index: 3; transition: opacity 0.1s ease, border-color 0.1s ease; }
-.thumb-btn:hover { opacity: 1; }
-.thumb-btn.active { border-color: var(--theme-color); opacity: 1; }
-.thumb { width: 100px; height: 100px; object-fit: cover; display: block; }
+/* ============================================================================
+   HEADINGS
+   ============================================================================ */
+.page-title {
+  font-family: var(--body); font-weight: 700; font-size: clamp(1.9rem, 4.4vw, 3rem);
+  color: var(--theme-color); margin: 0 0 34px; text-shadow: 3px 3px 0px #000; text-align: center;
+}
 
-.main-image-container { width: 100%; background: #0A0A0A; height: 650px; border: 2px solid #333; overflow: hidden; display: flex; flex-direction: column; position: relative; z-index: 3; }
-.image-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: space-between; }
-.main-img { width: 100%; flex-grow: 1; max-height: calc(100% - 70px); object-fit: contain; padding: 15px; box-sizing: border-box; }
+/* Small pixel eyebrow over a hairline rule, with its count pushed to the right.
+   Outside the wordmark this is the only place the pixel face does structural
+   work, and it stays at 0.65rem. */
+.strip { margin-bottom: 56px; }
+.strip:last-child { margin-bottom: 0; }
+.strip-title {
+  font-family: var(--pixel); font-size: 0.65rem; letter-spacing: 1px; line-height: 1.6;
+  margin: 0 0 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  border-bottom: 2px solid var(--line); padding-bottom: 12px; color: var(--theme-color);
+}
+.strip-count {
+  font-family: var(--mono); font-size: 0.7rem; color: var(--muted); letter-spacing: 1px;
+  margin-left: auto; text-transform: uppercase;
+}
 
-.image-caption { width: 100%; background: #050505; border-top: 2px solid #333; padding: 10px 15px; font-family: 'Exo 2', sans-serif; text-align: left; display: flex; flex-direction: column; gap: 2px; margin-top: auto; }
-.caption-line { font-size: 0.85rem; }
-.caption-label { color: #888; text-transform: uppercase; }
-.filament-list { color: var(--theme-color); font-weight: bold; }
-.texture-tag { color: #F5F0E6; font-weight: bold; }
+/* The same strip head, but naming a sub-category rather than labelling a section
+   of the front page. The name is content and a link, so it takes the reading
+   face at a readable size instead of the pixel eyebrow. */
+.sub-head {
+  margin: 0 0 20px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  border-bottom: 2px solid var(--line); padding-bottom: 12px;
+}
+.sub-head-name {
+  font-family: var(--body); font-weight: 700; font-size: 1.4rem; line-height: 1.2;
+  color: var(--ink); text-decoration: none; display: inline-flex; align-items: baseline; gap: 10px;
+  transition: color 0.1s ease;
+}
+.sub-head-name:hover { color: var(--theme-color); }
+.sub-head-arrow {
+  font-family: var(--mono); font-size: 0.9rem; color: var(--theme-color);
+  display: inline-block; transition: transform 0.1s ease;
+}
+.sub-head-name:hover .sub-head-arrow { transform: translateX(3px); }
 
-.details-pane { flex: 1 1 450px; padding: 20px; display: flex; flex-direction: column; border-left: 4px solid #F5F0E6; gap: 10px; }
-/* --fit-scale is set by useFitText: long names shrink to stay on one line
-   instead of wrapping down onto the price. min-height keeps the price where it
-   is for short names, and still holds the two apart in the wrap fallback. */
-.product-title { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: calc(clamp(1.8rem, 4vw, 3rem) * var(--fit-scale, 1)); line-height: 1.1; margin: 0; color: var(--theme-color); text-align: center; text-shadow: 2px 2px 0px #000; min-height: 65px; display: flex; align-items: center; justify-content: center; }
-.price-tag { font-family: 'Exo 2', sans-serif; color: var(--theme-color); font-size: 1.6rem; font-weight: bold; text-align: center; margin-bottom: 15px; }
+.strip-empty { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); margin: 0; }
 
-.description-box { font-family: 'Exo 2', sans-serif; font-size: clamp(0.9rem, 1.1vw, 1.1rem); line-height: 1.6; white-space: pre-wrap; padding: 25px; background: #121212; border: 2px dashed var(--theme-color); height: auto; flex-grow: 1; box-sizing: border-box; text-align: left; overflow: visible; position: relative; z-index: 3; }
+/* "More from …" under a product. The panels above it already end in a shadow,
+   so this needs real air between the two rather than the usual strip spacing —
+   otherwise the row reads as another panel in the buy column. */
+.related-strip { margin-top: 64px; }
+
 
 /* Inline SVG icons scale with the font size of whatever button they sit in. */
 .icon { width: 1em; height: 1em; flex: 0 0 auto; }
@@ -129,6 +223,210 @@ main:focus { outline: none; }
   overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
 }
 
+/* ============================================================================
+   LANDING
+   ============================================================================ */
+.landing-page { width: 100%; padding: 26px 0 0; box-sizing: border-box; display: flex; flex-direction: column; }
+
+/* Owner-editable intro block at the top of the Featured Items page. */
+.welcome-message {
+  font-family: var(--mono); text-align: center; color: var(--ink);
+  font-size: 0.92rem; line-height: 1.8; padding: 25px; max-width: 700px;
+  margin: 0 auto 48px; background: var(--surface); border: 2px dashed var(--line);
+  display: flex; flex-direction: column; gap: 15px;
+}
+.welcome-message p { margin: 0; }
+.welcome-lead { color: var(--theme-color); font-weight: 700; }
+.welcome-note { font-size: 0.82rem; color: var(--muted); }
+
+/* The way into the catalogue from the landing page — the storefront's front
+   door used to be a grid of featured items and nothing else. Each tile wears
+   its own category's accent on its edge, so the colour the page turns after the
+   tap is announced before it. */
+.cat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
+.cat-tile {
+  font-family: var(--mono); cursor: pointer; transition: all 0.1s ease; text-decoration: none;
+  background: var(--surface); padding: 16px 18px; border: 2px solid var(--line); color: var(--ink);
+  box-shadow: 5px 5px 0px #000; border-left: 5px solid var(--tile, var(--theme-color));
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left;
+}
+.cat-tile:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0px #000; }
+.cat-tile-name { font-family: var(--body); font-weight: 700; font-size: 1.1rem; }
+.cat-tile-count { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+
+/* --- PRODUCT CARD GRID --- */
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 26px; width: 100%; }
+.grid-card {
+  background: var(--surface); border: 2px solid var(--line); display: flex; flex-direction: column;
+  text-decoration: none; color: var(--ink); transition: all 0.15s ease; box-shadow: 6px 6px 0px #000;
+}
+.grid-card:hover { border-color: var(--theme-color); transform: translateY(-4px); box-shadow: 10px 10px 0px #000; }
+
+.card-img-container { width: 100%; aspect-ratio: 1; background: var(--sunken); border-bottom: 2px solid var(--line); overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; z-index: 3; }
+.card-img-container img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Left-aligned name over a price/category meta row, rather than three centred
+   lines: the names are the thing being scanned down the column. */
+.card-details { padding: 15px 16px 17px; display: flex; flex-direction: column; gap: 7px; }
+.card-name { font-family: var(--body); font-weight: 700; font-size: 1.1rem; line-height: 1.25; margin: 0; color: var(--ink); }
+.card-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.card-price { font-family: var(--mono); font-weight: 700; font-size: 1rem; color: var(--theme-color); }
+.card-category { font-family: var(--mono); font-size: 0.68rem; letter-spacing: 1px; color: var(--muted); text-transform: uppercase; }
+
+/* Shown in place of a photo until the owner uploads one. */
+.placeholder {
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 1px; color: var(--muted);
+  text-align: center; width: 100%; padding: 0 12px; box-sizing: border-box;
+}
+
+/* The "see the rest" tile that closes an over-full section strip. Built from the
+   same parts as a product card so it lines up with them exactly. */
+.more-card .card-img-container { background: var(--inset); }
+.more-count { font-family: var(--mono); font-weight: 700; font-size: 2.4rem; color: var(--theme-color); }
+.more-card:hover .more-count { color: var(--ink); }
+
+/* --- COLOURS ON THE SHELF (landing strip) --- */
+/* A taste of the filament library on the front page, so nobody has to discover
+   the Colours page to learn the prints come in more than one colour. */
+.swatch-row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.swatch { width: 84px; display: flex; flex-direction: column; align-items: center; gap: 9px; }
+.swatch-dot {
+  width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--ink);
+  box-shadow: 0 0 0 2px #000, 0 0 12px rgba(0, 0, 0, 0.6);
+  position: relative; z-index: 3;
+}
+.swatch-name { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); text-align: center; line-height: 1.4; }
+.stock-note { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 28px; }
+.stock-note p { margin: 0; flex: 1 1 260px; font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; color: var(--muted); }
+
+/* "Nothing here yet" / "could not load" states shared by the storefront pages. */
+.landing-empty { text-align: center; margin-top: 40px; }
+.landing-empty p { font-family: var(--mono); }
+.app-message {
+  font-family: var(--mono); color: var(--muted);
+  text-align: center; margin-top: 60px;
+}
+
+/* --- BREADCRUMB NAV --- */
+.breadcrumb {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 7px;
+  font-family: var(--mono); font-size: 0.78rem; margin-bottom: 30px;
+}
+/* Pull it up close beneath the (bottom-margined) title when it follows one. */
+.page-title + .breadcrumb { margin-top: -22px; }
+.breadcrumb-item { display: inline-flex; align-items: center; gap: 7px; }
+.breadcrumb-link {
+  color: var(--theme-color); text-decoration: none;
+  text-transform: uppercase; letter-spacing: 1px; padding: 2px 0;
+  border-bottom: 1px solid transparent; transition: border-color 0.1s ease;
+}
+.breadcrumb-link:hover { border-bottom-color: var(--theme-color); }
+.breadcrumb-current { color: var(--ink); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+.breadcrumb-sep { color: #444; }
+
+/* ============================================================================
+   PRODUCT — separate panels, not one welded card.
+
+   The gallery is its own box and every question the detail column asks is its
+   own box too, so each reads as a separate thing to answer rather than as one
+   long form inside a single frame.
+   ============================================================================ */
+.crumb-row {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+  margin: 26px 0 22px;
+}
+.crumb-row .breadcrumb { margin-bottom: 0; }
+
+.split { display: grid; grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr); gap: 26px; align-items: start; }
+.stack { display: flex; flex-direction: column; gap: 22px; }
+
+.panel { background: var(--surface); border: 2px solid var(--line); box-shadow: 8px 8px 0px #000; padding: 20px; }
+/* The gallery is the one panel that wears the category's accent, so the page
+   still announces which category it belongs to now that nothing else is framed
+   in it. */
+.panel.gallery { border-color: var(--theme-color); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+/* A panel's own label, with whatever is currently answered pushed to the right
+   of it — the question and its answer on one line, above the control. */
+.panel-head {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+  margin-bottom: 14px; padding-bottom: 11px; border-bottom: 2px solid var(--line);
+}
+.panel-label { font-family: var(--pixel); font-size: 0.55rem; letter-spacing: 1px; color: var(--muted); line-height: 1.5; }
+.panel-value { font-family: var(--mono); font-weight: 700; font-size: 0.78rem; letter-spacing: 1px; color: var(--theme-color); text-transform: uppercase; }
+
+/* --- GALLERY --- */
+.main-image-container { width: 100%; background: var(--sunken); border: 2px solid var(--line); overflow: hidden; display: flex; flex-direction: column; position: relative; z-index: 3; }
+.image-wrapper { width: 100%; display: flex; flex-direction: column; }
+.main-img { width: 100%; aspect-ratio: 1; object-fit: contain; padding: 14px; box-sizing: border-box; display: block; }
+
+.image-caption {
+  width: 100%; background: var(--inset); border-top: 2px solid var(--line); padding: 10px 14px;
+  font-family: var(--mono); font-size: 0.74rem; line-height: 1.7; text-align: left;
+  display: flex; flex-direction: column; gap: 2px; margin-top: auto;
+}
+.caption-line { display: block; }
+.caption-label { color: var(--line-strong); text-transform: uppercase; letter-spacing: 1px; margin-right: 6px; }
+.filament-list { color: var(--theme-color); font-weight: 700; }
+.texture-tag { color: var(--ink); font-weight: 700; }
+
+.thumb-row { display: flex; gap: 10px; flex-wrap: wrap; }
+/* The thumb is a button wrapping the image so it can be tabbed to and pressed
+   from the keyboard; the interactive treatment therefore lives on the button and
+   the image only handles its own sizing and cropping. */
+.thumb-btn { padding: 0; background: none; cursor: pointer; border: 2px solid var(--line); opacity: 0.55; line-height: 0; position: relative; z-index: 3; transition: opacity 0.1s ease, border-color 0.1s ease; }
+.thumb-btn:hover { opacity: 1; }
+.thumb-btn.active { border-color: var(--theme-color); opacity: 1; }
+.thumb { width: 76px; height: 76px; object-fit: cover; display: block; }
+
+/* --- HEAD PANEL --- */
+/* Cream rather than the accent: the accent is now doing the work of marking
+   what is interactive, and a title is not. */
+.product-title {
+  font-family: var(--body); font-weight: 700; font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+  line-height: 1.1; margin: 0; color: var(--ink);
+}
+.price-tag { font-family: var(--mono); font-weight: 700; color: var(--theme-color); font-size: 1.5rem; margin: 12px 0 0; }
+.head-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 16px; }
+/* Nothing is held in stock as a finished item, which is the single most useful
+   thing to know before choosing a colour. */
+.made-to-order {
+  font-family: var(--mono); font-weight: 700; font-size: 0.68rem; text-transform: uppercase;
+  letter-spacing: 1px; padding: 5px 10px; border: 2px solid currentColor; white-space: nowrap;
+  color: var(--warn);
+}
+
+.description-box {
+  font-family: var(--body); font-size: 1rem; line-height: 1.7; white-space: pre-wrap; color: var(--ink);
+}
+
+/* --- BUY PANEL --- */
+/* No quantity control here: adding the same print twice is rare next to
+   choosing its colours, and the cart already has a stepper for when it happens.
+   The button is full width because it is the one thing this column builds to. */
+.order-btn, .share-btn {
+  font-family: var(--mono); font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  cursor: pointer; text-decoration: none; padding: 10px 22px; box-shadow: 3px 3px 0px #000;
+  transition: all 0.1s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: 0.8rem;
+}
+.order-btn { background: var(--theme-color); border: 2px solid var(--theme-color); color: var(--on-accent); }
+.order-btn:hover { box-shadow: 6px 6px 0px #000; }
+.share-btn { background: transparent; border: 2px solid var(--line); color: var(--ink); }
+.share-btn:hover { border-color: var(--theme-color); color: var(--theme-color); }
+.order-btn:active, .share-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 #000; }
+.share-btn.small { padding: 7px 14px; font-size: 0.72rem; box-shadow: none; }
+.order-btn.wide { width: 100%; padding: 15px 22px; font-size: 0.85rem; letter-spacing: 2px; }
+
+/* Ordering happens in a chat, so "this isn't quite it" has somewhere to go
+   rather than ending the visit. */
+.foot-links {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px;
+  margin-top: 14px; font-family: var(--mono); font-size: 0.74rem; line-height: 1.7; color: var(--muted);
+}
+.foot-links a { color: var(--theme-color); text-decoration: none; font-weight: 700; }
+.foot-links a:hover { text-decoration: underline; }
+
 /* --- PRINT COLOUR PICKER --- */
 /* Offers the colours actually on the shelf, plus a request for one that isn't;
    the whole library, including what is out of stock, stays on the Colours page.
@@ -136,59 +434,56 @@ main:focus { outline: none; }
    the choice is a dropdown that names every colour next to its swatch. Whatever
    is picked travels with the item into the cart and into the pre-filled order
    message, so the chat starts with the colour agreed. */
-.colour-picker { border: 2px dashed #333; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
-.colour-picker-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; font-family: 'Exo 2', sans-serif; }
-.colour-picker-label { color: #888; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.08em; }
-.colour-picker-value { color: var(--theme-color); font-weight: 700; font-size: 0.85rem; text-align: right; }
+.colour-picker { display: flex; flex-direction: column; }
 
 /* The list is positioned against this, and the free-text request sits under it. */
 .colour-select-wrap { position: relative; display: flex; flex-direction: column; gap: 10px; }
 .colour-select {
-  display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px;
+  display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px;
   cursor: pointer; text-align: left; box-sizing: border-box;
-  background: #0A0A0A; border: 2px solid #666; transition: border-color 0.1s ease;
-  font-family: 'Exo 2', sans-serif; font-size: 0.95rem; color: #F5F0E6;
+  background: var(--sunken); border: 2px solid var(--line-strong); transition: border-color 0.1s ease;
+  font-family: var(--mono); font-size: 0.82rem; color: var(--ink);
 }
-.colour-select:hover { border-color: #F5F0E6; }
+.colour-select:hover { border-color: var(--ink); }
 .colour-select.open { border-color: var(--theme-color); }
 .colour-select-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.colour-select-caret { flex: 0 0 auto; color: var(--theme-color); font-size: 0.8rem; }
+.colour-select-caret { flex: 0 0 auto; color: var(--theme-color); font-size: 0.7rem; }
 
 /* Over the page rather than pushing it down, so opening the list on a phone
-   doesn't shove the Add to Cart button out of reach. Above the floating cart
-   button too — on a short screen the two can still meet, and the list a person
-   is actively reading has to win that click. Long libraries scroll. */
+   doesn't shove the Add to Cart button out of reach. Above the sticky header
+   too — on a short screen the two can still meet, and the list a person is
+   actively reading has to win that click. Long libraries scroll. */
 .colour-options {
   position: absolute; top: 100%; left: 0; right: 0; z-index: 10000;
   list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto;
-  background: #121212; border: 2px solid var(--theme-color); box-shadow: 4px 4px 0px #000;
+  background: var(--bg); border: 2px solid var(--theme-color); box-shadow: 4px 4px 0px #000;
 }
 .colour-option {
   display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px;
   cursor: pointer; text-align: left; background: none; border: none;
-  font-family: 'Exo 2', sans-serif; font-size: 0.9rem; color: #F5F0E6;
+  font-family: var(--mono); font-size: 0.8rem; color: var(--ink);
 }
-.colour-option:hover { background: #1A1A1A; }
+.colour-option:hover { background: var(--surface); }
 /* The row the arrow keys are on. Focus stays on the trigger button while the
    list is open (see ColourPicker.jsx), so without this there is nothing on
    screen to say which colour Enter would pick. */
-.colour-option.here { background: #1A1A1A; outline: 2px solid var(--theme-color); outline-offset: -2px; }
+.colour-option.here { background: var(--surface); outline: 2px solid var(--theme-color); outline-offset: -2px; }
 .colour-option.active { color: var(--theme-color); }
 .colour-option-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Material and finish are what separate two colours with similar names. */
-.colour-option-traits { flex: 0 0 auto; font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.06em; }
-.colour-option.custom { border-top: 2px dashed #333; color: #888; }
+.colour-option-traits { flex: 0 0 auto; font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.colour-option.custom { border-top: 2px dashed var(--line); color: var(--muted); }
 .colour-option.custom:hover, .colour-option.custom.active { color: var(--theme-color); }
 
 .colour-custom { display: flex; flex-direction: column; gap: 6px; }
-.colour-custom-label { font-family: 'Exo 2', sans-serif; font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.06em; }
+.colour-custom-label { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; line-height: 1.6; }
 .colour-custom-input {
-  font-family: 'Exo 2', sans-serif; font-size: 0.95rem; color: #F5F0E6;
-  background: #0A0A0A; border: 2px solid #666; padding: 9px 12px; width: 100%; box-sizing: border-box;
+  font-family: var(--mono); font-size: 0.82rem; color: var(--ink);
+  background: var(--sunken); border: 2px solid var(--line-strong); padding: 10px 12px; width: 100%; box-sizing: border-box;
 }
 /* Dimmer than the value typed in, but still legible against the near-black
    field — #555 on #0A0A0A was under 3:1. */
-.colour-custom-input::placeholder { color: #888; }
+.colour-custom-input::placeholder { color: var(--muted); }
 /* The theme-coloured border is the hover/active treatment; the focus ring is
    what tells a keyboard user where they are, so it stays. */
 .colour-custom-input:focus { border-color: var(--theme-color); }
@@ -196,82 +491,57 @@ main:focus { outline: none; }
 /* The small square standing in for a colour wherever one is shown: in the
    dropdown, on the button, and on cart lines. */
 .colour-swatch {
-  flex: 0 0 auto; width: 18px; height: 18px; border: 2px solid #F5F0E6;
+  flex: 0 0 auto; width: 17px; height: 17px; border: 2px solid var(--ink);
 }
 /* Nothing to show until Clarky confirms what he can source. */
 .colour-swatch.custom {
-  background: #0A0A0A; border-style: dashed; border-color: #888; color: #888;
-  font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; line-height: 14px; text-align: center;
+  background: var(--sunken); border-style: dashed; border-color: var(--muted); color: var(--muted);
+  font-family: var(--mono); font-size: 0.68rem; font-weight: 700; line-height: 13px; text-align: center;
 }
 .colour-swatch.any { background: repeating-linear-gradient(45deg, #333, #333 3px, #0A0A0A 3px, #0A0A0A 6px); border-color: #555; }
 
 /* --- MULTI-PART COLOURS --- */
 /* Prints assembled from separately-printed pieces ask for a colour per piece.
    One named dropdown per piece keeps five of them to five rows. */
-.colour-parts-note { margin: 0; font-family: 'Exo 2', sans-serif; font-size: 0.78rem; color: #888; }
-.colour-parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.colour-parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .colour-part { display: flex; align-items: center; gap: 12px; }
 .colour-part-name {
-  flex: 0 0 88px; font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.8rem;
-  color: #888; text-transform: uppercase; letter-spacing: 0.06em;
+  flex: 0 0 82px; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 1px;
+  color: var(--muted); text-transform: uppercase;
   overflow: hidden; text-overflow: ellipsis;
 }
 .colour-part .colour-select-wrap { flex: 1; min-width: 0; }
-
-/* Stacked on a phone: 88px of part name plus a dropdown is too tight to read. */
-@media (max-width: 480px) {
-  .colour-part { flex-direction: column; align-items: stretch; gap: 6px; }
-  .colour-part-name { flex: none; }
-}
+/* Under the rows rather than above them: the panel head already says what this
+   box is for, so the explanation is a footnote, not a preamble. */
+.colour-parts-note { margin: 14px 0 0; font-family: var(--mono); font-size: 0.72rem; line-height: 1.7; color: var(--line-strong); }
 
 /* --- MADE-TO-ORDER OPTIONS --- */
-/* The choices a print offers that are not about colour. Same dashed box as the
-   colour picker so the two read as one set of questions. The caret is a
+/* The choices a print offers that are not about colour. The caret is a
    background image rather than a pseudo-element, because a pseudo-element
    cannot be attached to a <select>; the option colours are named because the
    OS-drawn list does not inherit the page's colours everywhere. */
-.option-picker { border: 2px dashed #333; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
-.option-picker-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; font-family: 'Exo 2', sans-serif; }
-.option-picker-label { color: #888; text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.08em; }
-.option-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.option-picker { display: flex; flex-direction: column; }
+.option-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .option-row { display: flex; align-items: center; gap: 12px; }
 .option-name {
-  flex: 0 0 88px; font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.8rem;
-  color: #888; text-transform: uppercase; letter-spacing: 0.06em;
+  flex: 0 0 82px; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 1px;
+  color: var(--muted); text-transform: uppercase;
   overflow: hidden; text-overflow: ellipsis;
 }
 .option-select {
-  flex: 1; min-width: 0; width: 100%; padding: 9px 34px 9px 12px;
+  flex: 1; min-width: 0; width: 100%; padding: 10px 34px 10px 12px;
   cursor: pointer; box-sizing: border-box; appearance: none;
-  background-color: #0A0A0A; border: 2px solid #666; transition: border-color 0.1s ease;
-  font-family: 'Exo 2', sans-serif; font-size: 0.95rem; color: #F5F0E6;
+  background-color: var(--sunken); border: 2px solid var(--line-strong); transition: border-color 0.1s ease;
+  font-family: var(--mono); font-size: 0.82rem; color: var(--ink);
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path d='M0 0h10L5 6z' fill='%2300E5FF'/></svg>");
   background-repeat: no-repeat; background-position: right 12px center; background-size: 10px 6px;
 }
-.option-select:hover { border-color: #F5F0E6; }
-.option-select option { background: #0A0A0A; color: #F5F0E6; }
+.option-select:hover { border-color: var(--ink); }
+.option-select option { background: var(--sunken); color: var(--ink); }
 
-@media (max-width: 480px) {
-  .option-row { flex-direction: column; align-items: stretch; gap: 6px; }
-  .option-name { flex: none; }
-}
-
-/* --- ADD TO CART / SHARE BUTTONS --- */
-.product-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; margin-top: 10px; }
-
-.order-btn, .share-btn {
-  font-family: 'Exo 2', sans-serif; font-weight: 700; cursor: pointer; text-decoration: none;
-  padding: 10px 28px; box-shadow: 3px 3px 0px #000; transition: all 0.1s ease;
-  display: inline-flex; align-items: center; gap: 8px; font-size: clamp(0.8rem, 2vw, 1rem);
-}
-/* Adding to the cart is the point of the page, so it is the filled one of the pair. */
-.order-btn { background: var(--theme-color); border: 3px solid var(--theme-color); color: #121212; }
-.order-btn:hover { box-shadow: 6px 6px 0px #000; }
-.share-btn { background: transparent; border: 3px solid var(--theme-color); color: var(--theme-color); }
-.share-btn:hover { background: var(--theme-color); color: #121212; box-shadow: 5px 5px 0px #000; }
-.order-btn:active, .share-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 #000; }
-
-/* --- CASCADING CATALOGUE MENU --- */
+/* ============================================================================
+   CASCADING CATALOGUE MENU
+   ============================================================================ */
 .cascade-wrap { position: relative; display: inline-block; }
 
 .cascade-menu {
@@ -280,21 +550,22 @@ main:focus { outline: none; }
 }
 /* Little pointer connecting the menu to the button, centered on it. */
 .cascade-menu::before {
-  content: ""; position: absolute; top: -9px; left: 50%; transform: translateX(-50%) rotate(45deg);
-  width: 14px; height: 14px; background: #0A0A0A; border-left: 3px solid var(--theme-color);
-  border-top: 3px solid var(--theme-color);
+  content: ""; position: absolute; top: -8px; left: 50%; transform: translateX(-50%) rotate(45deg);
+  width: 13px; height: 13px; background: var(--sunken); border-left: 2px solid var(--theme-color);
+  border-top: 2px solid var(--theme-color);
 }
 
 .cascade-tier-1 {
-  background: #0A0A0A; border: 3px solid var(--theme-color); box-shadow: 8px 8px 0px #000;
+  background: var(--sunken); border: 2px solid var(--theme-color); box-shadow: 8px 8px 0px #000;
   padding: 6px; display: flex; flex-direction: column; gap: 2px;
 }
 
 .cascade-head {
-  font-family: 'Exo 2', sans-serif; font-weight: bold; color: var(--theme-color);
-  font-size: 0.8rem; padding: 8px 12px 10px; border-bottom: 2px dashed #333; margin-bottom: 4px;
+  font-family: var(--pixel); font-size: 0.55rem; letter-spacing: 1px; line-height: 1.5;
+  color: var(--theme-color);
+  padding: 10px 12px 11px; border-bottom: 2px solid var(--line); margin-bottom: 4px;
 }
-.cascade-empty { font-family: 'Exo 2', sans-serif; color: #888; padding: 10px 14px; font-size: 0.85rem; }
+.cascade-empty { font-family: var(--mono); color: var(--muted); padding: 10px 14px; font-size: 0.8rem; }
 
 .cascade-cat { position: relative; }
 
@@ -303,91 +574,37 @@ main:focus { outline: none; }
 .cascade-cat-row .cascade-cat-btn { flex: 1 1 auto; min-width: 0; }
 .cascade-cat-row .cascade-cat-btn > span { overflow: hidden; text-overflow: ellipsis; }
 
-.cascade-cat-btn, .cascade-prod-btn {
-  font-family: 'Exo 2', sans-serif; font-weight: bold; cursor: pointer; background: transparent;
-  border: none; color: #F5F0E6; width: 100%; text-align: left; padding: 11px 14px;
-  display: flex; align-items: center; gap: 12px; white-space: nowrap; transition: all 0.1s ease;
+.cascade-cat-btn {
+  font-family: var(--mono); font-size: 0.8rem; letter-spacing: 1px; cursor: pointer; background: transparent;
+  border: none; color: var(--ink); width: 100%; text-align: left; padding: 11px 14px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; white-space: nowrap;
+  transition: all 0.1s ease;
 }
-.cascade-cat-btn { justify-content: space-between; }
-.cascade-cat-btn:hover,
-.cascade-prod-btn:hover { background: var(--theme-color); color: #121212; }
+.cascade-cat-btn:hover { background: var(--theme-color); color: var(--on-accent); }
 
 /* Caret is a dedicated, finger-sized tap target that toggles the sub-categories
    without navigating. It stays reliable on touch where hover does not exist. */
 .cascade-caret {
   flex: 0 0 auto; width: 44px; align-self: stretch; cursor: pointer; background: transparent;
-  border: none; border-left: 2px dashed #333; color: var(--theme-color);
+  border: none; border-left: 2px dashed var(--line); color: var(--theme-color);
   font-size: 0.85rem; line-height: 1; padding: 0; transition: all 0.1s ease;
   display: flex; align-items: center; justify-content: center;
 }
 .cascade-caret:hover,
-.cascade-cat.active .cascade-caret { background: var(--theme-color); color: #121212; }
+.cascade-cat.active .cascade-caret { background: var(--theme-color); color: var(--on-accent); }
 
 /* Second tier flies out to the right of its category and grows to fit however
    many sub-categories exist — no fixed height, no scrollbar. */
 .cascade-tier-2 {
-  position: absolute; top: -3px; left: calc(100% + 10px);
-  background: #0A0A0A; border: 3px solid var(--theme-color); box-shadow: 8px 8px 0px #000;
+  position: absolute; top: -2px; left: calc(100% + 10px);
+  background: var(--sunken); border: 2px solid var(--theme-color); box-shadow: 8px 8px 0px #000;
   padding: 6px; min-width: 220px;
   display: flex; flex-direction: column; gap: 2px;
 }
 
-/* On narrow phones there is no room for a side fly-out, so the sub-categories
-   stack inline beneath their category instead. */
-@media (max-width: 768px) {
-  /* Catalogue button takes its own centred, full-width row within the hub nav
-     (ordered last) so its drop-down opens downward into empty space. */
-  .cascade-wrap { order: 2; flex: 0 0 100%; display: flex; justify-content: center; width: 100%; }
-
-  /* Give the drop-down its own screen-centred width, kept fairly narrow so the
-     name and its arrow don't drift far apart. */
-  .cascade-menu {
-    left: 50%; right: auto; transform: translateX(-50%); top: calc(100% + 8px);
-    width: min(300px, 90vw); min-width: 0;
-  }
-  .cascade-menu::before { left: 50%; transform: translateX(-50%) rotate(45deg); }
-
-  /* Condensed rows so the open menu takes far less vertical space while its
-     targets stay comfortably tappable. */
-  .cascade-tier-1 { padding: 5px; gap: 1px; }
-  .cascade-head { font-size: 0.75rem; padding: 8px 12px 9px; margin-bottom: 2px; }
-  .cascade-cat-btn { padding: 9px 14px; font-size: 0.95rem; }
-  .cascade-caret { width: 46px; font-size: 0.95rem; }
-
-  /* Sub-categories read as a tight, indented branch of their category rather
-     than a second bordered box floating inside the first. */
-  .cascade-tier-2 {
-    position: static; left: auto; top: auto;
-    background: transparent; border: none; box-shadow: none;
-    margin: 0 0 3px 20px; padding: 0 0 0 10px;
-    border-left: 2px solid var(--theme-color); min-width: 0; gap: 0;
-  }
-  .cascade-tier-2 .cascade-cat-btn { padding: 7px 12px; font-size: 0.88rem; }
-}
-
-/* --- CART --- */
-/* The floating button follows the customer around the catalogue, so the cart is
-   always one tap away and its count is the running confirmation that adding
-   worked. */
-/* Bottom-left, not bottom-right: the product details pane, its colour dropdowns
-   and the Add to Cart button all live on the right, and a floating button parked
-   over them covers the thing being read. Nothing else claims this corner. */
-.order-fab {
-  position: fixed; left: 30px; bottom: 30px; background: #1A1A1A;
-  border: 3px solid var(--theme-color); color: var(--theme-color);
-  padding: 12px 24px; box-shadow: 8px 8px 0px #000; cursor: pointer; z-index: 9999;
-  font-family: 'Exo 2', sans-serif; font-weight: bold; font-size: 1rem;
-  display: flex; align-items: center; gap: 10px; transition: all 0.1s ease;
-}
-.order-fab:hover { box-shadow: 11px 11px 0px #000; }
-.order-fab:active { transform: translate(3px, 3px); box-shadow: 4px 4px 0px #000; }
-.cart-count {
-  min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box;
-  background: var(--theme-color); color: #121212; border: 2px solid #000;
-  font-family: 'Space Mono', monospace; font-size: 0.78rem; font-weight: 700;
-  display: inline-flex; align-items: center; justify-content: center;
-}
-
+/* ============================================================================
+   CART
+   ============================================================================ */
 /* Panel over the storefront rather than a page of its own, so nobody loses
    their place in the catalogue while checking what they have picked up. */
 .cart-overlay {
@@ -396,32 +613,32 @@ main:focus { outline: none; }
 }
 .cart-panel {
   width: min(480px, 100%); height: 100%; box-sizing: border-box;
-  background: #0A0A0A; border-left: 4px solid var(--theme-color);
+  background: var(--sunken); border-left: 3px solid var(--theme-color);
   display: flex; flex-direction: column;
   background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.25) 2px, rgba(0,0,0,0.25) 4px);
 }
 
 .cart-head {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 18px 20px; border-bottom: 3px solid var(--theme-color); flex: 0 0 auto;
+  padding: 18px 20px; border-bottom: 2px solid var(--theme-color); flex: 0 0 auto;
 }
 .cart-title {
-  font-family: 'Press Start 2P', cursive; font-size: 0.85rem; letter-spacing: 1px;
+  font-family: var(--pixel); font-size: 0.65rem; letter-spacing: 1px; line-height: 1.6;
   color: var(--theme-color); margin: 0; display: flex; align-items: center; gap: 12px;
 }
 .cart-close {
   flex: 0 0 auto; width: 38px; height: 38px; cursor: pointer;
-  background: transparent; border: 2px solid #666; color: #F5F0E6;
+  background: transparent; border: 2px solid var(--line-strong); color: var(--ink);
   font-size: 1.1rem; line-height: 1; transition: all 0.1s ease;
 }
-.cart-close:hover { background: #ff5c5c; border-color: #ff5c5c; color: #121212; }
+.cart-close:hover { background: var(--danger); border-color: var(--danger); color: var(--bg); }
 
 .cart-empty {
   flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 14px; padding: 30px; text-align: center; font-family: 'Exo 2', sans-serif; color: #F5F0E6;
+  gap: 14px; padding: 30px; text-align: center; font-family: var(--mono); color: var(--ink);
 }
 .cart-empty p { margin: 0; }
-.cart-empty-hint { color: #888; font-size: 0.9rem; line-height: 1.6; max-width: 300px; }
+.cart-empty-hint { color: var(--muted); font-size: 0.82rem; line-height: 1.7; max-width: 300px; }
 
 /* The lines scroll; the header and the order button stay put, so the way out
    of the cart is never below the fold. */
@@ -432,7 +649,7 @@ main:focus { outline: none; }
 }
 
 .cart-line-thumb {
-  width: 72px; height: 72px; background: #000; border: 2px solid #333; overflow: hidden;
+  width: 72px; height: 72px; background: #000; border: 2px solid var(--line); overflow: hidden;
   display: flex; align-items: center; justify-content: center;
   position: relative; z-index: 3; transition: border-color 0.1s ease;
 }
@@ -440,202 +657,111 @@ main:focus { outline: none; }
 .cart-line-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .cart-line-thumb-ph { color: #444; font-size: 1.4rem; }
 
-.cart-line-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-family: 'Exo 2', sans-serif; }
-.cart-line-name { font-weight: 700; font-size: 1rem; color: #F5F0E6; text-decoration: none; }
+.cart-line-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cart-line-name { font-family: var(--body); font-weight: 700; font-size: 1rem; color: var(--ink); text-decoration: none; }
 .cart-line-name:hover { color: var(--theme-color); }
-.cart-line-where { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-.cart-line-colour { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #F5F0E6; margin-top: 2px; }
-.cart-line-option { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #F5F0E6; margin-top: 2px; }
+.cart-line-where { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.cart-line-colour, .cart-line-option { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 0.76rem; color: var(--ink); margin-top: 2px; }
 /* Which piece of the print this colour is for, on a multi-part line, and which
    question an extra choice answers. */
-.cart-line-part { color: #888; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 1px; }
+.cart-line-part { color: var(--muted); text-transform: uppercase; font-size: 0.68rem; letter-spacing: 1px; }
 
 .cart-line-swatch {
-  flex: 0 0 auto; width: 18px; height: 18px; border: 2px solid #F5F0E6;
+  flex: 0 0 auto; width: 17px; height: 17px; border: 2px solid var(--ink);
   position: relative; z-index: 3;
 }
 /* Nothing to show until Clarky confirms what he can source. */
 .cart-line-swatch.custom {
-  background: #0A0A0A; border-style: dashed; border-color: #888; color: #888;
-  font-family: 'Space Mono', monospace; font-size: 0.7rem; font-weight: 700; line-height: 14px; text-align: center;
+  background: var(--sunken); border-style: dashed; border-color: var(--muted); color: var(--muted);
+  font-family: var(--mono); font-size: 0.68rem; font-weight: 700; line-height: 13px; text-align: center;
 }
 .cart-line-swatch.any { background: repeating-linear-gradient(45deg, #333, #333 3px, #0A0A0A 3px, #0A0A0A 6px); border-color: #555; }
 
 .cart-line-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-.cart-line-price { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 1rem; color: var(--theme-color); white-space: nowrap; }
-.cart-line-price.to-price { font-size: 0.7rem; color: #888; letter-spacing: 1px; }
+.cart-line-price { font-family: var(--mono); font-weight: 700; font-size: 0.95rem; color: var(--theme-color); white-space: nowrap; }
+.cart-line-price.to-price { font-size: 0.68rem; color: var(--muted); letter-spacing: 1px; }
 
-.qty-stepper { display: flex; align-items: stretch; border: 2px solid #666; }
+.qty-stepper { display: flex; align-items: stretch; border: 2px solid var(--line-strong); }
 .qty-stepper button {
-  width: 30px; cursor: pointer; background: #121212; border: none; color: var(--theme-color);
-  font-family: 'Exo 2', sans-serif; font-size: 1.1rem; font-weight: 700; line-height: 1; padding: 0;
+  width: 30px; cursor: pointer; background: var(--bg); border: none; color: var(--theme-color);
+  font-family: var(--mono); font-size: 1.05rem; font-weight: 700; line-height: 1; padding: 0;
   transition: all 0.1s ease;
 }
-.qty-stepper button:hover { background: var(--theme-color); color: #121212; }
+.qty-stepper button:hover { background: var(--theme-color); color: var(--on-accent); }
 .qty-value {
   min-width: 34px; padding: 6px 0; text-align: center;
-  font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.9rem; color: #F5F0E6;
+  font-family: var(--mono); font-weight: 700; font-size: 0.88rem; color: var(--ink);
 }
 
 .cart-line-remove {
-  background: none; border: none; cursor: pointer; padding: 0; color: #666;
-  font-family: 'Exo 2', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 1px;
+  background: none; border: none; cursor: pointer; padding: 0; color: var(--line-strong);
+  font-family: var(--mono); font-size: 0.66rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
 }
-.cart-line-remove:hover { color: #ff5c5c; }
+.cart-line-remove:hover { color: var(--danger); }
 
 .cart-foot {
-  flex: 0 0 auto; padding: 18px 20px; border-top: 3px solid var(--theme-color);
-  display: flex; flex-direction: column; gap: 12px; background: #0A0A0A;
+  flex: 0 0 auto; padding: 18px 20px; border-top: 2px solid var(--theme-color);
+  display: flex; flex-direction: column; gap: 12px; background: var(--sunken);
 }
 .cart-total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.cart-total-label { font-family: 'Exo 2', sans-serif; font-size: 0.78rem; color: #888; text-transform: uppercase; letter-spacing: 0.08em; }
-.cart-total-value { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 1.6rem; color: var(--theme-color); }
+.cart-total-label { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.cart-total-value { font-family: var(--mono); font-weight: 700; font-size: 1.5rem; color: var(--theme-color); }
 /* Sits beside the total without competing with it — the amount is what matters,
    the currency is only there so nobody has to ask. */
-.cart-total-currency { font-size: 0.78rem; font-weight: 400; color: #888; letter-spacing: 0.08em; }
+.cart-total-currency { font-size: 0.72rem; font-weight: 400; color: var(--muted); letter-spacing: 1px; }
 /* Sits tight under the total (hence the pulled-up margin) so the two read as
    one block of money rather than a total and an unrelated remark. */
 .cart-shipping {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-  margin-top: -6px; font-family: 'Exo 2', sans-serif; font-size: 0.78rem;
-  color: #888; text-transform: uppercase; letter-spacing: 0.08em;
+  margin-top: -6px; font-family: var(--mono); font-size: 0.72rem;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 1px;
 }
-.cart-note { font-family: 'Exo 2', sans-serif; font-size: 0.75rem; color: #888; line-height: 1.5; margin: 0; text-align: center; }
+.cart-note { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); line-height: 1.7; margin: 0; text-align: center; }
 .cart-order { justify-content: center; }
 .cart-clear {
-  background: none; border: none; cursor: pointer; padding: 4px; color: #666;
-  font-family: 'Exo 2', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 1px;
+  background: none; border: none; cursor: pointer; padding: 4px; color: var(--line-strong);
+  font-family: var(--mono); font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
 }
-.cart-clear:hover { color: #ff5c5c; }
+.cart-clear:hover { color: var(--danger); }
 
-@media (max-width: 560px) {
-  .cart-panel { border-left: none; border-top: 4px solid var(--theme-color); }
-  .cart-lines { padding: 0 14px; }
-  /* No room for a third column, so price and quantity sit under the name. */
-  .cart-line { grid-template-columns: 60px 1fr; gap: 12px; }
-  .cart-line-thumb { width: 60px; height: 60px; }
-  .cart-line-side { grid-column: 2; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; }
-  .order-fab { left: 16px; bottom: 16px; padding: 10px 18px; font-size: 0.9rem; }
-  /* Smaller button, closer to the corner, so it needs less room kept clear. */
-  .app-container { padding-bottom: 96px; }
-}
-
-.landing-page { width: 100%; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
-.section-title { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: clamp(2rem, 5vw, 3.5rem); color: var(--theme-color); margin-bottom: 40px; text-shadow: 3px 3px 0px #000; text-align: center; }
-
-/* --- BREADCRUMB NAV --- */
-/* Left-aligned trail under a page title for stepping back up the hierarchy. */
-.breadcrumb {
-  align-self: flex-start; width: 100%; box-sizing: border-box;
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-  font-family: 'Space Mono', monospace; font-size: 0.8rem; margin-bottom: 30px;
-}
-/* Pull it up close beneath the (bottom-margined) title when it follows one. */
-.section-title + .breadcrumb { margin-top: -28px; }
-.breadcrumb-item { display: inline-flex; align-items: center; gap: 6px; }
-.breadcrumb-link {
-  color: var(--theme-color); text-decoration: none;
-  text-transform: uppercase; letter-spacing: 1px; padding: 2px 0;
-  border-bottom: 1px solid transparent; transition: border-color 0.1s ease;
-}
-.breadcrumb-link:hover { border-bottom-color: var(--theme-color); }
-.breadcrumb-current { color: #F5F0E6; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
-.breadcrumb-sep { color: #888; }
-
-.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; width: 100%; justify-content: center; }
-.grid-card { background: #1A1A1A; border: 3px solid #333; display: flex; flex-direction: column; text-decoration: none; color: #F5F0E6; transition: all 0.2s ease; box-shadow: 6px 6px 0px #000; }
-.grid-card:hover { border-color: var(--theme-color); transform: translateY(-4px); box-shadow: 10px 10px 0px #000; }
-
-.card-img-container { width: 100%; aspect-ratio: 1; background: #0A0A0A; border-bottom: 2px solid #333; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; z-index: 3; }
-.card-img-container img { width: 100%; height: 100%; object-fit: cover; }
-
-/* Shown in place of a photo until the owner uploads one. */
-.placeholder {
-  font-family: 'Space Mono', monospace; color: #888; text-align: center;
-  width: 100%; padding-top: 40%; box-sizing: border-box;
-}
-
-/* Owner-editable intro block at the top of the Featured Items page. */
-.welcome-message {
-  font-family: 'Space Mono', monospace; text-align: center; color: #F5F0E6;
-  font-size: 1rem; line-height: 1.6; padding: 25px; max-width: 700px;
-  margin: 0 auto 40px; background: #1A1A1A; border: 2px dashed #333;
-  display: flex; flex-direction: column; gap: 15px;
-}
-.welcome-message p { margin: 0; }
-.welcome-lead { color: var(--theme-color); font-weight: bold; }
-.welcome-note { font-size: 0.9rem; color: #888; }
-
-/* "Nothing here yet" / "could not load" states shared by the storefront pages. */
-.landing-empty { text-align: center; margin-top: 40px; }
-.landing-empty p { font-family: 'Space Mono', monospace; }
-.app-message {
-  font-family: 'Space Mono', monospace; color: #888;
-  text-align: center; margin-top: 60px;
-}
-
-/* Sub-category preview card: a square tiling of up to four product photos that
-   sits where a single product image would on a normal grid card. */
-.subcat-thumbs {
-  width: 100%; aspect-ratio: 1; display: grid; gap: 2px;
-  background: #333; border-bottom: 2px solid #333;
-  position: relative; z-index: 3;
-}
-.subcat-thumbs.n1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
-.subcat-thumbs.n2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
-.subcat-thumbs.n3,
-.subcat-thumbs.n4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
-.subcat-thumb {
-  background: #0A0A0A; overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-}
-.subcat-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.subcat-thumb-ph { color: #444; font-size: 1.6rem; line-height: 1; }
-.subcat-thumb.empty {
-  grid-column: 1 / -1; grid-row: 1 / -1;
-  font-family: 'Space Mono', monospace; font-size: 0.85rem; color: #666; letter-spacing: 2px;
-}
-.card-details { padding: 15px; display: flex; flex-direction: column; gap: 5px; text-align: center; }
-.card-details h3 { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 1.2rem; margin: 0; color: #F5F0E6; }
-.card-price { font-family: 'Exo 2', sans-serif; color: var(--theme-color); font-weight: bold; font-size: 1.1rem; }
-.card-category { font-family: 'Exo 2', sans-serif; font-size: 0.8rem; color: #888; text-transform: uppercase; margin-top: 5px; }
-
-/* --- COLOURS / FILAMENT LIBRARY --- */
+/* ============================================================================
+   COLOURS / FILAMENT LIBRARY
+   ============================================================================ */
 .colours-page { width: 100%; }
-.colours-message { font-family: 'Exo 2', sans-serif; color: #888; text-align: center; margin-top: 20px; }
+.colours-message { font-family: var(--mono); color: var(--muted); text-align: center; margin-top: 20px; }
 
 /* --- FILTER BAR --- */
 .filament-filters {
   width: 100%; max-width: 900px; margin: 0 auto 32px; display: flex; flex-direction: column;
-  gap: 16px; background: #1A1A1A; border: 3px solid #333; box-shadow: 6px 6px 0px #000;
+  gap: 16px; background: var(--surface); border: 2px solid var(--line); box-shadow: 6px 6px 0px #000;
   padding: 18px 20px; box-sizing: border-box;
 }
 .filter-group { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
 .filter-label {
-  font-family: 'Press Start 2P', cursive; font-size: 0.65rem; color: var(--theme-color);
-  letter-spacing: 1px; padding-top: 8px; min-width: 56px;
+  font-family: var(--pixel); font-size: 0.55rem; color: var(--theme-color);
+  letter-spacing: 1px; line-height: 1.5; padding-top: 9px; min-width: 50px;
 }
 .filter-pills { display: flex; flex-wrap: wrap; gap: 8px; flex: 1; }
 .filter-pill {
-  font-family: 'Exo 2', sans-serif; font-weight: 600; font-size: 0.75rem; cursor: pointer;
-  background: transparent; border: 2px solid #666; color: #F5F0E6; padding: 6px 14px;
+  font-family: var(--mono); font-size: 0.72rem; cursor: pointer;
+  background: transparent; border: 2px solid var(--line-strong); color: var(--ink); padding: 6px 14px;
   text-transform: uppercase; letter-spacing: 1px; transition: all 0.1s ease;
 }
 .filter-pill:hover { border-color: var(--theme-color); color: var(--theme-color); }
-.filter-pill.active { background: var(--theme-color); border-color: var(--theme-color); color: #121212; }
+.filter-pill.active { background: var(--theme-color); border-color: var(--theme-color); color: var(--on-accent); font-weight: 700; }
 
 /* --- FILAMENT LIST --- */
 .filament-section { width: 100%; max-width: 900px; margin: 0 auto 34px; }
 .filament-section-title {
-  font-family: 'Press Start 2P', cursive; font-size: 0.8rem; letter-spacing: 1px;
-  margin: 0 0 14px; display: flex; align-items: center; gap: 12px;
-  border-bottom: 3px solid currentColor; padding-bottom: 10px;
+  font-family: var(--pixel); font-size: 0.65rem; letter-spacing: 1px; line-height: 1.6;
+  margin: 0 0 16px; display: flex; align-items: center; gap: 12px;
+  border-bottom: 2px solid currentColor; padding-bottom: 12px;
 }
-.filament-section-title.in-stock { color: #33FF00; }
-.filament-section-title.on-order { color: #FFB800; }
-.filament-section-title.out-of-stock { color: #ff5c5c; }
+.filament-section-title.in-stock { color: var(--ok); }
+.filament-section-title.on-order { color: var(--warn); }
+.filament-section-title.out-of-stock { color: var(--danger); }
 .filament-section-count {
-  font-family: 'Space Mono', monospace; font-size: 0.7rem; color: #F5F0E6;
+  font-family: var(--mono); font-size: 0.7rem; color: var(--ink);
   background: #000; border: 2px solid currentColor; padding: 2px 8px; margin-left: auto;
 }
 
@@ -645,42 +771,41 @@ main:focus { outline: none; }
 }
 
 .filament-row {
-  display: flex; flex-direction: column; gap: 14px; background: #1A1A1A;
-  border: 2px solid #333; box-shadow: 4px 4px 0px #000; padding: 12px 18px;
+  display: flex; flex-direction: column; gap: 14px; background: var(--surface);
+  border: 2px solid var(--line); box-shadow: 4px 4px 0px #000; padding: 12px 18px;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
 .filament-row:hover { border-color: var(--theme-color); transform: translateX(4px); }
 .filament-row-top { display: flex; align-items: center; gap: 18px; }
 
-/* Colour rendered as an on-theme circle. z-index 3 lifts it above the CRT
-   scanline overlay (body::before, z-index 2) so the colour reads true. */
+/* Colour rendered as an on-theme circle. */
 .filament-dot {
   flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%;
-  border: 3px solid #F5F0E6; box-shadow: 0 0 0 2px #000, 0 0 12px rgba(0, 0, 0, 0.6);
+  border: 3px solid var(--ink); box-shadow: 0 0 0 2px #000, 0 0 12px rgba(0, 0, 0, 0.6);
   position: relative; z-index: 3;
 }
 
 .filament-row-main { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
-.filament-name { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 1.05rem; margin: 0; color: #F5F0E6; }
+.filament-name { font-family: var(--body); font-weight: 700; font-size: 1.05rem; margin: 0; color: var(--ink); }
 .filament-material {
-  font-family: 'Exo 2', sans-serif; font-size: 0.75rem; color: #888;
+  font-family: var(--mono); font-size: 0.7rem; color: var(--muted);
   text-transform: uppercase; letter-spacing: 1px;
 }
 
 .filament-row-meta { display: flex; align-items: center; gap: 16px; flex: 0 0 auto; }
 .filament-hex {
-  font-family: 'Space Mono', monospace; font-size: 0.8rem; color: #666;
+  font-family: var(--mono); font-size: 0.76rem; color: var(--line-strong);
   text-transform: uppercase;
 }
 
 .filament-status {
-  font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.7rem;
+  font-family: var(--mono); font-weight: 700; font-size: 0.68rem;
   text-transform: uppercase; letter-spacing: 1px; padding: 5px 10px;
   border: 2px solid currentColor; white-space: nowrap;
 }
-.filament-status.in-stock { color: #33FF00; }
-.filament-status.on-order { color: #FFB800; }
-.filament-status.out-of-stock { color: #ff5c5c; }
+.filament-status.in-stock { color: var(--ok); }
+.filament-status.on-order { color: var(--warn); }
+.filament-status.out-of-stock { color: var(--danger); }
 
 /* Out-of-stock colours stay listed but are visibly dimmed. */
 .filament-row.is-out { opacity: 0.5; }
@@ -688,17 +813,17 @@ main:focus { outline: none; }
 
 /* --- PRINT GALLERY (examples printed in a colour) --- */
 .filament-prints {
-  border-top: 2px dashed #333; padding-top: 12px;
+  border-top: 2px dashed var(--line); padding-top: 12px;
   display: flex; flex-direction: column; gap: 8px;
 }
 .filament-prints-label {
-  font-family: 'Press Start 2P', cursive; font-size: 0.5rem; letter-spacing: 1px;
+  font-family: var(--pixel); font-size: 0.5rem; letter-spacing: 1px; line-height: 1.5;
   color: var(--theme-color);
 }
 .filament-prints-strip { display: flex; flex-wrap: wrap; gap: 10px; }
 .filament-print-thumb {
   width: 88px; height: 88px; padding: 0; cursor: pointer; background: #000;
-  border: 2px solid #333; overflow: hidden; position: relative; z-index: 3;
+  border: 2px solid var(--line); overflow: hidden; position: relative; z-index: 3;
   transition: border-color 0.1s ease, transform 0.1s ease;
 }
 .filament-print-thumb:hover { border-color: var(--theme-color); transform: scale(1.04); }
@@ -715,73 +840,104 @@ main:focus { outline: none; }
 }
 .print-lightbox-inner img {
   max-width: 90vw; max-height: 78vh; object-fit: contain;
-  border: 3px solid #F5F0E6; box-shadow: 6px 6px 0 #000;
+  border: 3px solid var(--ink); box-shadow: 6px 6px 0 #000;
 }
 .print-lightbox-caption {
-  font-family: 'Exo 2', sans-serif; color: #F5F0E6; text-align: center; margin: 0;
+  font-family: var(--body); color: var(--ink); text-align: center; margin: 0;
   max-width: 640px;
 }
 .print-lightbox-close {
   position: absolute; top: -18px; right: -12px; width: 40px; height: 40px;
-  background: #ff5c5c; color: #121212; border: 3px solid #000; cursor: pointer;
+  background: var(--danger); color: var(--bg); border: 3px solid #000; cursor: pointer;
   font-size: 1.4rem; line-height: 1; font-weight: bold;
 }
 .print-lightbox-nav {
   position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 64px;
-  background: var(--theme-color); color: #121212; border: 3px solid #000; cursor: pointer;
+  background: var(--theme-color); color: var(--on-accent); border: 3px solid #000; cursor: pointer;
   font-size: 2rem; line-height: 1;
 }
 .print-lightbox-nav.prev { left: -60px; }
 .print-lightbox-nav.next { right: -60px; }
 
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+@media (max-width: 960px) {
+  /* The gallery and the detail stack become one column, in that order. */
+  .split { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .header-inner { padding: 12px 14px; gap: 10px 14px; }
+  /* Wordmark on its own centred line with the nav underneath, rather than a
+     wordmark squeezed against four wrapping buttons. */
+  .wordmark { flex: 1 1 100%; text-align: center; }
+  .topnav { flex: 1 1 100%; justify-content: center; }
+  .nav-btn, .cart-btn { padding: 7px 12px; font-size: 0.72rem; }
+
+  /* There is no room for a fly-out beside the menu on a phone, so the drop-down
+     spans the nav row instead of being centred on its button — that way it can
+     never hang off either edge — and the sub-categories stack inline beneath
+     their category. */
+  .cascade-wrap { position: static; }
+  .topnav { position: relative; }
+  .cascade-menu {
+    left: 0; right: 0; width: auto; min-width: 0; transform: none; top: calc(100% + 10px);
+  }
+  .cascade-menu::before { display: none; }
+  .cascade-tier-1 { padding: 5px; gap: 1px; }
+  .cascade-cat-btn { padding: 10px 14px; }
+  .cascade-caret { width: 46px; }
+  .cascade-tier-2 {
+    position: static; left: auto; top: auto;
+    background: transparent; border: none; box-shadow: none;
+    margin: 0 0 3px 20px; padding: 0 0 0 10px;
+    border-left: 2px solid var(--theme-color); min-width: 0; gap: 0;
+  }
+  .cascade-tier-2 .cascade-cat-btn { padding: 8px 12px; font-size: 0.76rem; }
+
+  /* Two smaller, shorter cards per row instead of one large full-width card. */
+  .product-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .card-img-container { aspect-ratio: 3 / 2; }
+  .card-details { padding: 10px; gap: 4px; }
+  .card-name { font-size: 0.9rem; }
+  .card-price { font-size: 0.85rem; }
+  .card-category { font-size: 0.62rem; }
+
+  .panel { padding: 16px; box-shadow: 6px 6px 0px #000; }
+  .sub-head-name { font-size: 1.15rem; }
+  .more-count { font-size: 1.8rem; }
+  .strip { margin-bottom: 42px; }
+}
+
 @media (max-width: 560px) {
+  .cart-panel { border-left: none; border-top: 3px solid var(--theme-color); }
+  .cart-lines { padding: 0 14px; }
+  /* No room for a third column, so price and quantity sit under the name. */
+  .cart-line { grid-template-columns: 60px 1fr; gap: 12px; }
+  .cart-line-thumb { width: 60px; height: 60px; }
+  .cart-line-side { grid-column: 2; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; }
+
   .filament-row-top { flex-wrap: wrap; gap: 12px; }
   .filament-row-meta { width: 100%; justify-content: space-between; padding-left: 64px; box-sizing: border-box; }
   .filter-label { min-width: 0; }
   .print-lightbox-nav.prev { left: 4px; }
   .print-lightbox-nav.next { right: 4px; }
+
+  .strip-title { font-size: 0.55rem; }
+  .swatch { width: 68px; }
+  .swatch-dot { width: 38px; height: 38px; }
 }
 
-/* --- MS-DOS DIRECTORY OVERLAY --- */
-.dos-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #050505; color: #33FF00; font-family: 'Space Mono', monospace;
-  z-index: 10000; padding: 30px; display: flex; flex-direction: column; overflow-y: auto;
-  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,0,0.05) 2px, rgba(0,255,0,0.05) 4px);
-}
-.dos-header { display: flex; justify-content: space-between; border-bottom: 2px dashed #33FF00; padding-bottom: 15px; margin-bottom: 30px; font-weight: bold; font-size: 1.2rem; }
-.dos-close { background: none; border: none; color: #33FF00; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 1.2rem; }
-.dos-tree-section { margin-bottom: 25px; }
-.dos-dir { font-weight: bold; margin-bottom: 10px; font-size: 1.2rem; }
-.dos-item { background: none; border: none; color: #33FF00; font-family: inherit; font-size: 1rem; cursor: pointer; text-align: left; padding: 8px 0 8px 20px; width: 100%; display: block; }
-.dos-item:hover, .dos-item:active { background-color: #111; color: #fff; }
-.dos-cursor { animation: blink 1s step-end infinite; font-size: 1.5rem; font-weight: bold; }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@media (max-width: 480px) {
+  /* The label is the first thing to go when the bar runs out of room; the icon
+     and the count still say what the button is, and its accessible name is on
+     the button itself. */
+  .cart-btn-label { display: none; }
 
-/* --- MOBILE RESPONSIVENESS --- */
-@media (max-width: 944px) {
-  .details-pane { border-left: none; border-top: 4px solid #F5F0E6; }
-  .product-title { min-height: 0; }
-  .thumb-container { height: auto; }
-  .main-image-container { height: 500px; }
-}
-@media (max-width: 768px) {
-  /* Condensed hub nav: the two quick links share one centred row and the
-     catalogue button drops onto its own row below (see .cascade-wrap above),
-     instead of three full-width buttons stacked in a tall column. */
-  .nav-row.main-hubs { width: 100%; box-sizing: border-box; gap: 8px 10px; margin-bottom: 18px; }
-  .hub-btn { padding: 8px 16px; font-size: 0.85rem; box-sizing: border-box; }
-}
-@media (max-width: 768px) {
-  /* Two smaller, shorter cards per row instead of one large full-width card.
-     Uses the same breakpoint as the condensed nav so it reaches devices in the
-     600–768px range too (a plain 600px cap missed them, leaving one big card). */
-  .product-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-  .grid-card { width: auto; max-width: none; }
-  /* Short landscape image area so the cards aren't so tall. */
-  .card-img-container, .subcat-thumbs { aspect-ratio: 3 / 2; }
-  .card-details { padding: 8px; gap: 2px; }
-  .card-details h3 { font-size: 0.9rem; }
-  .card-price { font-size: 0.85rem; }
-  .card-category { font-size: 0.68rem; }
+  /* A part name plus a dropdown on one line is too tight to read here. */
+  .colour-part, .option-row { flex-direction: column; align-items: stretch; gap: 6px; }
+  .colour-part-name, .option-name { flex: none; }
+
+  .product-grid { grid-template-columns: 1fr; }
 }

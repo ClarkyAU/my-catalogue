@@ -12,7 +12,7 @@ export const CategoryGrid = ({ subCategory, categoryId, subCategoryId, trail = [
 
   return (
     <div className="landing-page">
-      <h2 className="section-title">{subCategory.displayName}</h2>
+      <h2 className="page-title">{subCategory.displayName}</h2>
       <Breadcrumb trail={trail} />
       <div className="product-grid">
         {products.map((prod) => {
@@ -35,8 +35,12 @@ export const CategoryGrid = ({ subCategory, categoryId, subCategoryId, trail = [
                 )}
               </div>
               <div className="card-details">
-                <h3>{prod.displayName}</h3>
-                {prod.price && prod.price !== "0.00" && <span className="card-price">${prod.price}</span>}
+                <h3 className="card-name">{prod.displayName}</h3>
+                {prod.price && prod.price !== "0.00" && (
+                  <div className="card-meta">
+                    <span className="card-price">${prod.price}</span>
+                  </div>
+                )}
               </div>
             </a>
           );

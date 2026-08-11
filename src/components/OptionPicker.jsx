@@ -12,12 +12,19 @@ export const OptionPicker = ({ options, value, onChange }) => {
     onChange(value.map((slot, i) => (i === index ? { ...slot, choice } : slot)));
 
   return (
-    <div className="option-picker">
-      <div className="option-picker-head">
+    <div className="panel option-picker">
+      <div className="panel-head">
         {/* With one question its name is the heading, so a single-choice print
             does not read like a form. With several, every row is labelled. */}
-        <span className="option-picker-label">
+        <span className="panel-label">
           {options.length > 1 ? 'MADE TO ORDER' : options[0].name.toUpperCase()}
+        </span>
+        {/* Whatever is currently answered, mirrored on the right of the head the
+            same way the colour panel counts its parts. */}
+        <span className="panel-value">
+          {options.length > 1
+            ? `${options.length} choices`
+            : value[0]?.choice || options[0].choices[0]}
         </span>
       </div>
       <ul className="option-list">
