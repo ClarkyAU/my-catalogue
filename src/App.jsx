@@ -6,11 +6,11 @@ import { ProductDisplay } from './components/ProductDisplay';
 import { LandingPage } from './components/LandingPage';
 import { CategoryGrid } from './components/CategoryGrid';
 import { CategoryPage } from './components/CategoryPage';
-import { CascadeMenu } from './components/CascadeMenu';
 import { ColoursPage } from './components/ColoursPage';
 import { CartPanel } from './components/CartPanel';
-import { CartIcon } from './components/Icons';
 import { cartCount, useCart } from './lib/cart.js';
+import { inkFor } from './lib/onAccent.js';
+import { relatedProducts } from './lib/related.js';
 
 const SITE_NAME = 'Clarky3D';
 
@@ -74,8 +74,20 @@ export default function App() {
     }
   }, [loading, pageLabel, productPath]);
 
+  const themeColor = activeTheme?.themeColor || '#00E5FF';
+
+  // Which of the three routes the header should light up.
+  const activeRoute = activeColours ? 'colours' : activeCategory ? 'catalogue' : 'featured';
+
   return (
-    <div className="app-container" style={{ '--theme-color': activeTheme?.themeColor || '#00E5FF' }}>
+    // Two variables reach the whole storefront from here: the category's accent,
+    // and the ink that reads on top of a fill of it. The second is derived rather
+    // than fixed because a dark accent (Hotwheels red, Pep Things purple) does
+    // not carry the near-black the buttons used to hardcode.
+    <div
+      className="app-container"
+      style={{ '--theme-color': themeColor, '--on-accent': inkFor(themeColor) }}
+    >
       {/* The app routes on the URL fragment, so the obvious href="#main" would be
           read as a catalogue route and drop the visitor back on the landing page.
           Moving focus directly does the same job without touching the URL. */}
@@ -89,20 +101,14 @@ export default function App() {
       >
         SKIP TO CONTENT
       </a>
-      <Header />
+      <Header
+        catalogue={catalogue}
+        navigateTo={navigateTo}
+        active={activeRoute}
+        cartCount={count}
+        onOpenCart={() => setCartOpen(true)}
+      />
       <div className="main-wrapper">
-
-        <div className="nav-container">
-          <nav className="nav-row main-hubs">
-            <button className="nav-btn hub-btn" onClick={() => window.location.hash = ''}>
-              [ FEATURED ITEMS ]
-            </button>
-            <CascadeMenu catalogue={catalogue} navigateTo={navigateTo} />
-            <button className="nav-btn hub-btn" onClick={() => { window.location.hash = 'colours'; }}>
-              [ COLOURS ]
-            </button>
-          </nav>
-        </div>
 
         <main id="main" ref={mainRef} tabIndex={-1}>
           {loading ? (
@@ -133,20 +139,15 @@ export default function App() {
                 path={productPath}
                 categoryName={currentCategory.displayName}
                 subCategoryName={currentSubCategory.displayName}
+                categoryHref={`#${activeCategory}`}
+                subCategoryHref={`#${activeCategory}/${activeSubCategory}`}
+                related={relatedProducts(catalogue, activeCategory, activeSubCategory, activeProduct)}
               />
             )
           )}
         </main>
 
       </div>
-      <button
-        className="order-fab"
-        onClick={() => setCartOpen(true)}
-        aria-label={count ? `Open cart, ${count} item${count === 1 ? '' : 's'}` : 'Open cart'}
-      >
-        <CartIcon /> CART
-        {count > 0 && <span className="cart-count">{count}</span>}
-      </button>
       <CartPanel open={cartOpen} onClose={closeCart} />
     </div>
   );

@@ -82,7 +82,7 @@ export const ColoursPage = ({ trail = [] }) => {
 
   return (
     <div className="landing-page colours-page">
-      <h2 className="section-title">COLOUR LIBRARY</h2>
+      <h2 className="page-title">COLOUR LIBRARY</h2>
       <Breadcrumb trail={trail} />
 
       {!loading && filaments.length > 0 && types.length > 1 && (

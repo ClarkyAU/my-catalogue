@@ -260,9 +260,9 @@ export const ColourPicker = ({ parts, inStock, value, onChange }) => {
 
   if (parts.length === 0) {
     return (
-      <div className="colour-picker">
-        <div className="colour-picker-head">
-          <span className="colour-picker-label">PRINT COLOUR</span>
+      <div className="panel colour-picker">
+        <div className="panel-head">
+          <span className="panel-label">PRINT COLOUR</span>
         </div>
         <ColourSelect {...slotProps(0)} />
       </div>
@@ -272,17 +272,13 @@ export const ColourPicker = ({ parts, inStock, value, onChange }) => {
   const chosen = value.filter((slot) => slot.colour).length;
 
   return (
-    <div className="colour-picker parts">
-      <div className="colour-picker-head">
-        <span className="colour-picker-label">PRINT COLOURS</span>
-        <span className="colour-picker-value">
-          {chosen} OF {parts.length} CHOSEN
+    <div className="panel colour-picker">
+      <div className="panel-head">
+        <span className="panel-label">PRINT COLOURS</span>
+        <span className="panel-value">
+          {chosen} of {parts.length} set
         </span>
       </div>
-      <p className="colour-parts-note">
-        This one is printed in pieces, so each can be its own colour. Leave any of them on Lucky Dip
-        and Clarky will pick.
-      </p>
 
       <ul className="colour-parts">
         {parts.map((part, index) => (
@@ -292,6 +288,11 @@ export const ColourPicker = ({ parts, inStock, value, onChange }) => {
           </li>
         ))}
       </ul>
+
+      <p className="colour-parts-note">
+        This one is printed in pieces, so each can be its own colour. Leave any of them on Lucky Dip
+        and Clarky will pick.
+      </p>
     </div>
   );
 };

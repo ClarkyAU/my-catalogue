@@ -8,7 +8,7 @@ const DEFAULT_THEME = { themeColor: '#00E5FF' };
 // defaults come from the shared module the admin preview uses too.
 const DEFAULT_SETTINGS = {
   landingIntro: 'I am currently working on a batch of new products, so keep an eye out for updates.',
-  landingSubtext: 'Check out the latest releases below, or hit [ MY CATALOGUE ] above to browse every category and product.',
+  landingSubtext: 'Check out the latest releases below, or hit Catalogue in the bar above to browse every category and product.',
   landingNote: 'If there is anything you would like that is not listed, shoot me a message via the order button.',
   ...WATERMARK_DEFAULTS,
 };

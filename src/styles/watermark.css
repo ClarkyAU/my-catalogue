@@ -15,17 +15,24 @@
   pointer-events: none;
   z-index: 4;
   --wm-color: var(--theme-color, var(--accent, #00E5FF));
-  --wm-ink: #0A0A0A;
+  /* The band is filled with the category's colour, so the type on it has to be
+     picked from that colour rather than assumed dark — a deep purple category
+     was stamping near-black on near-black. The storefront works this out at
+     runtime (src/lib/onAccent.js); the fallback covers the admin portal, which
+     shares this file but does not publish --on-accent. */
+  --wm-ink: var(--on-accent, #0A0A0A);
   --wm-band: 170px;
 }
-.watermark.is-popular { --wm-color: #FFB800; }
+/* POPULAR is always amber, so its ink is always the dark one regardless of what
+   the surrounding category resolved to. */
+.watermark.is-popular { --wm-color: #FFB800; --wm-ink: #0A0A0A; }
 
 .watermark-label {
   position: absolute;
   display: block;
   box-sizing: border-box;
   opacity: var(--wm-opacity, 0.9);
-  font-family: 'Press Start 2P', cursive;
+  font-family: var(--pixel, 'Press Start 2P', cursive);
   line-height: 1;
   letter-spacing: 1px;
   white-space: nowrap;
