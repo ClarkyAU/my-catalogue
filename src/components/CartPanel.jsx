@@ -3,7 +3,7 @@ import { CartIcon, TelegramIcon } from './Icons';
 import { ANY_COLOUR, ColourSwatch } from './ColourPicker';
 import { cartLink, TELEGRAM_URL } from '../lib/telegram.js';
 import { cartTotal, clearCart, colourLabel, money, removeLine, setQty, useCart } from '../lib/cart.js';
-import { imageUrl, srcSet } from '../lib/photos.js';
+import { imageUrl, srcSetDensity } from '../lib/photos.js';
 import { useFocusTrap } from '../hooks/useFocusTrap.js';
 
 // Cart thumbnails are 72px squares (60px on a narrow screen), so they are
@@ -14,7 +14,7 @@ const THUMB_SIZE = { w: 72, h: 72 };
 // nobody loses their place in the catalogue while checking what they have
 // picked up. Ordering is still one message to Clarky — this just lets that
 // message carry several prints instead of one.
-export const CartPanel = ({ open, onClose }) => {
+export const CartPanel = ({ open, onClose, onNavigate }) => {
   const cart = useCart();
   const { total, unpriced, priced } = cartTotal(cart);
   // Focus starts on the close button (the panel's first control) and goes back
@@ -88,11 +88,11 @@ export const CartPanel = ({ open, onClose }) => {
 
                 return (
                   <li key={line.key} className="cart-line">
-                    <a className="cart-line-thumb" href={`#${line.path}`} onClick={onClose}>
+                    <a className="cart-line-thumb" href={`#${line.path}`} onClick={onNavigate}>
                       {line.photo ? (
                         <img
                           src={imageUrl(line.photo, THUMB_SIZE)}
-                          srcSet={srcSet(line.photo, THUMB_SIZE)}
+                          srcSet={srcSetDensity(line.photo, THUMB_SIZE)}
                           alt=""
                           loading="lazy"
                           decoding="async"
@@ -103,7 +103,7 @@ export const CartPanel = ({ open, onClose }) => {
                     </a>
 
                     <div className="cart-line-main">
-                      <a className="cart-line-name" href={`#${line.path}`} onClick={onClose}>
+                      <a className="cart-line-name" href={`#${line.path}`} onClick={onNavigate}>
                         {line.name}
                       </a>
                       {where && <span className="cart-line-where">{where}</span>}

@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Watermark } from './Watermark';
-import { PhotoPlaceholder } from './PhotoPlaceholder';
-import { firstPhotoUrl, imageUrl, srcSet } from '../lib/photos';
+import { CardImage } from './CardImage';
+import { firstPhotoUrl } from '../lib/photos';
 import { loadFilaments } from '../lib/filaments.js';
 import { swatchStyle } from '../lib/filamentSwatch.js';
-
-// Cards are square and render at 560px at their widest, so that is the size the
-// Image CDN is asked for rather than the full-resolution upload.
-const CARD_SIZE = { w: 560, h: 560 };
 
 // How many stocked colours the landing strip shows before it stops and points at
 // the full library. Enough to read as a real palette, short enough that it stays
@@ -123,25 +119,16 @@ export const LandingPage = ({ catalogue, settings, intro, subtext, note }) => {
           </div>
         ) : (
           <div className="product-grid">
-            {featuredProducts.map((prod) => {
+            {featuredProducts.map((prod, i) => {
               const mainImg = firstPhotoUrl(prod);
               const href = `#${prod.categoryId}/${prod.subCategoryId}/${prod.id}`;
               return (
                 <a key={href} href={href} className="grid-card">
                   <div className="card-img-container">
-                    {mainImg ? (
-                      <img
-                        src={imageUrl(mainImg, CARD_SIZE)}
-                        srcSet={srcSet(mainImg, CARD_SIZE)}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        width="560"
-                        height="560"
-                      />
-                    ) : (
-                      <PhotoPlaceholder />
-                    )}
+                    {/* No `priority` here: the welcome copy and the category
+                        tiles sit above this grid, so the first card is usually
+                        not the largest thing painted. */}
+                    <CardImage url={mainImg} index={i} />
                     <Watermark product={prod} settings={settings} />
                   </div>
                   <div className="card-details">

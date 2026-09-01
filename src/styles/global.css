@@ -1,5 +1,8 @@
-/* Google Fonts are linked from index.html rather than imported here — an
-   @import blocks on the stylesheet parsing before it can even start. */
+/* The faces are self-hosted (see fonts.css) rather than linked from
+   fonts.googleapis.com, so the first paint no longer waits on a third-party
+   stylesheet. Both @imports here are inlined into one file at build time, so
+   they cost no extra request at runtime. */
+@import './fonts.css';
 @import './watermark.css';
 
 /* ============================================================================
@@ -24,6 +27,12 @@
      --body    anything you actually read — titles, card names, description copy.
    ============================================================================ */
 :root {
+  /* The page is dark, and the browser has to be told so explicitly: without it
+     the controls the OS draws rather than CSS — the made-to-order <select>, the
+     text caret, form autofill, the scrollbars — come out in the light palette,
+     which on iOS meant a white dropdown list on a black page. */
+  color-scheme: dark;
+
   --theme-color: #00E5FF;
   --on-accent: #121212;
 
@@ -89,7 +98,13 @@ body { margin: 0; background-color: var(--bg); font-family: var(--body); }
 main:focus { outline: none; }
 main { scroll-margin-top: 96px; }
 
-/* Some people get motion sickness or migraines from movement on screen, and the
+/* Every transition below names the properties it animates rather than using
+   `all`. With `all` the browser has to watch each animatable property on the
+   element for a change, which on a grid of cards under the pointer is work it
+   does not need to do, and it will happily animate something that was only ever
+   meant to change instantly.
+
+   Some people get motion sickness or migraines from movement on screen, and the
    browser can be told so. Nothing here is load-bearing — the transitions are
    hover polish and the blinking cursor is decoration — so all of it stops.
    The CRT scanline overlay is deliberately left alone: it is a static texture,
@@ -105,12 +120,26 @@ main { scroll-margin-top: 96px; }
 }
 
 .app-container {
-  min-height: 100vh; box-sizing: border-box;
-  color: var(--ink); width: 100%; padding: 0 0 90px; display: flex; flex-direction: column;
+  /* dvh rather than vh: on a phone, vh is the height of the viewport with the
+     browser chrome hidden, so a 100vh page is taller than the window it is
+     first painted into and starts life scrollable by the height of the toolbar.
+     dvh tracks the space actually available. */
+  min-height: 100dvh; box-sizing: border-box;
+  color: var(--ink); width: 100%; display: flex; flex-direction: column;
+  /* The 90px that used to be reserved here was for the floating cart button,
+     which moved into the header; every route ended in a band of empty scroll
+     until the footer took the space over. */
+  padding: 0;
   background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.2) 2px, rgba(0,0,0,0.2) 4px);
 }
 
-.main-wrapper { width: 100%; max-width: 1400px; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }
+/* The insets keep content clear of a rounded corner or a camera cutout when the
+   phone is on its side — max() so they cost nothing on a screen that has none. */
+.main-wrapper {
+  width: 100%; max-width: 1400px; margin: 0 auto; box-sizing: border-box;
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+}
 
 /* ============================================================================
    HEADER — wordmark left, nav and cart right, a rule underneath.
@@ -125,7 +154,8 @@ main { scroll-margin-top: 96px; }
   background: var(--bg); border-bottom: 2px solid var(--line);
 }
 .header-inner {
-  width: 100%; max-width: 1400px; margin: 0 auto; padding: 16px 20px; box-sizing: border-box;
+  width: 100%; max-width: 1400px; margin: 0 auto; box-sizing: border-box;
+  padding: 16px max(20px, env(safe-area-inset-right)) 16px max(20px, env(safe-area-inset-left));
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
 }
 
@@ -140,16 +170,23 @@ main { scroll-margin-top: 96px; }
 
 .nav-btn {
   font-family: var(--mono); font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase;
-  cursor: pointer; transition: all 0.1s ease;
+  cursor: pointer; transition: border-color 0.1s ease, color 0.1s ease, box-shadow 0.1s ease;
   background: transparent; border: 2px solid var(--line); color: var(--ink); padding: 7px 14px;
 }
 .nav-btn:hover { border-color: var(--theme-color); color: var(--theme-color); }
 .nav-btn.active { border-color: var(--theme-color); color: var(--theme-color); box-shadow: 3px 3px 0px #000; }
+/* Search carries an icon instead of a word, so it gets a square box the size of
+   its lettered neighbours rather than a button collapsed around a 1em glyph. */
+.nav-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; padding: 7px 0; font-size: 0.95rem;
+}
 
 /* The one filled control in the bar, because it is the one that leads to an
    order rather than to another page. */
 .cart-btn {
-  display: inline-flex; align-items: center; gap: 10px; cursor: pointer; transition: all 0.1s ease;
+  display: inline-flex; align-items: center; gap: 10px; cursor: pointer;
+  transition: box-shadow 0.1s ease, transform 0.1s ease;
   font-family: var(--mono); font-weight: 700; font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase;
   background: var(--surface); border: 2px solid var(--theme-color); color: var(--theme-color);
   padding: 7px 14px; box-shadow: 4px 4px 0px #000;
@@ -203,7 +240,14 @@ main { scroll-margin-top: 96px; }
   font-family: var(--mono); font-size: 0.9rem; color: var(--theme-color);
   display: inline-block; transition: transform 0.1s ease;
 }
-.sub-head-name:hover .sub-head-arrow { transform: translateX(3px); }
+/* Guarded on a real pointer. A touch device fires :hover on tap and then leaves
+   it applied until something else is tapped, so an unguarded transform lifts a
+   card and leaves it lifted — and on the way to a new page, the last thing seen
+   is the tile sliding out from under the finger. Colour-only hovers are left
+   alone; a stuck tint is invisible next to a stuck displacement. */
+@media (hover: hover) {
+  .sub-head-name:hover .sub-head-arrow { transform: translateX(3px); }
+}
 
 .strip-empty { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); margin: 0; }
 
@@ -245,12 +289,15 @@ main { scroll-margin-top: 96px; }
    tap is announced before it. */
 .cat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
 .cat-tile {
-  font-family: var(--mono); cursor: pointer; transition: all 0.1s ease; text-decoration: none;
+  font-family: var(--mono); cursor: pointer; text-decoration: none;
+  transition: box-shadow 0.1s ease, transform 0.1s ease;
   background: var(--surface); padding: 16px 18px; border: 2px solid var(--line); color: var(--ink);
   box-shadow: 5px 5px 0px #000; border-left: 5px solid var(--tile, var(--theme-color));
   display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left;
 }
-.cat-tile:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0px #000; }
+@media (hover: hover) {
+  .cat-tile:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0px #000; }
+}
 .cat-tile-name { font-family: var(--body); font-weight: 700; font-size: 1.1rem; }
 .cat-tile-count { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
 
@@ -258,11 +305,21 @@ main { scroll-margin-top: 96px; }
 .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 26px; width: 100%; }
 .grid-card {
   background: var(--surface); border: 2px solid var(--line); display: flex; flex-direction: column;
-  text-decoration: none; color: var(--ink); transition: all 0.15s ease; box-shadow: 6px 6px 0px #000;
+  text-decoration: none; color: var(--ink); box-shadow: 6px 6px 0px #000;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
-.grid-card:hover { border-color: var(--theme-color); transform: translateY(-4px); box-shadow: 10px 10px 0px #000; }
+.grid-card:hover { border-color: var(--theme-color); }
+@media (hover: hover) {
+  .grid-card:hover { transform: translateY(-4px); box-shadow: 10px 10px 0px #000; }
+}
 
 .card-img-container { width: 100%; aspect-ratio: 1; background: var(--sunken); border-bottom: 2px solid var(--line); overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; z-index: 3; }
+/* The card photo is a <picture> now, because the mobile card frame is 3:2 while
+   the desktop one is square and the two want different crops out of the CDN
+   rather than one square fetched and then cropped again by CSS. <picture> is an
+   inline wrapper by default, so it has to be told to fill the frame the way the
+   bare <img> used to. */
+.card-img-container picture { display: block; width: 100%; height: 100%; }
 .card-img-container img { width: 100%; height: 100%; object-fit: cover; }
 
 /* Left-aligned name over a price/category meta row, rather than three centred
@@ -358,7 +415,29 @@ main { scroll-margin-top: 96px; }
 /* --- GALLERY --- */
 .main-image-container { width: 100%; background: var(--sunken); border: 2px solid var(--line); overflow: hidden; display: flex; flex-direction: column; position: relative; z-index: 3; }
 .image-wrapper { width: 100%; display: flex; flex-direction: column; }
-.main-img { width: 100%; aspect-ratio: 1; object-fit: contain; padding: 14px; box-sizing: border-box; display: block; }
+.main-img {
+  width: 100%; aspect-ratio: 1; object-fit: contain; padding: 14px; box-sizing: border-box; display: block;
+  /* Swiping the photo steps through the gallery (see useSwipe); pan-y leaves the
+     page's own vertical scrolling to the browser and only claims the horizontal
+     axis, and the drag has to be suppressed or a sideways swipe starts a
+     drag-image instead. */
+  -webkit-user-drag: none; touch-action: pan-y;
+}
+/* A phone on its side is about 390px tall and the gallery is full width, so a
+   square photo came out roughly twice the height of the window — the caption,
+   the price and the colour picker all started below the fold with no sign they
+   were there. Capped in dynamic viewport height instead; object-fit already
+   letterboxes whatever shape the photo is. The responsive `sizes` for this image
+   carries the matching condition, so the smaller box also fetches a smaller
+   file. */
+@media (orientation: landscape) and (max-height: 620px) {
+  .main-img {
+    aspect-ratio: auto; height: 78dvh;
+    /* Width from the photo's own shape rather than the frame's, so capping the
+       height narrows the box instead of leaving bars down both sides of it. */
+    width: auto; max-width: 100%; margin: 0 auto;
+  }
+}
 
 .image-caption {
   width: 100%; background: var(--inset); border-top: 2px solid var(--line); padding: 10px 14px;
@@ -407,7 +486,8 @@ main { scroll-margin-top: 96px; }
 .order-btn, .share-btn {
   font-family: var(--mono); font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
   cursor: pointer; text-decoration: none; padding: 10px 22px; box-shadow: 3px 3px 0px #000;
-  transition: all 0.1s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  transition: box-shadow 0.1s ease, transform 0.1s ease, border-color 0.1s ease, color 0.1s ease;
   font-size: 0.8rem;
 }
 .order-btn { background: var(--theme-color); border: 2px solid var(--theme-color); color: var(--on-accent); }
@@ -477,8 +557,12 @@ main { scroll-margin-top: 96px; }
 
 .colour-custom { display: flex; flex-direction: column; gap: 6px; }
 .colour-custom-label { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; line-height: 1.6; }
+/* Never below 16px. Safari on iOS zooms the page in when a field smaller than
+   that is focused, and it does not zoom back out — the visitor is left on a
+   sideways-scrolling page mid-order, which is exactly the wrong moment for it.
+   max() keeps the intended 0.82rem wherever the platform allows it. */
 .colour-custom-input {
-  font-family: var(--mono); font-size: 0.82rem; color: var(--ink);
+  font-family: var(--mono); font-size: max(16px, 0.82rem); color: var(--ink);
   background: var(--sunken); border: 2px solid var(--line-strong); padding: 10px 12px; width: 100%; box-sizing: border-box;
 }
 /* Dimmer than the value typed in, but still legible against the near-black
@@ -532,7 +616,8 @@ main { scroll-margin-top: 96px; }
   flex: 1; min-width: 0; width: 100%; padding: 10px 34px 10px 12px;
   cursor: pointer; box-sizing: border-box; appearance: none;
   background-color: var(--sunken); border: 2px solid var(--line-strong); transition: border-color 0.1s ease;
-  font-family: var(--mono); font-size: 0.82rem; color: var(--ink);
+  /* Same iOS zoom-on-focus rule applies to a <select>. */
+  font-family: var(--mono); font-size: max(16px, 0.82rem); color: var(--ink);
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path d='M0 0h10L5 6z' fill='%2300E5FF'/></svg>");
   background-repeat: no-repeat; background-position: right 12px center; background-size: 10px 6px;
 }
@@ -578,7 +663,7 @@ main { scroll-margin-top: 96px; }
   font-family: var(--mono); font-size: 0.8rem; letter-spacing: 1px; cursor: pointer; background: transparent;
   border: none; color: var(--ink); width: 100%; text-align: left; padding: 11px 14px;
   display: flex; align-items: center; justify-content: space-between; gap: 12px; white-space: nowrap;
-  transition: all 0.1s ease;
+  transition: background-color 0.1s ease, color 0.1s ease;
 }
 .cascade-cat-btn:hover { background: var(--theme-color); color: var(--on-accent); }
 
@@ -587,7 +672,8 @@ main { scroll-margin-top: 96px; }
 .cascade-caret {
   flex: 0 0 auto; width: 44px; align-self: stretch; cursor: pointer; background: transparent;
   border: none; border-left: 2px dashed var(--line); color: var(--theme-color);
-  font-size: 0.85rem; line-height: 1; padding: 0; transition: all 0.1s ease;
+  font-size: 0.85rem; line-height: 1; padding: 0;
+  transition: background-color 0.1s ease, color 0.1s ease;
   display: flex; align-items: center; justify-content: center;
 }
 .cascade-caret:hover,
@@ -610,9 +696,16 @@ main { scroll-margin-top: 96px; }
 .cart-overlay {
   position: fixed; inset: 0; z-index: 10005; background: rgba(0, 0, 0, 0.78);
   display: flex; justify-content: flex-end;
+  /* Stops a scroll that runs off the end of the cart from carrying on into the
+     catalogue behind it, and on a phone from triggering pull-to-refresh. */
+  overscroll-behavior: contain;
 }
+/* The panel opens against the right edge, so in landscape it is the thing that
+   meets the rounded corner and the camera cutout. Taken once here rather than
+   row by row inside it. */
 .cart-panel {
   width: min(480px, 100%); height: 100%; box-sizing: border-box;
+  padding-right: env(safe-area-inset-right);
   background: var(--sunken); border-left: 3px solid var(--theme-color);
   display: flex; flex-direction: column;
   background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.25) 2px, rgba(0,0,0,0.25) 4px);
@@ -629,7 +722,8 @@ main { scroll-margin-top: 96px; }
 .cart-close {
   flex: 0 0 auto; width: 38px; height: 38px; cursor: pointer;
   background: transparent; border: 2px solid var(--line-strong); color: var(--ink);
-  font-size: 1.1rem; line-height: 1; transition: all 0.1s ease;
+  font-size: 1.1rem; line-height: 1;
+  transition: background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease;
 }
 .cart-close:hover { background: var(--danger); border-color: var(--danger); color: var(--bg); }
 
@@ -642,7 +736,7 @@ main { scroll-margin-top: 96px; }
 
 /* The lines scroll; the header and the order button stay put, so the way out
    of the cart is never below the fold. */
-.cart-lines { flex: 1 1 auto; overflow-y: auto; list-style: none; margin: 0; padding: 0 20px; }
+.cart-lines { flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; list-style: none; margin: 0; padding: 0 20px; }
 .cart-line {
   display: grid; grid-template-columns: 72px 1fr auto; gap: 14px; align-items: start;
   padding: 16px 0; border-bottom: 2px dashed #262626;
@@ -685,7 +779,7 @@ main { scroll-margin-top: 96px; }
 .qty-stepper button {
   width: 30px; cursor: pointer; background: var(--bg); border: none; color: var(--theme-color);
   font-family: var(--mono); font-size: 1.05rem; font-weight: 700; line-height: 1; padding: 0;
-  transition: all 0.1s ease;
+  transition: background-color 0.1s ease, color 0.1s ease;
 }
 .qty-stepper button:hover { background: var(--theme-color); color: var(--on-accent); }
 .qty-value {
@@ -700,8 +794,12 @@ main { scroll-margin-top: 96px; }
 .cart-line-remove:hover { color: var(--danger); }
 
 .cart-foot {
-  flex: 0 0 auto; padding: 18px 20px; border-top: 2px solid var(--theme-color);
+  flex: 0 0 auto; border-top: 2px solid var(--theme-color);
   display: flex; flex-direction: column; gap: 12px; background: var(--sunken);
+  /* The order button is the last thing in the panel and the panel runs to the
+     bottom of the screen, so on a phone with a gesture bar the button sat under
+     the home indicator — where a tap is a swipe up out of the browser. */
+  padding: 18px 20px max(18px, env(safe-area-inset-bottom));
 }
 .cart-total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .cart-total-label { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
@@ -745,7 +843,8 @@ main { scroll-margin-top: 96px; }
 .filter-pill {
   font-family: var(--mono); font-size: 0.72rem; cursor: pointer;
   background: transparent; border: 2px solid var(--line-strong); color: var(--ink); padding: 6px 14px;
-  text-transform: uppercase; letter-spacing: 1px; transition: all 0.1s ease;
+  text-transform: uppercase; letter-spacing: 1px;
+  transition: background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease;
 }
 .filter-pill:hover { border-color: var(--theme-color); color: var(--theme-color); }
 .filter-pill.active { background: var(--theme-color); border-color: var(--theme-color); color: var(--on-accent); font-weight: 700; }
@@ -775,7 +874,10 @@ main { scroll-margin-top: 96px; }
   border: 2px solid var(--line); box-shadow: 4px 4px 0px #000; padding: 12px 18px;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
-.filament-row:hover { border-color: var(--theme-color); transform: translateX(4px); }
+.filament-row:hover { border-color: var(--theme-color); }
+@media (hover: hover) {
+  .filament-row:hover { transform: translateX(4px); }
+}
 .filament-row-top { display: flex; align-items: center; gap: 18px; }
 
 /* Colour rendered as an on-theme circle. */
@@ -826,21 +928,33 @@ main { scroll-margin-top: 96px; }
   border: 2px solid var(--line); overflow: hidden; position: relative; z-index: 3;
   transition: border-color 0.1s ease, transform 0.1s ease;
 }
-.filament-print-thumb:hover { border-color: var(--theme-color); transform: scale(1.04); }
+.filament-print-thumb:hover { border-color: var(--theme-color); }
+@media (hover: hover) {
+  .filament-print-thumb:hover { transform: scale(1.04); }
+}
 .filament-print-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
 /* --- PRINT LIGHTBOX --- */
 .print-lightbox {
   position: fixed; inset: 0; z-index: 10001; background: rgba(0, 0, 0, 0.9);
-  display: flex; align-items: center; justify-content: center; padding: 24px;
+  display: flex; align-items: center; justify-content: center;
+  padding:
+    max(24px, env(safe-area-inset-top))
+    max(24px, env(safe-area-inset-right))
+    max(24px, env(safe-area-inset-bottom))
+    max(24px, env(safe-area-inset-left));
+  overscroll-behavior: contain;
 }
 .print-lightbox-inner {
-  position: relative; max-width: 90vw; max-height: 90vh;
+  position: relative; max-width: 90vw; max-height: 90dvh;
   display: flex; flex-direction: column; align-items: center; gap: 12px;
 }
 .print-lightbox-inner img {
-  max-width: 90vw; max-height: 78vh; object-fit: contain;
+  max-width: 90vw; max-height: 78dvh; object-fit: contain;
   border: 3px solid var(--ink); box-shadow: 6px 6px 0 #000;
+  /* Swiping the photo steps through the gallery (see useSwipe), which the
+     browser would otherwise read as an attempt to drag the image. */
+  -webkit-user-drag: none; user-select: none; touch-action: pan-y;
 }
 .print-lightbox-caption {
   font-family: var(--body); color: var(--ink); text-align: center; margin: 0;
@@ -858,6 +972,166 @@ main { scroll-margin-top: 96px; }
 }
 .print-lightbox-nav.prev { left: -60px; }
 .print-lightbox-nav.next { right: -60px; }
+
+/* ============================================================================
+   FOOTER
+
+   There wasn't one. The bar at the top gets people around, but the things that
+   were only ever said inside the cart or halfway down a product page — that
+   nothing is held in stock, that postage is quoted in the chat, where to reach
+   Clarky — are exactly what is looked for at the bottom of a shop. It also gives
+   the page an ending, which the 90px of dead padding it replaces did not.
+   ============================================================================ */
+.site-footer {
+  margin-top: auto; width: 100%; box-sizing: border-box;
+  border-top: 2px solid var(--line); background: var(--sunken);
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.25) 2px, rgba(0,0,0,0.25) 4px);
+}
+.footer-inner {
+  width: 100%; max-width: 1400px; margin: 0 auto; box-sizing: border-box;
+  display: grid; grid-template-columns: 1.4fr 1fr 1.4fr; gap: 30px 40px;
+  padding: 34px max(20px, env(safe-area-inset-right)) max(34px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+}
+.footer-block { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0; }
+.footer-label {
+  font-family: var(--pixel); font-size: 0.55rem; letter-spacing: 1px; line-height: 1.5;
+  color: var(--theme-color);
+}
+.footer-note {
+  margin: 0; font-family: var(--mono); font-size: 0.74rem; line-height: 1.8; color: var(--muted);
+  max-width: 34ch;
+}
+/* Laid out as rows rather than a wrapping line: three stacked links are easier
+   to hit with a thumb than three separated by bullets, and each gets the full
+   44px without the block growing awkwardly wide. */
+.footer-link {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 30px;
+  font-family: var(--mono); font-size: 0.76rem; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--ink); text-decoration: none; border-bottom: 2px solid transparent;
+  transition: color 0.1s ease, border-color 0.1s ease;
+}
+.footer-link:hover { color: var(--theme-color); border-bottom-color: var(--theme-color); }
+.footer-link.strong { color: var(--theme-color); font-weight: 700; }
+
+/* ============================================================================
+   SEARCH
+
+   One overlay for every device rather than a persistent desktop field and
+   something else on a phone: the header is already two rows on a narrow screen,
+   and a field wide enough to type in would take a third. Anchored near the top
+   rather than centred, so the panel does not jump when the phone keyboard comes
+   up under it.
+   ============================================================================ */
+.search-overlay {
+  position: fixed; inset: 0; z-index: 10005; background: rgba(0, 0, 0, 0.82);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding:
+    max(12vh, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  overscroll-behavior: contain;
+}
+.search-panel {
+  width: min(620px, 100%); max-height: 76dvh; box-sizing: border-box;
+  background: var(--bg); border: 3px solid var(--theme-color); box-shadow: 8px 8px 0px #000;
+  display: flex; flex-direction: column; min-height: 0;
+}
+
+.search-field {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-bottom: 2px solid var(--line);
+}
+.search-field-icon { flex: 0 0 auto; color: var(--theme-color); font-size: 1rem; line-height: 1; }
+.search-input {
+  flex: 1 1 auto; min-width: 0; background: transparent; border: none; padding: 6px 0;
+  /* 16px floor, or iOS zooms the page the moment the field takes focus. */
+  font-family: var(--mono); font-size: max(16px, 0.95rem); color: var(--ink);
+}
+.search-input::placeholder { color: var(--muted); }
+.search-input:focus { outline: none; }
+/* Safari draws its own clear button inside a search field, in its own colours. */
+.search-input::-webkit-search-cancel-button { appearance: none; }
+.search-close {
+  flex: 0 0 auto; width: 40px; height: 40px; cursor: pointer;
+  background: transparent; border: 2px solid var(--line-strong); color: var(--ink);
+  font-size: 1rem; line-height: 1;
+  transition: background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease;
+}
+.search-close:hover { background: var(--danger); border-color: var(--danger); color: var(--bg); }
+
+.search-status {
+  flex: 0 0 auto; margin: 0; padding: 9px 16px; border-bottom: 2px solid var(--line);
+  font-family: var(--mono); font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted);
+}
+
+.search-empty {
+  padding: 26px 20px 30px; text-align: center;
+  font-family: var(--mono); font-size: 0.85rem; line-height: 1.7; color: var(--ink);
+}
+.search-empty p { margin: 0; }
+.search-empty-hint { margin-top: 12px !important; font-size: 0.74rem; color: var(--muted); }
+
+.search-results {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  list-style: none; margin: 0; padding: 6px;
+}
+.search-result {
+  display: flex; align-items: center; gap: 14px; padding: 8px 10px;
+  text-decoration: none; color: var(--ink); border: 2px solid transparent;
+}
+/* One highlight for both routes in: the arrow keys move it and the mouse moves
+   it, so there is never a second, competing "selected" row. */
+.search-result.here { border-color: var(--theme-color); background: var(--surface); }
+
+.search-result-thumb {
+  flex: 0 0 auto; width: 56px; height: 56px; background: #000; border: 2px solid var(--line);
+  overflow: hidden; display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 3;
+}
+.search-result-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.search-result-thumb-ph { color: #444; font-size: 1.2rem; }
+
+.search-result-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.search-result-name {
+  font-family: var(--body); font-weight: 700; font-size: 0.98rem; line-height: 1.25;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.search-result-where {
+  font-family: var(--mono); font-size: 0.66rem; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.search-result-price {
+  flex: 0 0 auto; font-family: var(--mono); font-weight: 700; font-size: 0.9rem;
+  color: var(--theme-color); white-space: nowrap;
+}
+
+/* ============================================================================
+   TOUCH
+
+   Every control below cleared 44px in neither dimension, which is the size a
+   fingertip can be relied on to hit. They are bumped only where the pointer is
+   actually coarse, so the desktop layout — where a 26px-tall stepper beside a
+   72px thumbnail is correctly proportioned — is left as it was.
+   ============================================================================ */
+@media (pointer: coarse) {
+  .nav-btn, .cart-btn { min-height: 44px; }
+  .nav-icon-btn { width: 44px; }
+
+  /* 30 x 26 before this, and the two buttons sit next to each other, so a
+     mis-tap on minus is a tap on plus. */
+  .qty-stepper button { min-width: 44px; min-height: 40px; }
+  .qty-value { min-width: 40px; }
+
+  /* Roughly 11px of text with no padding, and it empties a line from the cart.
+     The most destructive control in the storefront should not be the smallest
+     thing to aim at. */
+  .cart-line-remove { min-height: 44px; padding: 0 4px; }
+  .cart-clear { min-height: 44px; padding: 4px 10px; }
+
+  .thumb-btn { min-width: 44px; min-height: 44px; }
+  .footer-link { min-height: 44px; }
+  .search-result { padding: 10px; }
+}
 
 /* ============================================================================
    RESPONSIVE
@@ -908,6 +1182,20 @@ main { scroll-margin-top: 96px; }
   .sub-head-name { font-size: 1.15rem; }
   .more-count { font-size: 1.8rem; }
   .strip { margin-bottom: 42px; }
+
+  /* The front door was the longest thing on the phone version of the landing
+     page: an intro block with 25px of padding and 48px under it, then one
+     full-width tile per category stacked down the screen, so the featured items
+     the page is named after started three or four scrolls down. The tiles carry
+     a name and a count, both of which fit in half a phone's width. */
+  .welcome-message { padding: 16px 18px; margin-bottom: 26px; gap: 10px; font-size: 0.85rem; line-height: 1.7; }
+  .cat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .cat-tile { padding: 12px 13px; gap: 5px; box-shadow: 4px 4px 0px #000; }
+  .cat-tile-name { font-size: 0.95rem; line-height: 1.2; }
+  .cat-tile-count { font-size: 0.62rem; }
+
+  /* Three columns of small print is unreadable at this width; one is a list. */
+  .footer-inner { grid-template-columns: 1fr; gap: 26px; padding-top: 28px; }
 }
 
 @media (max-width: 560px) {
@@ -927,6 +1215,11 @@ main { scroll-margin-top: 96px; }
   .strip-title { font-size: 0.55rem; }
   .swatch { width: 68px; }
   .swatch-dot { width: 38px; height: 38px; }
+
+  /* Nearly the full height of the phone, and pinned close to the top so the
+     keyboard has somewhere to go. */
+  .search-overlay { padding-top: max(16px, env(safe-area-inset-top)); }
+  .search-panel { max-height: calc(100dvh - 32px); }
 }
 
 @media (max-width: 480px) {

@@ -15,3 +15,66 @@
   from = "/admin"
   to = "/admin.html"
   status = 200
+
+# ---------------------------------------------------------------------------
+# Static asset caching.
+#
+# Netlify's default for a static file is `public, max-age=0, must-revalidate`,
+# which is the safe choice when it cannot know whether a URL's contents can
+# change. For these three it can: every one of them is either content-addressed
+# or effectively frozen, and leaving them on the default meant a returning
+# visitor spent a revalidation round trip per file before anything could render.
+# ---------------------------------------------------------------------------
+
+# Vite puts a content hash in every filename it emits, so a changed file is a
+# changed URL and this can never serve the wrong bytes.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    cache-control = "public, max-age=31536000, immutable"
+
+# Self-hosted faces. The filenames carry family, weight and subset, so updating
+# a font means writing a new name rather than replacing one of these in place.
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    cache-control = "public, max-age=31536000, immutable"
+
+# Photos carried over from the original static site. These are not
+# content-addressed, so they get a long-but-finite life rather than `immutable`:
+# a week in cache, and up to a day of serving the old copy while a new one is
+# fetched in the background.
+[[headers]]
+  for = "/products/*"
+  [headers.values]
+    cache-control = "public, max-age=604800, stale-while-revalidate=86400"
+
+# The favicons, the app icons and the default social card. All change about
+# never, but all are hand-named, so the same finite policy applies.
+[[headers]]
+  for = "/favicon.svg"
+  [headers.values]
+    cache-control = "public, max-age=604800, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/icon*"
+  [headers.values]
+    cache-control = "public, max-age=604800, stale-while-revalidate=86400"
+
+[[headers]]
+  for = "/apple-touch-icon.png"
+  [headers.values]
+    cache-control = "public, max-age=604800, stale-while-revalidate=86400"
+
+# Shorter, because this is the one file a launcher re-reads to notice a changed
+# name, colour or icon set, and a week of staleness there is a week of a wrong
+# home-screen label.
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    cache-control = "public, max-age=86400, stale-while-revalidate=3600"
+
+[[headers]]
+  for = "/og-default.jpg"
+  [headers.values]
+    cache-control = "public, max-age=604800, stale-while-revalidate=86400"

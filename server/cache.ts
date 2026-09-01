@@ -29,12 +29,19 @@ export const CACHE_TAGS = {
   filaments: "filaments",
 } as const;
 
-/** Long-lived edge cache for a response that is invalidated explicitly on write. */
-export function cacheHeaders(tag: string): Record<string, string> {
+/**
+ * Long-lived edge cache for a response that is invalidated explicitly on write.
+ *
+ * More than one tag may be given, for a response assembled from things that are
+ * edited separately: the bootstrap payload carries the catalogue, the site copy
+ * and the filament library, so a purge of any one of those has to take it with
+ * them. A response is invalidated when *any* of its tags is purged.
+ */
+export function cacheHeaders(...tags: string[]): Record<string, string> {
   return {
     "netlify-cdn-cache-control": "public, durable, s-maxage=31536000, stale-while-revalidate=60",
     "cache-control": "public, max-age=0, must-revalidate",
-    "cache-tag": tag,
+    "cache-tag": tags.join(","),
   };
 }
 
