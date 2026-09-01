@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Clarky3D">
+  <rect width="512" height="512" fill="#121212"/>
+  <!-- The CRT scanline the whole storefront wears, at icon scale. -->
+  <rect width="512" height="512" fill="url(#scan)"/>
+  <defs>
+    <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="2" y="2" fill="#000" opacity="0.22"/>
+    </pattern>
+  </defs>
+  <rect x="102" y="190" width="66" height="22" fill="#000000"/>
+  <rect x="80" y="212" width="22" height="22" fill="#000000"/>
+  <rect x="168" y="212" width="22" height="22" fill="#000000"/>
+  <rect x="80" y="234" width="22" height="22" fill="#000000"/>
+  <rect x="80" y="256" width="22" height="22" fill="#000000"/>
+  <rect x="80" y="278" width="22" height="22" fill="#000000"/>
+  <rect x="80" y="300" width="22" height="22" fill="#000000"/>
+  <rect x="168" y="300" width="22" height="22" fill="#000000"/>
+  <rect x="102" y="322" width="66" height="22" fill="#000000"/>
+  <rect x="212" y="190" width="88" height="22" fill="#000000"/>
+  <rect x="300" y="212" width="22" height="22" fill="#000000"/>
+  <rect x="300" y="234" width="22" height="22" fill="#000000"/>
+  <rect x="234" y="256" width="66" height="22" fill="#000000"/>
+  <rect x="300" y="278" width="22" height="22" fill="#000000"/>
+  <rect x="300" y="300" width="22" height="22" fill="#000000"/>
+  <rect x="212" y="322" width="88" height="22" fill="#000000"/>
+  <rect x="344" y="190" width="88" height="22" fill="#000000"/>
+  <rect x="344" y="212" width="22" height="22" fill="#000000"/>
+  <rect x="432" y="212" width="22" height="22" fill="#000000"/>
+  <rect x="344" y="234" width="22" height="22" fill="#000000"/>
+  <rect x="432" y="234" width="22" height="22" fill="#000000"/>
+  <rect x="344" y="256" width="22" height="22" fill="#000000"/>
+  <rect x="432" y="256" width="22" height="22" fill="#000000"/>
+  <rect x="344" y="278" width="22" height="22" fill="#000000"/>
+  <rect x="432" y="278" width="22" height="22" fill="#000000"/>
+  <rect x="344" y="300" width="22" height="22" fill="#000000"/>
+  <rect x="432" y="300" width="22" height="22" fill="#000000"/>
+  <rect x="344" y="322" width="88" height="22" fill="#000000"/>
+  <rect x="80" y="168" width="66" height="22" fill="#F5F0E6"/>
+  <rect x="58" y="190" width="22" height="22" fill="#F5F0E6"/>
+  <rect x="146" y="190" width="22" height="22" fill="#F5F0E6"/>
+  <rect x="58" y="212" width="22" height="22" fill="#F5F0E6"/>
+  <rect x="58" y="234" width="22" height="22" fill="#F5F0E6"/>
+  <rect x="58" y="256" width="22" height="22" fill="#F5F0E6"/>
+  <rect x="58" y="278" width="22" height="22" fill="#F5F0E6"/>
+  <rect x="146" y="278" width="22" height="22" fill="#F5F0E6"/>
+  <rect x="80" y="300" width="66" height="22" fill="#F5F0E6"/>
+  <rect x="190" y="168" width="88" height="22" fill="#00E5FF"/>
+  <rect x="278" y="190" width="22" height="22" fill="#00E5FF"/>
+  <rect x="278" y="212" width="22" height="22" fill="#00E5FF"/>
+  <rect x="212" y="234" width="66" height="22" fill="#00E5FF"/>
+  <rect x="278" y="256" width="22" height="22" fill="#00E5FF"/>
+  <rect x="278" y="278" width="22" height="22" fill="#00E5FF"/>
+  <rect x="190" y="300" width="88" height="22" fill="#00E5FF"/>
+  <rect x="322" y="168" width="88" height="22" fill="#00E5FF"/>
+  <rect x="322" y="190" width="22" height="22" fill="#00E5FF"/>
+  <rect x="410" y="190" width="22" height="22" fill="#00E5FF"/>
+  <rect x="322" y="212" width="22" height="22" fill="#00E5FF"/>
+  <rect x="410" y="212" width="22" height="22" fill="#00E5FF"/>
+  <rect x="322" y="234" width="22" height="22" fill="#00E5FF"/>
+  <rect x="410" y="234" width="22" height="22" fill="#00E5FF"/>
+  <rect x="322" y="256" width="22" height="22" fill="#00E5FF"/>
+  <rect x="410" y="256" width="22" height="22" fill="#00E5FF"/>
+  <rect x="322" y="278" width="22" height="22" fill="#00E5FF"/>
+  <rect x="410" y="278" width="22" height="22" fill="#00E5FF"/>
+  <rect x="322" y="300" width="88" height="22" fill="#00E5FF"/>
+</svg>

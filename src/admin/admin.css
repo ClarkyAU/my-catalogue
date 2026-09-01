@@ -1,8 +1,16 @@
-/* Google Fonts are linked from admin.html rather than imported here — an
-   @import blocks on the stylesheet parsing before it can even start. */
+/* Shares the storefront's self-hosted faces (see ../styles/fonts.css) instead
+   of linking fonts.googleapis.com. Both @imports here are inlined into one file
+   at build time, so they cost no extra request at runtime. */
+@import '../styles/fonts.css';
 @import '../styles/watermark.css';
 
 :root {
+  /* The portal is dark, so the browser is told so explicitly — otherwise the
+     controls it draws itself rather than from CSS (the status and finish
+     <select>s, the text caret, autofill, the scrollbars) come out in the light
+     palette. On iOS that meant a white dropdown over a black page. */
+  color-scheme: dark;
+
   --accent: #00E5FF;
   --bg: #121212;
   --panel: #1A1A1A;
@@ -42,7 +50,12 @@ body {
   font-size: 0.8rem;
   letter-spacing: 0.5px;
 }
-.a-btn:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 #000; }
+/* Guarded on a real pointer: a touch device leaves :hover applied after a tap,
+   so an unguarded lift stays lifted on whichever button was last pressed. The
+   :active nudge below is the touch feedback and stays. */
+@media (hover: hover) {
+  .a-btn:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 #000; }
+}
 .a-btn:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #000; }
 .a-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: 4px 4px 0 #000; transform: none; }
 .a-btn-sm { padding: 6px 12px; font-size: 0.7rem; box-shadow: 3px 3px 0 #000; }
@@ -56,7 +69,11 @@ body {
   border: 2px solid var(--line);
   color: var(--text);
   padding: 10px;
-  font-size: 0.9rem;
+  /* Never below 16px. Safari on iOS zooms in when a smaller field is focused and
+     does not zoom back out, which on a form this wide leaves the portal
+     sideways-scrolling for the rest of the session. max() keeps the intended
+     0.9rem everywhere the platform allows it. */
+  font-size: max(16px, 0.9rem);
   width: 100%;
 }
 /* Border colour is the active treatment; the focus ring above stays on top. */
@@ -65,7 +82,7 @@ body {
 .a-color { width: 46px; height: 40px; padding: 2px; border: 2px solid var(--line); background: var(--panel-2); cursor: pointer; }
 
 /* ---- login ---- */
-.a-login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.a-login-wrap { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 20px; }
 .a-login-card {
   width: 100%; max-width: 380px; background: var(--panel);
   border: 4px solid var(--accent); box-shadow: 12px 12px 0 #000;
@@ -79,13 +96,16 @@ body {
 .a-form .a-btn { width: 100%; }
 
 /* ---- shell ---- */
-.a-shell { min-height: 100vh; }
+/* dvh rather than vh: on a phone vh measures the viewport with the browser
+   chrome hidden, so a 100vh page is taller than the window it is painted into. */
+.a-shell { min-height: 100dvh; }
 .a-topbar {
   position: sticky; top: 0; z-index: 10;
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 12px;
-  padding: 14px 22px; background: var(--panel-2);
+  background: var(--panel-2);
   border-bottom: 3px solid var(--accent);
+  padding: 14px max(22px, env(safe-area-inset-right)) 14px max(22px, env(safe-area-inset-left));
 }
 .a-brand { font-family: 'Press Start 2P', cursive; font-size: 1.1rem; }
 .a-nav { display: flex; gap: 8px; }
@@ -93,13 +113,17 @@ body {
   font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.8rem;
   text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer;
   background: transparent; color: var(--muted); border: 2px solid var(--line);
-  padding: 7px 16px; transition: all 0.1s ease;
+  padding: 7px 16px;
+  transition: background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease;
 }
 .a-nav-btn:hover { color: var(--text); border-color: var(--text); }
 .a-nav-btn.is-active { background: var(--accent); color: #061013; border-color: var(--accent); }
 .a-topbar-right { display: flex; align-items: center; gap: 14px; }
 .a-link { color: var(--accent); text-decoration: none; font-size: 0.8rem; }
-.a-main { max-width: 1000px; margin: 0 auto; padding: 26px 18px 80px; }
+.a-main {
+  max-width: 1000px; margin: 0 auto;
+  padding: 26px max(18px, env(safe-area-inset-right)) max(80px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+}
 
 .a-addbar { display: flex; gap: 10px; margin-bottom: 26px; }
 .a-addbar .a-input { flex: 1; }
@@ -278,7 +302,9 @@ select.a-input { cursor: pointer; }
 .a-photo-meta label > span { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
 .a-photo-input {
   font-family: 'Exo 2', sans-serif; background: var(--panel-2); border: 1px solid var(--line);
-  color: var(--text); padding: 5px 6px; font-size: 0.78rem; width: 100%; box-sizing: border-box;
+  color: var(--text); padding: 5px 6px; width: 100%; box-sizing: border-box;
+  /* Same iOS zoom-on-focus floor as .a-input. */
+  font-size: max(16px, 0.78rem);
 }
 .a-photo-input:focus { border-color: var(--accent); }
 .a-photo-save { width: 100%; margin-top: 2px; }
@@ -291,8 +317,49 @@ select.a-input { cursor: pointer; }
 .a-lead { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 1.2rem; }
 .a-error { color: var(--danger); font-size: 0.85rem; }
 .a-action-error { margin: 8px 0 0; }
-.a-splash { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 20px; }
+.a-splash { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; padding: 20px; }
 .a-splash-inline { padding: 40px; text-align: center; color: var(--muted); }
+
+/* ---- responsive ----
+   There was one breakpoint at 600px, which left the range between a phone and a
+   desktop untouched: the offset shadows and 3px frames eat about 40px of a
+   tablet's width before any content, the filament rows want three fields on a
+   line that only fits two, and the photo and print strips are fixed-width tiles
+   that leave a ragged gap rather than filling the row. The steps below take the
+   chrome down as the screen narrows and turn the fixed tiles into a grid. */
+@media (max-width: 900px) {
+  .a-cat, .a-settings { box-shadow: 5px 5px 0 #000; }
+  .a-main { padding-top: 20px; }
+  /* Name / material / status will not fit on one line much under this, so the
+     status drops to a full row of its own rather than being squeezed. */
+  .a-fil-status { flex: 1 1 100%; }
+}
+
+@media (max-width: 700px) {
+  /* Brand, tabs and the sign-out group each take a full row, centred, instead of
+     the tabs wrapping into a ragged second line under a left-aligned brand. */
+  .a-topbar { justify-content: center; padding-top: 10px; padding-bottom: 10px; }
+  .a-brand { flex: 1 1 100%; text-align: center; font-size: 0.95rem; }
+  .a-nav { flex: 1 1 100%; justify-content: center; flex-wrap: wrap; }
+  .a-topbar-right { flex: 1 1 100%; justify-content: center; }
+
+  .a-cat, .a-settings { box-shadow: 4px 4px 0 #000; border-width: 2px; }
+  .a-cat-body, .a-settings { padding: 12px; }
+  .a-cat-head { padding: 12px; }
+  .a-prod, .a-sub { padding: 12px; }
+
+  /* Fixed 180px and 150px tiles: two fit a phone with a gap left over, so they
+     are stretched to fill the row instead. */
+  .a-photo-strip, .a-fil-prints-strip {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;
+  }
+  .a-photo, .a-fil-print { width: auto; }
+
+  /* The add row's text field and its button cannot share a line here. */
+  .a-addbar { flex-wrap: wrap; }
+  .a-addbar .a-input { flex: 1 1 100%; }
+  .a-addbar .a-btn { flex: 1 1 auto; }
+}
 
 @media (max-width: 600px) {
   .a-hide-sm { display: none; }
@@ -303,4 +370,27 @@ select.a-input { cursor: pointer; }
   .a-field-featured { flex: 0 0 72px; }
   .a-wm-preview { width: 100%; }
   .a-wm-tile, .a-wm-frame { width: 100%; }
+
+  .a-login-card { padding: 26px 18px; border-width: 3px; box-shadow: 8px 8px 0 #000; }
+  .a-logo { font-size: 1.4rem; }
+  /* Name and material stack; each was down to about 110px on one line. */
+  .a-fil-name, .a-fil-mat, .a-fil-finish { flex: 1 1 100%; }
+  .a-parts-row, .a-option-choice { flex-wrap: wrap; }
+  /* The nested answers were indented 34px plus a 12px rule, which is a sixth of
+     a phone's width spent on hierarchy. */
+  .a-option-choices { margin-left: 12px; padding-left: 10px; }
+  .a-option > .a-btn { margin-left: 12px; }
+}
+
+/* Every control the portal is driven from, sized for a fingertip on the devices
+   that have one. The buttons here are 30-34px, which is fine under a mouse. */
+@media (pointer: coarse) {
+  .a-btn, .a-nav-btn, .a-input, select.a-input { min-height: 44px; }
+  .a-btn-sm { min-height: 40px; }
+  .a-mini { min-height: 32px; min-width: 32px; }
+  .a-collapse { min-height: 44px; min-width: 44px; }
+  .a-color { height: 44px; }
+  .a-photo-input { min-height: 36px; }
+  /* A 22px tick box, and the ones on a product line sit 14px apart. */
+  .a-toggle input, .a-field-featured input { width: 26px; height: 26px; }
 }

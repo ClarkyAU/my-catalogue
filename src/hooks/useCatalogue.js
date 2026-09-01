@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { WATERMARK_DEFAULTS } from '../lib/watermark';
+import { primeFilaments } from '../lib/filaments';
 
 const DEFAULT_THEME = { themeColor: '#00E5FF' };
 
@@ -15,22 +16,80 @@ const DEFAULT_SETTINGS = {
 
 const hasContent = (data) => data && typeof data === 'object' && Object.keys(data).length > 0;
 
+// The URL fragment is an external store, so it is read as one — the same way the
+// cart is (see src/lib/cart.js). This replaced a listener that was attached
+// inside an effect and re-attached on every catalogue update, and that had to
+// call itself once on mount to catch a route it had missed. Subscribing properly
+// means there is no window where the hash and the rendered route disagree, and
+// the route below is derived during render rather than pushed into state by an
+// effect.
+const subscribeToHash = (onChange) => {
+  window.addEventListener('hashchange', onChange);
+  return () => window.removeEventListener('hashchange', onChange);
+};
+const getHash = () => window.location.hash.slice(1);
+// Nothing renders on the server, but useSyncExternalStore wants a snapshot for
+// it and an empty hash is the storefront root.
+const getServerHash = () => '';
+
+/**
+ * Resolve a fragment against the catalogue. Pure, so it can run during render:
+ * before the catalogue arrives every route falls through to the landing page,
+ * and re-runs on its own the moment the tree lands.
+ */
+function resolveRoute(hash, catalogue) {
+  const empty = {
+    activeCategory: null,
+    activeSubCategory: null,
+    activeProduct: null,
+    activeTheme: DEFAULT_THEME,
+    activeColours: false,
+  };
+
+  // Dedicated standalone page for the filament colour library.
+  if (hash === 'colours') return { ...empty, activeColours: true };
+  if (!hash) return empty;
+
+  const [catId, subId, prodId] = hash.split('/');
+  const category = catalogue[catId];
+  if (!category) return empty;
+
+  const subCategory = subId ? category.subCategories?.[subId] : null;
+  const product = subCategory && prodId ? subCategory.products?.[prodId] : null;
+
+  return {
+    activeCategory: catId,
+    activeSubCategory: subCategory ? subId : null,
+    activeProduct: product ? prodId : null,
+    activeTheme: category.theme || DEFAULT_THEME,
+    activeColours: false,
+  };
+}
+
+const navigateTo = (catId, subId, prodId) => {
+  let path = '';
+  if (catId) path += catId;
+  if (subId) path += `/${subId}`;
+  if (prodId) path += `/${prodId}`;
+  window.location.hash = path;
+};
+
 export const useCatalogue = () => {
   const [catalogue, setCatalogue] = useState({});
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
-  const [activeCategory, setActiveCategory] = useState(null);
-  const [activeSubCategory, setActiveSubCategory] = useState(null);
-  const [activeProduct, setActiveProduct] = useState(null);
-  const [activeTheme, setActiveTheme] = useState(DEFAULT_THEME);
-  const [activeColours, setActiveColours] = useState(false);
 
-  // One request for both the catalogue and the editable site copy. There is no
-  // bundled fallback catalogue: a snapshot goes stale the moment the owner
-  // edits anything in the admin portal, and it has no notion of hidden
-  // listings, so falling back to it could put a withdrawn product back on the
-  // storefront. If the request fails the page says so instead.
+  // One request for the catalogue, the editable site copy and the filament
+  // library — everything the first render needs. There is no bundled fallback
+  // catalogue: a snapshot goes stale the moment the owner edits anything in the
+  // admin portal, and it has no notion of hidden listings, so falling back to it
+  // could put a withdrawn product back on the storefront. If the request fails
+  // the page says so instead.
+  //
+  // index.html preloads this URL, so the response is usually already on its way
+  // before this effect runs and the fetch resolves off the warmed entry rather
+  // than opening a request of its own.
   useEffect(() => {
     let cancelled = false;
     fetch('/api/bootstrap')
@@ -40,6 +99,9 @@ export const useCatalogue = () => {
         if (hasContent(data?.catalogue)) {
           setCatalogue(data.catalogue);
           if (hasContent(data.settings)) setSettings({ ...DEFAULT_SETTINGS, ...data.settings });
+          // Hand the colour library to the module every consumer reads it from,
+          // so none of them has to go and fetch it separately.
+          primeFilaments(data.filaments);
         } else {
           setFailed(true);
         }
@@ -55,53 +117,10 @@ export const useCatalogue = () => {
     };
   }, []);
 
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.slice(1);
+  const hash = useSyncExternalStore(subscribeToHash, getHash, getServerHash);
+  const route = useMemo(() => resolveRoute(hash, catalogue), [hash, catalogue]);
 
-      // Dedicated standalone page for the filament colour library.
-      if (hash === 'colours') {
-        setActiveColours(true);
-        setActiveCategory(null); setActiveSubCategory(null); setActiveProduct(null);
-        setActiveTheme(DEFAULT_THEME);
-        return;
-      }
-      setActiveColours(false);
-
-      if (!hash) {
-        setActiveCategory(null); setActiveSubCategory(null); setActiveProduct(null);
-        setActiveTheme(DEFAULT_THEME); return;
-      }
-
-      const [catId, subId, prodId] = hash.split('/');
-
-      if (catalogue[catId]) {
-        setActiveCategory(catId);
-        setActiveTheme(catalogue[catId].theme || DEFAULT_THEME);
-        if (subId && catalogue[catId].subCategories[subId]) {
-          setActiveSubCategory(subId);
-          if (prodId && catalogue[catId].subCategories[subId].products[prodId]) {
-            setActiveProduct(prodId);
-          } else { setActiveProduct(null); }
-        } else { setActiveSubCategory(null); setActiveProduct(null); }
-      } else {
-        setActiveCategory(null); setActiveSubCategory(null); setActiveProduct(null);
-        setActiveTheme(DEFAULT_THEME);
-      }
-    };
-
-    window.addEventListener('hashchange', handleHashChange);
-    handleHashChange();
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [catalogue]);
-
-  const navigateTo = (catId, subId, prodId) => {
-    let path = '';
-    if (catId) path += catId;
-    if (subId) path += `/${subId}`;
-    if (prodId) path += `/${prodId}`;
-    window.location.hash = path;
-  };
-
-  return { catalogue, settings, loading, failed, activeCategory, activeSubCategory, activeProduct, activeTheme, activeColours, navigateTo };
+  // `hash` is handed back so the scroll reset can key off the raw route (see
+  // useScrollReset) without subscribing to the fragment a second time.
+  return { catalogue, settings, loading, failed, hash, ...route, navigateTo };
 };

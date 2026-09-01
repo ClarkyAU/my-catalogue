@@ -3,16 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#121212" />
     <meta name="robots" content="noindex, nofollow" />
+    <!-- No manifest here on purpose: the portal is behind a login and is not
+         something to install, so it only needs the icon and the chrome colour. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Clarky3D Admin</title>
-    <!-- Fonts load from a <link> rather than a CSS @import so the browser can
-         start fetching them while the stylesheet is still downloading. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Self-hosted faces, declared in src/styles/fonts.css via admin.css. The
+         portal is behind a login and only the owner ever loads it, so only the
+         face it opens on is preloaded. -->
     <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700&family=Press+Start+2P&display=swap"
+      rel="preload"
+      href="/fonts/exo2-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
   </head>
   <body>

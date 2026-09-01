@@ -1,5 +1,5 @@
-import './styles/global.css';
-import { useCallback, useEffect, useRef, useState } from 'react';
+// The stylesheet is imported once, at the entry (src/main.jsx).
+import { useEffect, useMemo, useRef } from 'react';
 import { useCatalogue } from './hooks/useCatalogue';
 import { Header } from './components/Header';
 import { ProductDisplay } from './components/ProductDisplay';
@@ -8,21 +8,46 @@ import { CategoryGrid } from './components/CategoryGrid';
 import { CategoryPage } from './components/CategoryPage';
 import { ColoursPage } from './components/ColoursPage';
 import { CartPanel } from './components/CartPanel';
+import { SearchOverlay } from './components/SearchOverlay';
+import { SiteFooter } from './components/SiteFooter';
 import { cartCount, useCart } from './lib/cart.js';
 import { inkFor } from './lib/onAccent.js';
 import { relatedProducts } from './lib/related.js';
+import { useOverlay } from './hooks/useOverlay.js';
+import { useScrollReset } from './hooks/useScrollReset.js';
 
 const SITE_NAME = 'Clarky3D';
 
 export default function App() {
-  const { catalogue, settings, loading, failed, activeCategory, activeSubCategory, activeProduct, activeTheme, activeColours, navigateTo } = useCatalogue();
+  const { catalogue, settings, loading, failed, hash, activeCategory, activeSubCategory, activeProduct, activeTheme, activeColours, navigateTo } = useCatalogue();
   const cart = useCart();
-  const [cartOpen, setCartOpen] = useState(false);
+  useScrollReset(hash);
+  // Both panels are backed by a history entry, so the Android back button and
+  // the iOS back-swipe close them instead of leaving the storefront.
+  const cartPanel = useOverlay('cart');
+  const search = useOverlay('search');
   // Target for the skip link below, so a keyboard user can get past the header
   // and the catalogue menu in one press.
   const mainRef = useRef(null);
-  const closeCart = useCallback(() => setCartOpen(false), []);
   const count = cartCount(cart);
+
+  // Desktop route into search. "/" is the near-universal shortcut for it and
+  // Cmd/Ctrl-K the other one people try; both are ignored while the caret is in
+  // a field, so typing a slash into the colour request still types a slash.
+  const openSearch = search.open;
+  useEffect(() => {
+    const onKey = (event) => {
+      const inField = /^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName || '')
+        || event.target?.isContentEditable;
+      if (inField) return;
+      const shortcut = event.key === '/' || ((event.metaKey || event.ctrlKey) && event.key === 'k');
+      if (!shortcut) return;
+      event.preventDefault();
+      openSearch();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [openSearch]);
 
   const currentCategory = activeCategory ? catalogue[activeCategory] : null;
   const currentSubCategory = activeCategory && activeSubCategory ? currentCategory?.subCategories[activeSubCategory] : null;
@@ -31,18 +56,31 @@ export default function App() {
   const productPath = currentProduct ? `${activeCategory}/${activeSubCategory}/${activeProduct}` : null;
 
   // Path below Home for the breadcrumb, built from whatever level is active.
-  const trail = [];
-  if (currentCategory) {
-    trail.push({ label: currentCategory.displayName, hash: activeCategory });
-    if (currentSubCategory) {
-      trail.push({ label: currentSubCategory.displayName, hash: `${activeCategory}/${activeSubCategory}` });
-      if (currentProduct) {
-        trail.push({ label: currentProduct.displayName, hash: `${activeCategory}/${activeSubCategory}/${activeProduct}` });
+  // Memoised along with the related-products row below it: both are rebuilt from
+  // the whole catalogue, and this component re-renders on things that have
+  // nothing to do with either of them — opening the cart, adding a line to it.
+  const trail = useMemo(() => {
+    const crumbs = [];
+    if (currentCategory) {
+      crumbs.push({ label: currentCategory.displayName, hash: activeCategory });
+      if (currentSubCategory) {
+        crumbs.push({ label: currentSubCategory.displayName, hash: `${activeCategory}/${activeSubCategory}` });
+        if (currentProduct) {
+          crumbs.push({ label: currentProduct.displayName, hash: `${activeCategory}/${activeSubCategory}/${activeProduct}` });
+        }
       }
+    } else if (activeColours) {
+      crumbs.push({ label: 'COLOURS', hash: 'colours' });
     }
-  } else if (activeColours) {
-    trail.push({ label: 'COLOURS', hash: 'colours' });
-  }
+    return crumbs;
+  }, [currentCategory, currentSubCategory, currentProduct, activeCategory, activeSubCategory, activeProduct, activeColours]);
+
+  const related = useMemo(
+    () => (currentProduct
+      ? relatedProducts(catalogue, activeCategory, activeSubCategory, activeProduct)
+      : undefined),
+    [catalogue, currentProduct, activeCategory, activeSubCategory, activeProduct],
+  );
 
   // The HTML document is only ever fetched once, and its <title> and canonical
   // URL may have been rewritten for a shared product link by the social-preview
@@ -106,7 +144,8 @@ export default function App() {
         navigateTo={navigateTo}
         active={activeRoute}
         cartCount={count}
-        onOpenCart={() => setCartOpen(true)}
+        onOpenCart={cartPanel.open}
+        onOpenSearch={search.open}
       />
       <div className="main-wrapper">
 
@@ -141,14 +180,26 @@ export default function App() {
                 subCategoryName={currentSubCategory.displayName}
                 categoryHref={`#${activeCategory}`}
                 subCategoryHref={`#${activeCategory}/${activeSubCategory}`}
-                related={relatedProducts(catalogue, activeCategory, activeSubCategory, activeProduct)}
+                related={related}
               />
             )
           )}
         </main>
 
       </div>
-      <CartPanel open={cartOpen} onClose={closeCart} />
+      <SiteFooter />
+      <CartPanel
+        open={cartPanel.isOpen}
+        onClose={cartPanel.close}
+        onNavigate={cartPanel.dismiss}
+      />
+      {search.isOpen && (
+        <SearchOverlay
+          catalogue={catalogue}
+          onClose={search.close}
+          onNavigate={search.dismiss}
+        />
+      )}
     </div>
   );
 }

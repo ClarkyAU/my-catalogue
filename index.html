@@ -3,7 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover lets the page use the whole screen on a notched
+         phone; the layout keeps its content clear of the cutouts and the home
+         indicator with env(safe-area-inset-*) instead of leaving letterboxed
+         bars down the sides. No maximum-scale or user-scalable: pinch-zoom is
+         how a lot of people read small print, and taking it away is not ours to
+         do. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Paints the browser's own chrome — the Android address bar, the Safari
+         toolbars, the task switcher card — in the page's background instead of
+         leaving a white or grey band above a black site. -->
+    <meta name="theme-color" content="#121212" />
+
+    <!-- Saved to a home screen, the storefront had no icon of its own: iOS
+         screenshotted the page and Android drew the favicon on a white circle.
+         The manifest supplies real ones, plus the name and the colours the
+         launcher and splash use. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Clarky3D" />
     <!-- Everything between the markers below is the site-wide default preview,
          and is swapped for product-specific tags by the social-preview edge
          function (netlify/edge-functions/share-preview.ts) on any request
@@ -38,14 +56,37 @@
     <meta name="twitter:image" content="https://print.clarkyau.com/og-default.jpg" />
     <meta name="twitter:image:alt" content="Clarky3D — made-to-order 3D prints" />
     <!-- social-meta:end -->
-    <!-- Fonts load from a <link> rather than a CSS @import so the browser can
-         start fetching them while the stylesheet is still downloading. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- The faces are declared in src/styles/fonts.css and served from this
+         origin, so there is no third-party stylesheet in front of the first
+         paint any more. The two the browser needs on every route are preloaded
+         here so they download alongside the CSS that references them rather
+         than waiting for it to parse: Exo 2 sets every heading and every line
+         of body copy, and Space Mono sets the whole interface (nav, prices,
+         breadcrumb, captions). Press Start 2P is deliberately left out — it
+         only dresses the wordmark and a few eyebrow labels, and can swap in
+         late without moving anything that matters. -->
     <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700&family=Press+Start+2P&family=Space+Mono:wght@400;700&display=swap"
+      rel="preload"
+      href="/fonts/exo2-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
+    <link
+      rel="preload"
+      href="/fonts/space-mono-400-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <!-- The storefront renders nothing until this responds: the shell ships an
+         empty #root, so the catalogue was previously only requested once the
+         module graph had downloaded, parsed and run — four sequential hops
+         before the first image byte could move. Preloading it puts the request
+         in flight during the JS download instead, and the fetch in
+         src/hooks/useCatalogue.js picks the warmed entry straight out of the
+         cache. -->
+    <link rel="preload" href="/api/bootstrap" as="fetch" crossorigin="anonymous" />
   </head>
   <body>
     <div id="root"></div>

@@ -6,18 +6,27 @@ import { OptionPicker } from './OptionPicker';
 import { CartIcon, ShareIcon } from './Icons';
 import { loadFilaments } from '../lib/filaments.js';
 import { shareUrl } from '../lib/shareLink.js';
-import { firstPhotoUrl, imageUrl, srcSet } from '../lib/photos.js';
+import {
+  MAIN_IMAGE,
+  avifSrcSet,
+  firstPhotoUrl,
+  imageUrl,
+  responsiveImage,
+  srcSetDensity,
+} from '../lib/photos.js';
+import { CardImage, EAGER_CARDS } from './CardImage';
 import { productParts } from '../lib/colourParts.js';
 import { defaultSelections, productOptions } from '../lib/productOptions.js';
 import { addToCart } from '../lib/cart.js';
+import { useSwipe } from '../hooks/useSwipe.js';
 import { TELEGRAM_URL } from '../lib/telegram.js';
 
-// The main photo is shown "contain" inside a square frame, so only a width is
-// requested and the CDN keeps the aspect ratio. The thumbs are 100px squares,
-// and the related cards below are the same square cards used everywhere else.
-const MAIN_SIZE = { w: 1200 };
+// The main photo is shown "contain" inside a square frame that fills its column,
+// so it is served from the fluid MAIN_IMAGE ladder rather than at one fixed
+// width. The thumbs are genuinely 100px squares at every viewport, which is the
+// one case where a 1x/2x density srcset is the right answer. The related cards
+// below are the same square cards used everywhere else.
 const THUMB_SIZE = { w: 100, h: 100 };
-const CARD_SIZE = { w: 560, h: 560 };
 
 /**
  * What the main photo shows, for anyone who cannot see it. The filament and
@@ -63,10 +72,22 @@ export const ProductDisplay = ({
   const options = useMemo(() => productOptions(product), [product]);
   const [selections, setSelections] = useState(() => defaultSelections(options));
 
+  const photoCount = product.photos?.length || 0;
+  // On a phone the main photo is most of the page and the thumb row is below the
+  // fold, so swiping it is the only gesture that reaches the other photos
+  // without scrolling away from the one on screen.
+  const swipeRef = useSwipe({
+    enabled: photoCount > 1,
+    onNext: () => setIndex((i) => (i + 1) % photoCount),
+    onPrevious: () => setIndex((i) => (i - 1 + photoCount) % photoCount),
+  });
+
   const currentPhoto = product.photos?.[index];
   // Photos arrive as objects from the API, but the carried-over static data used
   // bare URL strings, so both shapes still have to work here.
   const mainPhotoUrl = currentPhoto?.url || currentPhoto || null;
+  const main = responsiveImage(mainPhotoUrl, MAIN_IMAGE);
+  const avifMain = avifSrcSet(mainPhotoUrl, MAIN_IMAGE);
   // The crawler-readable form of this page's URL, so a link pasted into a chat
   // previews as the product rather than the bare homepage.
   const productUrl = path ? shareUrl(path) : window.location.href;
@@ -141,14 +162,26 @@ export const ProductDisplay = ({
                     content of this page rather than decoration, so unlike the
                     grid cards — where the product name sits in the same link —
                     it carries a real alt describing what is pictured. */}
-                <img
-                  src={imageUrl(mainPhotoUrl, MAIN_SIZE)}
-                  srcSet={srcSet(mainPhotoUrl, MAIN_SIZE)}
-                  className="main-img"
-                  alt={describePhoto(product.displayName, currentPhoto)}
-                  decoding="async"
-                  fetchPriority="high"
-                />
+                <picture>
+                  {/* AVIF first, for the one image on the site where the extra
+                      edge transform pays for itself. Anything that cannot decode
+                      it skips this source entirely and takes the <img> below,
+                      where the CDN negotiates WebP off the Accept header as
+                      usual. */}
+                  {avifMain && (
+                    <source type="image/avif" srcSet={avifMain} sizes={main.sizes} />
+                  )}
+                  <img
+                    ref={swipeRef}
+                    src={main.src}
+                    srcSet={main.srcSet}
+                    sizes={main.sizes}
+                    className="main-img"
+                    alt={describePhoto(product.displayName, currentPhoto)}
+                    decoding="async"
+                    fetchPriority="high"
+                  />
+                </picture>
 
                 {(currentPhoto?.filaments || currentPhoto?.texture) && (
                   <div className="image-caption">
@@ -191,7 +224,7 @@ export const ProductDisplay = ({
                   >
                     <img
                       src={imageUrl(url, THUMB_SIZE)}
-                      srcSet={srcSet(url, THUMB_SIZE)}
+                      srcSet={srcSetDensity(url, THUMB_SIZE)}
                       className="thumb"
                       alt=""
                       loading="lazy"
@@ -275,24 +308,11 @@ export const ProductDisplay = ({
             {related.items.map(({ key, product: item, href, subName }) => {
               const img = firstPhotoUrl(item);
               return (
-                // Nothing scrolls the page on a route change, and this sits at
-                // the very bottom of it — without this the next product would
-                // open already scrolled past its own photo.
-                <a key={key} href={href} className="grid-card" onClick={() => window.scrollTo(0, 0)}>
+                <a key={key} href={href} className="grid-card">
                   <div className="card-img-container">
-                    {img ? (
-                      <img
-                        src={imageUrl(img, CARD_SIZE)}
-                        srcSet={srcSet(img, CARD_SIZE)}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        width="560"
-                        height="560"
-                      />
-                    ) : (
-                      <PhotoPlaceholder />
-                    )}
+                    {/* Always below the fold: this row is under the gallery and
+                        every question the page asks, so it stays lazy. */}
+                    <CardImage url={img} index={EAGER_CARDS} />
                   </div>
                   <div className="card-details">
                     <h4 className="card-name">{item.displayName}</h4>

@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { swatchStyle, STATUS_ORDER } from '../lib/filamentSwatch.js';
 import { loadFilaments } from '../lib/filaments.js';
-import { imageUrl, srcSet } from '../lib/photos.js';
+import { LIGHTBOX_IMAGE, imageUrl, responsiveImage, srcSetDensity } from '../lib/photos.js';
 import { useFocusTrap } from '../hooks/useFocusTrap.js';
+import { useOverlay } from '../hooks/useOverlay.js';
+import { useSwipe } from '../hooks/useSwipe.js';
 import { Breadcrumb } from './Breadcrumb';
 
-// Print thumbs are 88px squares; the lightbox shows the photo large but still
-// nowhere near the size it was uploaded at.
+// Print thumbs are 88px squares at every viewport, so a 1x/2x density srcset is
+// correct for them. The lightbox opens at 90% of the viewport, which is not a
+// fixed size at all, so it takes the fluid LIGHTBOX_IMAGE ladder instead.
 const PRINT_THUMB_SIZE = { w: 88, h: 88 };
-const LIGHTBOX_SIZE = { w: 1400 };
 
 // Maps each stock status to a CSS modifier for its badge/heading colour.
 const STATUS_CLASS = {
@@ -27,7 +29,9 @@ export const ColoursPage = ({ trail = [] }) => {
   const [filaments, setFilaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('All');
-  const [lightbox, setLightbox] = useState(null); // { prints, index } | null
+  // { prints, index } while open. Backed by a history entry, so the back button
+  // and the iOS back-swipe close the viewer instead of leaving the site.
+  const lightbox = useOverlay('print-lightbox');
 
   useEffect(() => {
     let cancelled = false;
@@ -71,10 +75,12 @@ export const ColoursPage = ({ trail = [] }) => {
     [visible],
   );
 
-  const openLightbox = (prints, index) => setLightbox({ prints, index });
-  const closeLightbox = () => setLightbox(null);
+  const openLightbox = (prints, index) => lightbox.open({ prints, index });
+  // Moving between photos is not navigation, so it changes the value in place
+  // rather than stacking a history entry per photo — otherwise leaving a gallery
+  // of eight would take eight presses of back.
   const step = (delta) =>
-    setLightbox((lb) => {
+    lightbox.update((lb) => {
       if (!lb) return lb;
       const n = lb.prints.length;
       return { ...lb, index: (lb.index + delta + n) % n };
@@ -127,11 +133,11 @@ export const ColoursPage = ({ trail = [] }) => {
         ))
       )}
 
-      {lightbox && (
+      {lightbox.value && (
         <PrintLightbox
-          prints={lightbox.prints}
-          index={lightbox.index}
-          onClose={closeLightbox}
+          prints={lightbox.value.prints}
+          index={lightbox.value.index}
+          onClose={lightbox.close}
           onStep={step}
         />
       )}
@@ -181,7 +187,7 @@ function FilamentRow({ filament: f, onOpenPrint }) {
               >
                 <img
                   src={imageUrl(p.url, PRINT_THUMB_SIZE)}
-                  srcSet={srcSet(p.url, PRINT_THUMB_SIZE)}
+                  srcSet={srcSetDensity(p.url, PRINT_THUMB_SIZE)}
                   alt={p.caption || `Print in ${f.name}`}
                   loading="lazy"
                   decoding="async"
@@ -200,9 +206,21 @@ function FilamentRow({ filament: f, onOpenPrint }) {
 function PrintLightbox({ prints, index, onClose, onStep }) {
   const print = prints[index];
   const many = prints.length > 1;
+  // The lightbox is sized in viewport units, so it takes the fluid ladder — and
+  // it stops at the stored original's width rather than asking the CDN to
+  // upscale past it the way the old fixed 1400/2800 pair did.
+  const lightboxImage = responsiveImage(print.url, LIGHTBOX_IMAGE);
   // A real dialog: focus is held inside it while it is up and handed back to the
   // thumbnail that opened it on the way out.
   const dialogRef = useFocusTrap(true);
+  // On a phone the arrows are pushed on top of the image (there is no room
+  // beside it), so swiping is both the obvious gesture and the one that does not
+  // cover the photo.
+  const swipeRef = useSwipe({
+    enabled: many,
+    onNext: () => onStep(1),
+    onPrevious: () => onStep(-1),
+  });
 
   useEffect(() => {
     const onKey = (e) => {
@@ -238,8 +256,10 @@ function PrintLightbox({ prints, index, onClose, onStep }) {
           </button>
         )}
         <img
-          src={imageUrl(print.url, LIGHTBOX_SIZE)}
-          srcSet={srcSet(print.url, LIGHTBOX_SIZE)}
+          ref={swipeRef}
+          src={lightboxImage.src}
+          srcSet={lightboxImage.srcSet}
+          sizes={lightboxImage.sizes}
           alt={print.caption || 'Print'}
         />
         {print.caption && <p className="print-lightbox-caption">{print.caption}</p>}
