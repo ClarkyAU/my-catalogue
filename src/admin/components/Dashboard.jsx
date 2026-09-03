@@ -1,45 +1,46 @@
 import { useState } from 'react';
-import { api } from '../api.js';
 import { useCatalogueTree, CatalogueStoreProvider } from '../useCatalogueTree.js';
-import { Splash } from './Splash.jsx';
 import { SiteSettings } from './SiteSettings.jsx';
-import { CategoryBlock } from './CategoryBlock.jsx';
+import { CataloguePage } from './CataloguePage.jsx';
+import { FeaturedOrder } from './FeaturedOrder.jsx';
 import { FilamentManager } from './FilamentManager.jsx';
 
-// The signed-in control panel: site text and watermark settings, the category
-// tree, and the filament colour library. The catalogue tree is loaded once here
-// and shared with every block below through the store context.
-export function Dashboard({ user, onSignOut }) {
-  const store = useCatalogueTree();
-  const { tree, loading, error, reload } = store;
-  const [newCat, setNewCat] = useState('');
-  const [page, setPage] = useState('catalogue'); // 'catalogue' | 'filaments'
+// One tab per job, rather than one long page.
+//
+// The catalogue page had grown a stack of things that were not the catalogue:
+// the site's welcome text, the watermark settings and their preview, and the
+// home page's running order — all above the first category, all needing to be
+// scrolled past to get to the work. They are separate jobs done at separate
+// times, so they are separate pages now. Ordered by how often each is opened,
+// with the settings that are set once at the end.
+const PAGES = [
+  { id: 'catalogue', label: 'CATALOGUE' },
+  { id: 'featured', label: 'FEATURED' },
+  { id: 'filaments', label: 'FILAMENTS' },
+  { id: 'settings', label: 'SETTINGS' },
+];
 
-  const addCategory = async (e) => {
-    e.preventDefault();
-    if (!newCat.trim()) return;
-    await api('/categories', { method: 'POST', body: { displayName: newCat.trim() } });
-    setNewCat('');
-    reload();
-  };
+export function Dashboard({ user, onSignOut }) {
+  // The catalogue tree is loaded once here and shared with every page below
+  // through the store context, so switching tabs does not refetch it.
+  const store = useCatalogueTree();
+  const { error } = store;
+  const [page, setPage] = useState('catalogue');
 
   return (
     <div className="a-shell">
       <header className="a-topbar">
         <span className="a-brand">CLARKY3D<span>_ADMIN</span></span>
         <nav className="a-nav">
-          <button
-            className={`a-nav-btn ${page === 'catalogue' ? 'is-active' : ''}`}
-            onClick={() => setPage('catalogue')}
-          >
-            CATALOGUE
-          </button>
-          <button
-            className={`a-nav-btn ${page === 'filaments' ? 'is-active' : ''}`}
-            onClick={() => setPage('filaments')}
-          >
-            FILAMENTS
-          </button>
+          {PAGES.map(({ id, label }) => (
+            <button
+              key={id}
+              className={`a-nav-btn ${page === id ? 'is-active' : ''}`}
+              onClick={() => setPage(id)}
+            >
+              {label}
+            </button>
+          ))}
         </nav>
         <div className="a-topbar-right">
           <a className="a-link" href="/" target="_blank" rel="noreferrer">view site ↗</a>
@@ -48,31 +49,18 @@ export function Dashboard({ user, onSignOut }) {
         </div>
       </header>
 
-      <main className="a-main">
-        {error && <p className="a-error">{error}</p>}
+      <CatalogueStoreProvider value={store}>
+        <main className="a-main">
+          {/* Anything that went wrong loading or saving the tree, shown on
+              whichever page is open when it happens. */}
+          {error && <p className="a-error">{error}</p>}
 
-        {page === 'filaments' ? (
-          <FilamentManager />
-        ) : (
-          <CatalogueStoreProvider value={store}>
-            <SiteSettings />
-
-            <form className="a-addbar" onSubmit={addCategory}>
-              <input className="a-input" placeholder="New category name…" value={newCat}
-                onChange={(e) => setNewCat(e.target.value)} />
-              <button className="a-btn" type="submit">+ CATEGORY</button>
-            </form>
-
-            {loading ? (
-              <Splash text="LOADING…" inline />
-            ) : tree.length === 0 ? (
-              <p className="a-muted">No categories yet. Add one above to get started.</p>
-            ) : (
-              tree.map((cat) => <CategoryBlock key={cat.id} category={cat} />)
-            )}
-          </CatalogueStoreProvider>
-        )}
-      </main>
+          {page === 'catalogue' && <CataloguePage />}
+          {page === 'featured' && <FeaturedOrder />}
+          {page === 'filaments' && <FilamentManager />}
+          {page === 'settings' && <SiteSettings />}
+        </main>
+      </CatalogueStoreProvider>
     </div>
   );
 }

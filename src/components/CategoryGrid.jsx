@@ -1,8 +1,9 @@
 import { Breadcrumb } from './Breadcrumb';
 import { CardImage } from './CardImage';
 import { firstPhotoUrl } from '../lib/photos';
+import { DesignedMark } from './DesignedMark';
 
-export const CategoryGrid = ({ subCategory, categoryId, subCategoryId, trail = [] }) => {
+export const CategoryGrid = ({ subCategory, categoryId, subCategoryId, settings, trail = [] }) => {
   if (!subCategory || !subCategory.products) return null;
   const products = Object.values(subCategory.products);
 
@@ -19,6 +20,7 @@ export const CategoryGrid = ({ subCategory, categoryId, subCategoryId, trail = [
                 {/* This grid is the whole page, so its first card is the largest
                     thing painted and is marked as such. */}
                 <CardImage url={mainImg} index={i} priority />
+                <DesignedMark product={prod} settings={settings} />
               </div>
               <div className="card-details">
                 <h3 className="card-name">{prod.displayName}</h3>

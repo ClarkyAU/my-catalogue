@@ -1,11 +1,16 @@
 import type { Config, Context } from "@netlify/functions";
 import { purgeCache } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { categories, subcategories, products, photos, filaments, filamentPhotos } from "../../db/schema.js";
 import { requireAdmin } from "../../server/auth.js";
-import { slugify, normalizeColourParts, normalizeProductOptions } from "../../server/catalogue.js";
+import {
+  slugify,
+  normalizeColourParts,
+  normalizeProductOptions,
+  normalizeCustomText,
+} from "../../server/catalogue.js";
 import {
   listFilaments,
   normalizeStatus,
@@ -33,6 +38,21 @@ function uniqueSlug(base: string, taken: Set<string>): string {
   let n = 2;
   while (taken.has(`${slug}_${n}`)) n++;
   return `${slug}_${n}`;
+}
+
+/**
+ * The order value that puts an item at the top of the Featured Items page: one
+ * below whatever is currently highest. Newly featured items go straight to the
+ * top, which is where the owner expects to find the thing they just added, and
+ * the arrows in the admin portal move it from there.
+ */
+async function topFeaturedOrder(): Promise<number> {
+  const [row] = await db
+    .select({ lowest: sql<number | null>`min(${products.featuredOrder})` })
+    .from(products)
+    .where(eq(products.featured, true));
+  const lowest = row?.lowest;
+  return lowest === null || lowest === undefined ? 0 : lowest - 1;
 }
 
 function positiveInteger(value: unknown): number | null {
@@ -69,12 +89,17 @@ const productView = (p: typeof products.$inferSelect, pics: (typeof photos.$infe
   price: p.price,
   featured: p.featured,
   badge: p.badge,
+  clarkyDesigned: p.clarkyDesigned,
   hidden: p.hidden,
   // Always an array here, even when the print is a single colour, so the editor
   // does not have to special-case null.
   colourParts: p.colourParts || [],
   // Same again for the extra made-to-order choices.
   options: p.options || [],
+  // Null for the prints that take no custom text, which the editor reads as the
+  // box being switched off.
+  customText: p.customText || null,
+  featuredOrder: p.featuredOrder,
   sortOrder: p.sortOrder,
   photos: pics.map(photoView),
 });
@@ -284,6 +309,34 @@ async function handleAdminRequest(req: Request, _context: Context): Promise<Resp
 
     // ---------- Products ----------
     if (resource === "products") {
+      // POST /api/admin/products/:id/featured-order — move an item up or down
+      // the Featured Items page. The whole featured list is renumbered densely
+      // so a swap always takes effect, even between two items that still share
+      // the order they were created with.
+      if (method === "POST" && Number.isInteger(id) && action === "featured-order") {
+        const dir = body.direction;
+        if (dir !== "up" && dir !== "down")
+          return json({ error: "direction must be 'up' or 'down'" }, 400);
+        const featuredList = await db
+          .select({ id: products.id })
+          .from(products)
+          .where(eq(products.featured, true))
+          .orderBy(asc(products.featuredOrder), asc(products.id));
+        const at = featuredList.findIndex((row) => row.id === id);
+        if (at === -1) return json({ error: "Not found" }, 404);
+        const swapWith = dir === "up" ? at - 1 : at + 1;
+        if (swapWith >= 0 && swapWith < featuredList.length) {
+          const order = featuredList.map((row) => row.id);
+          [order[at], order[swapWith]] = [order[swapWith], order[at]];
+          await Promise.all(
+            order.map((pid, i) =>
+              db.update(products).set({ featuredOrder: i }).where(eq(products.id, pid)),
+            ),
+          );
+        }
+        return json({ ok: true });
+      }
+
       if (method === "POST") {
         const subcategoryId = positiveInteger(body.subcategoryId);
         const displayName = String(body.displayName || "").trim();
@@ -310,9 +363,12 @@ async function handleAdminRequest(req: Request, _context: Context): Promise<Resp
             price: normalizePrice(body.price),
             featured: Boolean(body.featured),
             badge: normalizeBadge(body.badge),
+            clarkyDesigned: Boolean(body.clarkyDesigned),
             hidden: Boolean(body.hidden),
             colourParts: normalizeColourParts(body.colourParts),
             options: normalizeProductOptions(body.options),
+            customText: normalizeCustomText(body.customText),
+            featuredOrder: body.featured ? await topFeaturedOrder() : 0,
             sortOrder,
           })
           .returning();
@@ -323,12 +379,28 @@ async function handleAdminRequest(req: Request, _context: Context): Promise<Resp
         if (body.displayName !== undefined) updates.displayName = body.displayName;
         if (body.description !== undefined) updates.description = body.description;
         if (body.price !== undefined) updates.price = normalizePrice(body.price);
-        if (body.featured !== undefined) updates.featured = Boolean(body.featured);
+        if (body.featured !== undefined) {
+          const nowFeatured = Boolean(body.featured);
+          updates.featured = nowFeatured;
+          // Being featured for the first time puts the item at the top of the
+          // page. Un-featuring leaves its old place alone: ticking the box back
+          // on is a fresh arrival, and that is when it gets a new position.
+          if (nowFeatured) {
+            const [before] = await db
+              .select({ featured: products.featured })
+              .from(products)
+              .where(eq(products.id, id));
+            if (before && !before.featured) updates.featuredOrder = await topFeaturedOrder();
+          }
+        }
         if (body.badge !== undefined) updates.badge = normalizeBadge(body.badge);
+        if (body.clarkyDesigned !== undefined)
+          updates.clarkyDesigned = Boolean(body.clarkyDesigned);
         if (body.hidden !== undefined) updates.hidden = Boolean(body.hidden);
         if (body.colourParts !== undefined)
           updates.colourParts = normalizeColourParts(body.colourParts);
         if (body.options !== undefined) updates.options = normalizeProductOptions(body.options);
+        if (body.customText !== undefined) updates.customText = normalizeCustomText(body.customText);
         if (body.sortOrder !== undefined) updates.sortOrder = body.sortOrder;
         if (body.subcategoryId !== undefined) {
           const destinationId = positiveInteger(body.subcategoryId);
