@@ -99,3 +99,65 @@
   .wm-tag .watermark-label { font-size: 0.36rem; padding: 4px 7px; box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.75); }
   .wm-stamp .watermark-label { font-size: 0.5rem; padding: 7px 9px; border-width: 2px; }
 }
+
+/* --- CLARKY DESIGNED SEAL ---
+   The mark on a print Clarky designed in-house, struck over the same photo as
+   the watermark above. Which corner it takes is worked out from the watermark
+   setting (see designedMarkFor in src/lib/watermark.js) so the two never share
+   one; the corner classes below just place it there.
+
+   Deliberately not the theme colour. NEW and POPULAR are promotion and are
+   painted in the category's colour or the warm accent, so the seal is inked in
+   the palette's cream on a dark pad instead — a different kind of claim, told
+   apart at a glance from the marks it may be sitting next to. Its double rule
+   and its slight rotation do the same job against the pinned tag, which is a
+   single hard-bordered box sitting square. */
+.designed-seal {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  --ds-size: 0.4rem;
+  --ds-inset: 12px;
+}
+.ds-top-left { top: var(--ds-inset); left: var(--ds-inset); }
+.ds-top-right { top: var(--ds-inset); right: var(--ds-inset); }
+.ds-bottom-left { bottom: var(--ds-inset); left: var(--ds-inset); }
+.ds-bottom-right { bottom: var(--ds-inset); right: var(--ds-inset); }
+
+.designed-seal-ink {
+  display: block;
+  padding: 5px 7px;
+  text-align: center;
+  font-family: var(--pixel, 'Press Start 2P', cursive);
+  font-size: var(--ds-size);
+  line-height: 1;
+  letter-spacing: 1px;
+  color: var(--ink, #F5F0E6);
+  background: rgba(6, 6, 6, 0.62);
+  /* Two rules with a gap between them: the double-ruled edge of a rubber stamp. */
+  border: 2px solid currentColor;
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  text-shadow: 1px 1px 0 #000;
+  /* Landed slightly off square, the way a hand stamp does. Shallower than the
+     diagonal watermark's -12deg, or a mark this close to the edge of the frame
+     starts to look like it is falling out of it. */
+  transform: rotate(-6deg);
+}
+.designed-seal-top { display: block; font-size: 0.82em; }
+.designed-seal-main {
+  display: block;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 2px solid currentColor;
+}
+
+/* The product page's own photo is several times the size of a grid card's, and
+   carries no watermark of its own, so the seal is set larger there. */
+.main-image-container .designed-seal { --ds-size: 0.5rem; --ds-inset: 16px; }
+
+@media (max-width: 768px) {
+  .designed-seal { --ds-size: 0.32rem; --ds-inset: 8px; }
+  .designed-seal-ink { padding: 4px 5px; letter-spacing: 0; }
+  .main-image-container .designed-seal { --ds-size: 0.42rem; --ds-inset: 12px; }
+}

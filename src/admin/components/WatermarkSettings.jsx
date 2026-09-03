@@ -1,5 +1,6 @@
 import { WATERMARK_STYLES, WATERMARK_POSITIONS, PRODUCT_BADGES } from '../../lib/watermark.js';
 import { Watermark } from '../../components/Watermark.jsx';
+import { DesignedMark } from '../../components/DesignedMark.jsx';
 
 // Controls the mark stamped over preview images on the Featured Items page for
 // products flagged "New" or "Popular". The preview uses the very same component
@@ -16,6 +17,10 @@ export function WatermarkSettings({ values, set, loading, dirty, saving, saved, 
         The mark stamped over a product's preview image on the Featured Items page. Tick "New" or
         "Popular" on a product below to give it a mark. The mark follows each category's theme colour;
         Popular uses the warm accent so the two read differently.
+      </p>
+      <p className="a-settings-hint">
+        The tiles below also show the "Clarky designed" seal, which is ticked per product and lands
+        in the corner opposite the one chosen here so the two marks never overlap.
       </p>
 
       <div className="a-wm">
@@ -101,6 +106,7 @@ export function WatermarkSettings({ values, set, loading, dirty, saving, saved, 
             <div className="a-wm-tile" key={badge.value}>
               <div className="a-wm-frame">
                 {enabled && <Watermark product={{ badge: badge.value }} settings={values} />}
+                <DesignedMark product={{ clarkyDesigned: true }} settings={values} />
               </div>
               <span className="a-wm-caption">{badge.label}</span>
             </div>

@@ -342,20 +342,6 @@ main { scroll-margin-top: 96px; }
 .more-count { font-family: var(--mono); font-weight: 700; font-size: 2.4rem; color: var(--theme-color); }
 .more-card:hover .more-count { color: var(--ink); }
 
-/* --- COLOURS ON THE SHELF (landing strip) --- */
-/* A taste of the filament library on the front page, so nobody has to discover
-   the Colours page to learn the prints come in more than one colour. */
-.swatch-row { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
-.swatch { width: 84px; display: flex; flex-direction: column; align-items: center; gap: 9px; }
-.swatch-dot {
-  width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--ink);
-  box-shadow: 0 0 0 2px #000, 0 0 12px rgba(0, 0, 0, 0.6);
-  position: relative; z-index: 3;
-}
-.swatch-name { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); text-align: center; line-height: 1.4; }
-.stock-note { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 28px; }
-.stock-note p { margin: 0; flex: 1 1 260px; font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; color: var(--muted); }
-
 /* "Nothing here yet" / "could not load" states shared by the storefront pages. */
 .landing-empty { text-align: center; margin-top: 40px; }
 .landing-empty p { font-family: var(--mono); }
@@ -414,7 +400,7 @@ main { scroll-margin-top: 96px; }
 
 /* --- GALLERY --- */
 .main-image-container { width: 100%; background: var(--sunken); border: 2px solid var(--line); overflow: hidden; display: flex; flex-direction: column; position: relative; z-index: 3; }
-.image-wrapper { width: 100%; display: flex; flex-direction: column; }
+.image-wrapper { width: 100%; display: flex; flex-direction: column; position: relative; }
 .main-img {
   width: 100%; aspect-ratio: 1; object-fit: contain; padding: 14px; box-sizing: border-box; display: block;
   /* Swiping the photo steps through the gallery (see useSwipe); pan-y leaves the
@@ -495,6 +481,15 @@ main { scroll-margin-top: 96px; }
 .share-btn { background: transparent; border: 2px solid var(--line); color: var(--ink); }
 .share-btn:hover { border-color: var(--theme-color); color: var(--theme-color); }
 .order-btn:active, .share-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 #000; }
+/* A print that has to carry the customer's words cannot be ordered without
+   them. The button says so by going flat and unclickable rather than
+   disappearing, so the reason stays visible in the field above it. */
+.order-btn:disabled {
+  background: var(--sunken); border-color: var(--line-strong); color: var(--muted);
+  cursor: not-allowed; box-shadow: 3px 3px 0px #000;
+}
+.order-btn:disabled:hover { box-shadow: 3px 3px 0px #000; }
+.order-btn:disabled:active { transform: none; box-shadow: 3px 3px 0px #000; }
 .share-btn.small { padding: 7px 14px; font-size: 0.72rem; box-shadow: none; }
 .order-btn.wide { width: 100%; padding: 15px 22px; font-size: 0.85rem; letter-spacing: 2px; }
 
@@ -623,6 +618,29 @@ main { scroll-margin-top: 96px; }
 }
 .option-select:hover { border-color: var(--ink); }
 .option-select option { background: var(--sunken); color: var(--ink); }
+
+/* --- CUSTOM TEXT --- */
+/* The line of the customer's own words some prints carry. Built from the same
+   field as the "colour we don't stock" request below it, so the two free-text
+   asks on the page look like the same control. */
+.custom-text { display: flex; flex-direction: column; }
+.custom-text-input {
+  width: 100%; box-sizing: border-box; padding: 10px 12px;
+  background: var(--sunken); border: 2px solid var(--line-strong);
+  /* Same iOS zoom-on-focus rule as every other field on the page. */
+  font-family: var(--mono); font-size: max(16px, 0.82rem); color: var(--ink);
+  transition: border-color 0.1s ease;
+}
+.custom-text-input::placeholder { color: var(--muted); }
+.custom-text-input:hover { border-color: var(--ink); }
+.custom-text-input:focus { border-color: var(--theme-color); }
+.custom-text-note {
+  margin: 10px 0 0; font-family: var(--mono); font-size: 0.72rem; line-height: 1.7; color: var(--line-strong);
+}
+.custom-text-warn {
+  margin: 10px 0 0; font-family: var(--mono); font-size: 0.72rem; line-height: 1.7;
+  letter-spacing: 1px; color: var(--theme-color); text-transform: uppercase;
+}
 
 /* ============================================================================
    CASCADING CATALOGUE MENU
@@ -976,11 +994,12 @@ main { scroll-margin-top: 96px; }
 /* ============================================================================
    FOOTER
 
-   There wasn't one. The bar at the top gets people around, but the things that
-   were only ever said inside the cart or halfway down a product page — that
-   nothing is held in stock, that postage is quoted in the chat, where to reach
-   Clarky — are exactly what is looked for at the bottom of a shop. It also gives
-   the page an ending, which the 90px of dead padding it replaces did not.
+   One line, not three columns. It used to repeat the routes that are already in
+   the bar at the top and restate what the pages above it say, which made the
+   bottom of every page a wall of small print. What is left is the only thing
+   that is nowhere else on the way out: postage is quoted in the chat, and here
+   is the chat. It still gives the page an ending, which the dead padding it
+   originally replaced did not.
    ============================================================================ */
 .site-footer {
   margin-top: auto; width: 100%; box-sizing: border-box;
@@ -989,29 +1008,26 @@ main { scroll-margin-top: 96px; }
 }
 .footer-inner {
   width: 100%; max-width: 1400px; margin: 0 auto; box-sizing: border-box;
-  display: grid; grid-template-columns: 1.4fr 1fr 1.4fr; gap: 30px 40px;
-  padding: 34px max(20px, env(safe-area-inset-right)) max(34px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px;
+  padding: 22px max(20px, env(safe-area-inset-right)) max(22px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
 }
-.footer-block { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0; }
 .footer-label {
   font-family: var(--pixel); font-size: 0.55rem; letter-spacing: 1px; line-height: 1.5;
   color: var(--theme-color);
 }
 .footer-note {
   margin: 0; font-family: var(--mono); font-size: 0.74rem; line-height: 1.8; color: var(--muted);
-  max-width: 34ch;
 }
-/* Laid out as rows rather than a wrapping line: three stacked links are easier
-   to hit with a thumb than three separated by bullets, and each gets the full
-   44px without the block growing awkwardly wide. */
+/* Pushed to the far end of the row on a wide screen; on a phone the row wraps
+   and it becomes the last line, either way with a full thumb-sized target. */
 .footer-link {
-  display: inline-flex; align-items: center; gap: 8px; min-height: 30px;
+  display: inline-flex; align-items: center; gap: 8px; min-height: 30px; margin-left: auto;
   font-family: var(--mono); font-size: 0.76rem; letter-spacing: 1px; text-transform: uppercase;
-  color: var(--ink); text-decoration: none; border-bottom: 2px solid transparent;
+  color: var(--theme-color); font-weight: 700; text-decoration: none;
+  border-bottom: 2px solid transparent;
   transition: color 0.1s ease, border-color 0.1s ease;
 }
-.footer-link:hover { color: var(--theme-color); border-bottom-color: var(--theme-color); }
-.footer-link.strong { color: var(--theme-color); font-weight: 700; }
+.footer-link:hover { color: var(--ink); border-bottom-color: var(--ink); }
 
 /* ============================================================================
    SEARCH
@@ -1194,8 +1210,9 @@ main { scroll-margin-top: 96px; }
   .cat-tile-name { font-size: 0.95rem; line-height: 1.2; }
   .cat-tile-count { font-size: 0.62rem; }
 
-  /* Three columns of small print is unreadable at this width; one is a list. */
-  .footer-inner { grid-template-columns: 1fr; gap: 26px; padding-top: 28px; }
+  /* The row wraps here, so the Telegram link stops being pushed to the end and
+     starts the line under the note instead. */
+  .footer-link { margin-left: 0; }
 }
 
 @media (max-width: 560px) {
@@ -1213,8 +1230,6 @@ main { scroll-margin-top: 96px; }
   .print-lightbox-nav.next { right: 4px; }
 
   .strip-title { font-size: 0.55rem; }
-  .swatch { width: 68px; }
-  .swatch-dot { width: 38px; height: 38px; }
 
   /* Nearly the full height of the phone, and pinned close to the top so the
      keyboard has somewhere to go. */

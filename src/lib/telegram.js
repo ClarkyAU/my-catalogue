@@ -41,6 +41,12 @@ function summariseOptions(options) {
   return options.map((option) => `${option.name} ${option.choice}`).join(', ');
 }
 
+/**
+ * The words a line is to be printed with, quoted so the exact spacing and
+ * capitalisation survive being read out of a chat message.
+ */
+const textLine = (text) => `Text: "${text}"`;
+
 /** One cart line as the block of text describing it. */
 function describeLine(line, numbered) {
   const heading = [numbered ? `${numbered}. ` : '', line.name, line.qty > 1 ? ` × ${line.qty}` : '']
@@ -51,6 +57,10 @@ function describeLine(line, numbered) {
   // How the print is built comes before what colour it is, the same order the
   // product page asks in: "Inlay: Hex" decides what there is to colour.
   for (const option of line.options || []) out.push(`${option.name}: ${option.choice}`);
+
+  // The one part of an order that cannot be guessed or confirmed later without
+  // asking, so it goes in the message whenever there is any.
+  if (line.text) out.push(textLine(line.text));
 
   // A print whose parts are coloured separately gets a line per part, so Clarky
   // can read the order off without asking which colour went where.
@@ -102,7 +112,11 @@ export function cartMessage(cart) {
 
   if (cart.length > MAX_DETAILED_LINES) {
     const list = cart.map((line, i) => {
-      const detail = [summariseOptions(line.options), summariseColours(line.colours)]
+      const detail = [
+        summariseOptions(line.options),
+        line.text ? textLine(line.text) : '',
+        summariseColours(line.colours),
+      ]
         .filter(Boolean)
         .join(', ');
       return `${i + 1}. ${line.name}${line.qty > 1 ? ` × ${line.qty}` : ''}${detail ? ` — ${detail}` : ''}`;

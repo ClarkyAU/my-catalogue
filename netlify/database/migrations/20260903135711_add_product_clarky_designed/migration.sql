@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "clarky_designed" boolean DEFAULT false NOT NULL;

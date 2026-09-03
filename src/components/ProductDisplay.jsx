@@ -3,6 +3,8 @@ import { Breadcrumb } from './Breadcrumb';
 import { PhotoPlaceholder } from './PhotoPlaceholder';
 import { ColourPicker } from './ColourPicker';
 import { OptionPicker } from './OptionPicker';
+import { CustomTextField } from './CustomTextField';
+import { DesignedMark } from './DesignedMark';
 import { CartIcon, ShareIcon } from './Icons';
 import { loadFilaments } from '../lib/filaments.js';
 import { shareUrl } from '../lib/shareLink.js';
@@ -17,6 +19,7 @@ import {
 import { CardImage, EAGER_CARDS } from './CardImage';
 import { productParts } from '../lib/colourParts.js';
 import { defaultSelections, productOptions } from '../lib/productOptions.js';
+import { productCustomText } from '../lib/customText.js';
 import { addToCart } from '../lib/cart.js';
 import { useSwipe } from '../hooks/useSwipe.js';
 import { TELEGRAM_URL } from '../lib/telegram.js';
@@ -46,6 +49,7 @@ export const ProductDisplay = ({
   product,
   trail = [],
   path,
+  settings,
   categoryName,
   subCategoryName,
   categoryHref,
@@ -71,6 +75,13 @@ export const ProductDisplay = ({
   // so there is always something concrete to put on the order.
   const options = useMemo(() => productOptions(product), [product]);
   const [selections, setSelections] = useState(() => defaultSelections(options));
+  // The line of the customer's own words this print carries, if the owner turned
+  // one on for it — a name, a date, a message. Null for most of the catalogue.
+  const customText = useMemo(() => productCustomText(product), [product]);
+  const [text, setText] = useState('');
+  // A print that has to carry words cannot be made without them, so the order is
+  // held until there are some rather than sending one Clarky has to chase.
+  const textMissing = Boolean(customText?.required) && !text.trim();
 
   const photoCount = product.photos?.length || 0;
   // On a phone the main photo is most of the page and the thumb row is below the
@@ -112,6 +123,7 @@ export const ProductDisplay = ({
       photo: firstPhotoUrl(product),
       colours,
       options: selections,
+      text,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
@@ -182,6 +194,12 @@ export const ProductDisplay = ({
                     fetchPriority="high"
                   />
                 </picture>
+
+                {/* Pinned to a top corner rather than the corner the watermark
+                    setting frees up: the main photo carries no watermark to keep
+                    clear of, and the printed-with caption runs along the bottom
+                    of this frame. */}
+                <DesignedMark product={product} position="top-right" />
 
                 {(currentPhoto?.filaments || currentPhoto?.texture) && (
                   <div className="image-caption">
@@ -273,8 +291,14 @@ export const ProductDisplay = ({
               a colour we don't carry is exactly the case that needs asking. */}
           <ColourPicker parts={parts} inStock={inStock} value={colours} onChange={setColours} />
 
+          {/* Last of the questions: everything above decides which version of
+              the print is being made, and this is what goes on the one chosen. */}
+          {customText && (
+            <CustomTextField config={customText} value={text} onChange={setText} />
+          )}
+
           <div className="panel">
-            <button className="order-btn wide" onClick={handleAdd}>
+            <button className="order-btn wide" onClick={handleAdd} disabled={textMissing}>
               <CartIcon />
               {added ? 'Added to cart' : 'Add to cart'}
             </button>
@@ -313,6 +337,7 @@ export const ProductDisplay = ({
                     {/* Always below the fold: this row is under the gallery and
                         every question the page asks, so it stays lazy. */}
                     <CardImage url={img} index={EAGER_CARDS} />
+                    <DesignedMark product={item} settings={settings} />
                   </div>
                   <div className="card-details">
                     <h4 className="card-name">{item.displayName}</h4>

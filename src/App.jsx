@@ -164,9 +164,9 @@ export default function App() {
           ) : !activeCategory ? (
             <LandingPage catalogue={catalogue} settings={settings} intro={settings.landingIntro} subtext={settings.landingSubtext} note={settings.landingNote} />
           ) : !activeSubCategory ? (
-            <CategoryPage category={catalogue[activeCategory]} categoryId={activeCategory} trail={trail} />
+            <CategoryPage category={catalogue[activeCategory]} categoryId={activeCategory} settings={settings} trail={trail} />
           ) : !activeProduct ? (
-            <CategoryGrid subCategory={currentSubCategory} categoryId={activeCategory} subCategoryId={activeSubCategory} trail={trail} />
+            <CategoryGrid subCategory={currentSubCategory} categoryId={activeCategory} subCategoryId={activeSubCategory} settings={settings} trail={trail} />
           ) : (
             // Keyed on the product so the gallery remounts (and its selected photo
             // resets) when navigating between products.
@@ -176,6 +176,7 @@ export default function App() {
                 product={currentProduct}
                 trail={trail}
                 path={productPath}
+                settings={settings}
                 categoryName={currentCategory.displayName}
                 subCategoryName={currentSubCategory.displayName}
                 categoryHref={`#${activeCategory}`}

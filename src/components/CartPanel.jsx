@@ -117,6 +117,14 @@ export const CartPanel = ({ open, onClose, onNavigate }) => {
                           {option.choice}
                         </span>
                       ))}
+                      {/* Quoted, so the spacing and capitalisation someone
+                          typed are visibly theirs rather than ours. */}
+                      {line.text && (
+                        <span className="cart-line-text">
+                          <span className="cart-line-part">Text</span>
+                          “{line.text}”
+                        </span>
+                      )}
                       {colours.map((slot, i) => (
                         <span key={slot.part || i} className="cart-line-colour">
                           <ColourSwatch colour={slot.colour} className="cart-line-swatch" />

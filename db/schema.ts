@@ -51,6 +51,11 @@ export const products = pgTable(
     // Watermark stamped over the product's preview image on the Featured Items
     // page: "none", "new" or "popular".
     badge: text().notNull().default("none"),
+    // Clarky's own design, modelled in-house rather than printed from someone
+    // else's file. Deliberately not a third `badge` value: badge is one mark or
+    // the other, and where a print came from is a different kind of fact from
+    // whether it is new or selling well — a brand new in-house design is both.
+    clarkyDesigned: boolean("clarky_designed").notNull().default(false),
     // Hidden listings stay in the admin portal but are left out of the public
     // catalogue entirely, so they disappear from the storefront.
     hidden: boolean().notNull().default(false),
@@ -65,6 +70,20 @@ export const products = pgTable(
     // or a stamped logo for another — so nothing here names a specific kind of
     // variation. Null or empty means the print is ordered as pictured.
     options: jsonb().$type<{ name: string; choices: string[] }[] | null>(),
+    // A line of the customer's own words to be printed on this item — a name on
+    // a keyring, a message on a plaque. The owner turns it on per product and
+    // says what is being asked for, because "Name to print" and "Text to
+    // engrave" are different questions and only they know which one this print
+    // asks. Null means the print takes no custom text, which is most of them.
+    customText: jsonb("custom_text").$type<{
+      label: string;
+      required: boolean;
+    } | null>(),
+    // Where this item sits on the Featured Items page, low to high, independent
+    // of `sortOrder` (which orders it inside its own subcategory). Newly
+    // featured items take a value below every other, so the newest thing is at
+    // the top of the page until the owner drags the order around.
+    featuredOrder: integer("featured_order").notNull().default(0),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),

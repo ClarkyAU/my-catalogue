@@ -11,6 +11,7 @@
 import { Breadcrumb } from './Breadcrumb';
 import { CardImage, EAGER_CARDS } from './CardImage';
 import { firstPhotoUrl } from '../lib/photos';
+import { DesignedMark } from './DesignedMark';
 
 // A full row of cards at the widest layout. Past this the strip shows one fewer
 // product and spends the last slot on a link to the whole sub-category, so every
@@ -19,7 +20,7 @@ const ROW = 4;
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-export const CategoryPage = ({ category, categoryId, trail = [] }) => {
+export const CategoryPage = ({ category, categoryId, settings, trail = [] }) => {
   if (!category) return null;
 
   const subCategories = Object.values(category.subCategories || {});
@@ -70,6 +71,7 @@ export const CategoryPage = ({ category, categoryId, trail = [] }) => {
                             index={stripIndex === 0 ? i : EAGER_CARDS}
                             priority={stripIndex === 0}
                           />
+                          <DesignedMark product={prod} settings={settings} />
                         </div>
                         <div className="card-details">
                           <h4 className="card-name">{prod.displayName}</h4>

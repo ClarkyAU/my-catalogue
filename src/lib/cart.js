@@ -16,6 +16,14 @@ const MAX_QTY = 99;
 // so they are kept to a sentence rather than an essay.
 export const MAX_COLOUR_NOTE = 80;
 
+// Not a limit on what a print can say — listings set no length at all, and what
+// will fit is worked out in the chat. This is the structural stop that keeps one
+// line from breaking the things it has to travel through: the whole cart lives in
+// one localStorage entry, and the order arrives as a Telegram deep link, which is
+// a URL. Far past any real name, date or message, and past anything a phone
+// keyboard produces by accident.
+const MAX_TEXT = 500;
+
 const listeners = new Set();
 
 /** How one colour choice is identified, whatever kind of choice it is. */
@@ -33,7 +41,7 @@ function colourKey(colour) {
  * it was ordered with: two of the same case with different inlays are two
  * different things to make.
  */
-function lineKey(path, colours, options) {
+function lineKey(path, colours, options, text) {
   const colourPart = () => {
     if (colours.length === 0) return `${path}|any`;
     // A print that is one colour keys on just that colour, the way it always
@@ -45,8 +53,14 @@ function lineKey(path, colours, options) {
   const base = colourPart();
   // Appended only when there are choices, so a line on a print that offers none
   // keys exactly as it did before options existed.
-  if (options.length === 0) return base;
-  return [base, ...options.map((option) => `${option.name}=${option.choice}`)].join('|');
+  const withOptions =
+    options.length === 0
+      ? base
+      : [base, ...options.map((option) => `${option.name}=${option.choice}`)].join('|');
+  // Two of the same keyring with two different names on them are two different
+  // things to make, so the text is part of what identifies a line. A print that
+  // carries none keys exactly as it did before custom text existed.
+  return text ? `${withOptions}|text=${text.toLowerCase()}` : withOptions;
 }
 
 /**
@@ -77,13 +91,26 @@ export function normalizeOptions(options) {
 }
 
 /**
+ * The canonical form of the words a line is to be printed with: trimmed, and cut
+ * to the ceiling above however long it was when it was saved. An empty string is
+ * the usual case — the print carries no custom text, or none was typed.
+ */
+export function normalizeText(text) {
+  return typeof text === 'string' ? text.trim().slice(0, MAX_TEXT) : '';
+}
+
+/**
  * Lines used to carry a single `colour`, and lines saved before a print could
  * offer choices carry no `options` at all. Anything older is lifted into the
  * current shape rather than thrown away, so a cart left open over either change
  * still opens with everything in it.
  */
 function normalizeLine(line) {
-  const withOptions = Array.isArray(line.options) ? line : { ...line, options: [] };
+  const withText =
+    typeof line.text === 'string' ? line : { ...line, text: normalizeText(line.text) };
+  const withOptions = Array.isArray(withText.options)
+    ? withText
+    : { ...withText, options: [] };
   if (Array.isArray(withOptions.colours)) return withOptions;
   const lifted = {
     ...withOptions,
@@ -159,12 +186,14 @@ export function addToCart({
   photo,
   colours,
   options,
+  text,
 }) {
   if (!path || !name) return;
 
   const picked = normalizeColours(colours);
   const chosen = normalizeOptions(options);
-  const key = lineKey(path, picked, chosen);
+  const typed = normalizeText(text);
+  const key = lineKey(path, picked, chosen, typed);
   const existing = lines.find((line) => line.key === key);
 
   if (existing) {
@@ -188,6 +217,7 @@ export function addToCart({
       photo,
       colours: picked,
       options: chosen,
+      text: typed,
       qty: 1,
     },
   ]);

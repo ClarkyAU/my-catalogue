@@ -103,6 +103,37 @@ export function normalizeProductOptions(input: unknown): ProductOption[] | null 
   return options.length > 0 ? options : null;
 }
 
+// Some prints carry a line of the customer's own words — a name on a keyring, a
+// date on a plaque. The owner decides per product whether that is on offer and
+// how long the line may be, because what fits depends on the print, not on us.
+export const MAX_CUSTOM_TEXT_LABEL = 40;
+const DEFAULT_CUSTOM_TEXT_LABEL = "Custom text";
+
+/** What a print asks for when it takes the customer's own words. */
+export interface CustomTextConfig {
+  label: string;
+  required: boolean;
+}
+
+/**
+ * Clean the custom-text setting an owner saved. `enabled: false` — and anything
+ * that is not an object at all — means the print takes no custom text, which is
+ * most of them, and is stored as null so the listing keeps the shape it had
+ * before this existed. A blank question still gets a usable one, since a
+ * nameless field on a product page asks the customer nothing they can answer.
+ */
+export function normalizeCustomText(input: unknown): CustomTextConfig | null {
+  if (!input || typeof input !== "object") return null;
+  const raw = input as Record<string, unknown>;
+  if (raw.enabled === false) return null;
+
+  const label =
+    typeof raw.label === "string" && raw.label.trim()
+      ? raw.label.trim().slice(0, MAX_CUSTOM_TEXT_LABEL)
+      : DEFAULT_CUSTOM_TEXT_LABEL;
+  return { label, required: Boolean(raw.required) };
+}
+
 /** Public URL for a photo row (Blobs-backed uploads vs. carried-over statics). */
 function photoUrl(row: { id: number; blobKey: string | null; staticUrl: string | null }): string {
   if (row.blobKey) return `/api/photos/${row.id}`;
@@ -165,6 +196,9 @@ export async function buildCatalogue() {
       price: prod.price,
       photos: [],
     };
+    // Only sent for Clarky's own designs, so every other listing keeps the
+    // shape it had before this existed.
+    if (prod.clarkyDesigned) listing.clarkyDesigned = true;
     // Only sent for prints that actually have separately-coloured parts, so a
     // single-colour listing stays exactly the shape it was.
     const parts = normalizeColourParts(prod.colourParts);
@@ -173,6 +207,12 @@ export async function buildCatalogue() {
     // same object it has always been.
     const options = normalizeProductOptions(prod.options);
     if (options) listing.options = options;
+    // Only sent for the prints that actually take a line of custom text.
+    const customText = normalizeCustomText(prod.customText);
+    if (customText) listing.customText = customText;
+    // What the Featured Items page orders by. Sent only for the items that page
+    // shows, since it means nothing anywhere else in the catalogue.
+    if (prod.featured) listing.featuredOrder = prod.featuredOrder;
     tree[loc.catSlug].subCategories[loc.slug].products[prod.slug] = listing;
   }
 

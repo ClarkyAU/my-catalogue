@@ -38,6 +38,13 @@ export const PRODUCT_BADGES = [
 const STYLE_VALUES = WATERMARK_STYLES.map((s) => s.value);
 const POSITION_VALUES = WATERMARK_POSITIONS.map((p) => p.value);
 
+const OPPOSITE_CORNER = {
+  'top-left': 'bottom-right',
+  'top-right': 'bottom-left',
+  'bottom-left': 'top-right',
+  'bottom-right': 'top-left',
+};
+
 /**
  * Resolve the watermark to draw over a product's preview image, or null when
  * the product carries no badge, the owner switched watermarks off, or the label
@@ -68,4 +75,30 @@ export function watermarkFor(product, settings) {
       : WATERMARK_DEFAULTS.watermarkPosition,
     opacity: Number.isFinite(opacity) ? Math.min(1, Math.max(0.2, opacity)) : 0.9,
   };
+}
+
+/**
+ * Where to strike the "Clarky designed" seal on a product's image, or null for
+ * everything Clarky did not design.
+ *
+ * The seal shares the photo with the New/Popular watermark, so the two are
+ * placed together rather than left to land where they may: it takes the corner
+ * opposite whichever one the owner set the watermark to, which is free in every
+ * configuration — a ribbon or a tag occupies that one corner, and the diagonal
+ * stamp keeps to the middle and leaves all four.
+ *
+ * Keyed to the site-wide setting rather than to this product's own badge on
+ * purpose. The seal then sits in the same corner on every card in a grid,
+ * whether or not the print next to it happens to be marked NEW, and still never
+ * shares a corner with a watermark.
+ */
+export function designedMarkFor(product, settings) {
+  if (!product?.clarkyDesigned) return null;
+
+  const config = { ...WATERMARK_DEFAULTS, ...(settings || {}) };
+  const watermarkCorner = POSITION_VALUES.includes(config.watermarkPosition)
+    ? config.watermarkPosition
+    : WATERMARK_DEFAULTS.watermarkPosition;
+
+  return { position: OPPOSITE_CORNER[watermarkCorner] };
 }

@@ -9,6 +9,12 @@ import {
   MAX_PRODUCT_OPTIONS,
   sameOptionList,
 } from '../../lib/productOptions.js';
+import {
+  DEFAULT_CUSTOM_TEXT_LABEL,
+  MAX_CUSTOM_TEXT_LABEL,
+  customTextForm,
+  sameCustomText,
+} from '../../lib/customText.js';
 import { PhotoGrid } from './PhotoGrid.jsx';
 
 // One product listing: its fields, the New/Popular/Featured/Hidden ticks, where
@@ -19,6 +25,9 @@ export function ProductBlock({ product, currentSubcategoryId }) {
   const [price, setPrice] = useState(product.price);
   const [featured, setFeatured] = useState(product.featured);
   const [badge, setBadge] = useState(product.badge || 'none');
+  // Clarky's own design. Separate from the badge above rather than a third
+  // choice within it, so a print can be new and in-house at the same time.
+  const [designed, setDesigned] = useState(Boolean(product.clarkyDesigned));
   const [hidden, setHidden] = useState(Boolean(product.hidden));
   const [description, setDescription] = useState(product.description || '');
   // The pieces of this print that can each be a different colour. Empty means
@@ -28,6 +37,10 @@ export function ProductBlock({ product, currentSubcategoryId }) {
   // (Inlay, Lid, Logo) with the answers on offer. Empty means it is ordered
   // exactly as pictured.
   const [options, setOptions] = useState(product.options || []);
+  // Whether this print carries a line of the customer's own words, and what to
+  // call the question. Held as { enabled, label, required } so the wording
+  // survives the box being switched off and on again.
+  const [customText, setCustomText] = useState(() => customTextForm(product.customText));
   const initialCategoryId = categories.find((category) =>
     category.subcategories.some((subcategory) => subcategory.id === currentSubcategoryId))?.id;
   const [categoryId, setCategoryId] = useState(initialCategoryId || categories[0]?.id || '');
@@ -46,11 +59,15 @@ export function ProductBlock({ product, currentSubcategoryId }) {
     price !== product.price ||
     featured !== product.featured ||
     badge !== (product.badge || 'none') ||
+    designed !== Boolean(product.clarkyDesigned) ||
     hidden !== Boolean(product.hidden) ||
     description !== (product.description || '') ||
     !samePartList(parts, product.colourParts || []) ||
     !sameOptionList(options, product.options || []) ||
+    !sameCustomText(customText, customTextForm(product.customText)) ||
     moving;
+
+  const setCustom = (changes) => setCustomText((current) => ({ ...current, ...changes }));
 
   const setPart = (index, value) =>
     setParts((current) => current.map((part, i) => (i === index ? value : part)));
@@ -96,7 +113,16 @@ export function ProductBlock({ product, currentSubcategoryId }) {
         method: 'PATCH',
         body: {
           displayName: name, price, featured, badge, hidden, description,
+          clarkyDesigned: designed,
           colourParts: parts, options, subcategoryId,
+          // Switched off is stored as "this print takes no text" rather than as
+          // a disabled setting, so the storefront has one thing to check.
+          customText: customText.enabled
+            ? {
+                label: customText.label.trim() || DEFAULT_CUSTOM_TEXT_LABEL,
+                required: customText.required,
+              }
+            : null,
         },
       });
       setSaved(true);
@@ -107,6 +133,9 @@ export function ProductBlock({ product, currentSubcategoryId }) {
       // Same for a question left half-filled: it is dropped on save, and showing
       // that straight away beats pretending it was kept.
       setOptions(row.options || []);
+      // The label is trimmed and the length clamped on save, so show what was
+      // actually stored.
+      setCustomText(customTextForm(row.customText));
       // Moving the product to another subcategory changes the shape of the tree,
       // so that case still needs a refetch. A plain field edit does not — the
       // saved row is enough to update this listing in place.
@@ -158,6 +187,10 @@ export function ProductBlock({ product, currentSubcategoryId }) {
             <input type="checkbox" checked={badge === 'popular'}
               onChange={(e) => setBadge(e.target.checked ? 'popular' : 'none')} />
           </label>
+          <label className="a-field a-field-designed">
+            <span>Clarky designed</span>
+            <input type="checkbox" checked={designed} onChange={(e) => setDesigned(e.target.checked)} />
+          </label>
           <label className="a-field a-field-featured">
             <span>Hidden</span>
             <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} />
@@ -166,8 +199,10 @@ export function ProductBlock({ product, currentSubcategoryId }) {
       </div>
       <p className="a-location-note a-prod-note">
         Tick New or Popular to stamp that watermark over this item's preview on the Featured Items page —
-        an item carries one mark, so ticking one clears the other. Hiding it keeps the listing here but
-        takes it off the storefront entirely.
+        an item carries one mark, so ticking one clears the other. Clarky designed credits the print as
+        your own work rather than someone else's model, and shows under its name wherever it appears, so
+        it can be ticked alongside either watermark. Hiding it keeps the listing here but takes it off the
+        storefront entirely.
       </p>
 
       <label className="a-field">
@@ -290,6 +325,47 @@ export function ProductBlock({ product, currentSubcategoryId }) {
           {options.length > 0
             ? 'The storefront shows a dropdown per row, above the colours, and puts the answers on the order. The first choice is what a customer starts on, so put the usual build first — or lead with something like "Clarky picks" to have it come up in the chat. A row needs a name and at least two choices to be worth asking, so anything short of that is dropped when you save.'
             : 'For prints that come in versions — a different inlay, a different lid, with or without a logo. Add a row for what is being chosen, then list the choices on offer, and the storefront asks for it on the product page. Leave it empty for a print that is ordered exactly as pictured.'}
+        </p>
+      </div>
+
+      <div className="a-parts a-ctext">
+        <div className="a-parts-head">
+          <span>Custom text</span>
+          <label className="a-ctext-toggle">
+            <input
+              type="checkbox"
+              checked={customText.enabled}
+              onChange={(e) => setCustom({ enabled: e.target.checked })}
+            />
+            <span>Ask for text on this item</span>
+          </label>
+        </div>
+        {customText.enabled && (
+          <div className="a-ctext-fields">
+            <label className="a-field a-ctext-label">
+              <span>What to ask for</span>
+              <input
+                className="a-input"
+                value={customText.label}
+                maxLength={MAX_CUSTOM_TEXT_LABEL}
+                placeholder={DEFAULT_CUSTOM_TEXT_LABEL}
+                onChange={(e) => setCustom({ label: e.target.value })}
+              />
+            </label>
+            <label className="a-field a-field-featured">
+              <span>Required</span>
+              <input
+                type="checkbox"
+                checked={customText.required}
+                onChange={(e) => setCustom({ required: e.target.checked })}
+              />
+            </label>
+          </div>
+        )}
+        <p className="a-location-note">
+          {customText.enabled
+            ? `The storefront shows a text box on this product and puts what is typed on the order, exactly as typed, however long it is. Name the question the way you would ask it — "Name to print", "Text to engrave" — because that is the wording a customer reads. Required stops the item going in the cart until there is something in the box, which is right for a print that cannot be made without the words.`
+            : 'For prints that carry words a customer chooses — a name on a keyring, a date on a plaque. Switch it on and the storefront asks for the text on this product only.'}
         </p>
       </div>
 

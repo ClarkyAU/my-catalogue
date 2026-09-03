@@ -1,22 +1,18 @@
-import { useEffect, useState } from 'react';
 import { Watermark } from './Watermark';
 import { CardImage } from './CardImage';
 import { firstPhotoUrl } from '../lib/photos';
-import { loadFilaments } from '../lib/filaments.js';
-import { swatchStyle } from '../lib/filamentSwatch.js';
-
-// How many stocked colours the landing strip shows before it stops and points at
-// the full library. Enough to read as a real palette, short enough that it stays
-// one or two rows on a laptop.
-const SWATCH_LIMIT = 12;
+import { DesignedMark } from './DesignedMark';
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-// The storefront's front door. Three strips under the featured grid's title:
-// a way into the catalogue, the featured products themselves, and what is
-// actually on the shelf to print them in. The first and third exist because the
-// page used to be a grid and nothing else — there was no route into the
-// categories from here, and no sign the colour library existed.
+// The storefront's front door: a way into the catalogue, then the featured
+// products themselves. The first strip exists because the page used to be a grid
+// and nothing else, with no route into the categories from here.
+//
+// A strip of the colours currently on the shelf used to close the page. It went
+// because it was the third place on one screen to say the same thing — the bar
+// at the top has a Colours route, and the colour library is a page of its own —
+// and it was pushing the footer a screen further down for it.
 export const LandingPage = ({ catalogue, settings, intro, subtext, note }) => {
   // An empty field means the owner does not want that line shown at all, so we
   // render each paragraph only when it has content (no hardcoded fallback copy)
@@ -25,20 +21,6 @@ export const LandingPage = ({ catalogue, settings, intro, subtext, note }) => {
   const subtextText = (subtext || '').trim();
   const noteText = (note || '').trim();
   const hasWelcome = introText || subtextText || noteText;
-
-  // Only what is on the shelf right now. The full library, including what is on
-  // order or out of stock, stays on the Colours page.
-  const [inStock, setInStock] = useState([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    loadFilaments().then((list) => {
-      if (!cancelled) setInStock(list.filter((f) => f.status === 'In Stock'));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const categories = Object.entries(catalogue).map(([catId, category]) => {
     const subCategories = Object.values(category.subCategories || {});
@@ -68,6 +50,12 @@ export const LandingPage = ({ catalogue, settings, intro, subtext, note }) => {
       });
     });
   });
+
+  // The order the owner set in the admin portal, newest first until they change
+  // it. Without this the grid came out in the order walking the catalogue tree
+  // happens to produce — category, then section, then position on the shelf —
+  // which buried anything new at the bottom of the page.
+  featuredProducts.sort((a, b) => (a.featuredOrder ?? 0) - (b.featuredOrder ?? 0));
 
   return (
     <div className="landing-page">
@@ -130,6 +118,7 @@ export const LandingPage = ({ catalogue, settings, intro, subtext, note }) => {
                         not the largest thing painted. */}
                     <CardImage url={mainImg} index={i} />
                     <Watermark product={prod} settings={settings} />
+                    <DesignedMark product={prod} settings={settings} />
                   </div>
                   <div className="card-details">
                     <h4 className="card-name">{prod.displayName}</h4>
@@ -147,33 +136,6 @@ export const LandingPage = ({ catalogue, settings, intro, subtext, note }) => {
         )}
       </section>
 
-      {inStock.length > 0 && (
-        <section className="strip">
-          <h3 className="strip-title">
-            COLOURS ON THE SHELF
-            <span className="strip-count">{inStock.length} in stock</span>
-          </h3>
-          <div className="swatch-row">
-            {inStock.slice(0, SWATCH_LIMIT).map((filament) => (
-              <span className="swatch" key={filament.id}>
-                {/* Decorative here: the name is right underneath it. */}
-                <span className="swatch-dot" style={swatchStyle(filament)} aria-hidden="true" />
-                <span className="swatch-name">{filament.name}</span>
-              </span>
-            ))}
-          </div>
-          <div className="stock-note">
-            <span className="filament-status in-stock">In Stock</span>
-            <p>
-              Every colour above is on the shelf right now. Pick one per part when you order, or
-              leave it to Clarky.
-            </p>
-            <a className="share-btn small" href="#colours">
-              See the full library
-            </a>
-          </div>
-        </section>
-      )}
     </div>
   );
 };

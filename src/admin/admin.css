@@ -108,7 +108,7 @@ body {
   padding: 14px max(22px, env(safe-area-inset-right)) 14px max(22px, env(safe-area-inset-left));
 }
 .a-brand { font-family: 'Press Start 2P', cursive; font-size: 1.1rem; }
-.a-nav { display: flex; gap: 8px; }
+.a-nav { display: flex; gap: 8px; flex-wrap: wrap; }
 .a-nav-btn {
   font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 0.8rem;
   text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer;
@@ -248,9 +248,15 @@ select.a-input { cursor: pointer; }
 .a-field-price { flex: 0 0 130px; }
 /* The four listing ticks stay on one line together rather than each claiming a
    column of their own. */
-.a-prod-ticks { display: flex; gap: 14px; flex: 0 0 auto; }
+.a-prod-ticks { display: flex; gap: 14px; flex: 0 0 auto; flex-wrap: wrap; }
 .a-field-featured { flex: 0 0 84px; align-items: flex-start; }
-.a-field-featured input { width: 22px; height: 22px; accent-color: var(--accent); margin-top: 6px; }
+/* Wider than the rest because its name is: "Clarky designed" does not fit the
+   column the one-word ticks share, and shortening it loses what it means. */
+.a-field-designed { flex: 0 0 auto; min-width: 0; align-items: flex-start; }
+.a-field-designed > span { white-space: nowrap; }
+.a-field-featured input, .a-field-designed input {
+  width: 22px; height: 22px; accent-color: var(--accent); margin-top: 6px;
+}
 /* The badge ticks carry the same colours the marks use on the storefront. */
 .a-field-pop input { accent-color: #FFB800; }
 .a-prod-actions { display: flex; align-items: center; gap: 10px; }
@@ -285,6 +291,30 @@ select.a-input { cursor: pointer; }
 .a-option-choice .a-input { flex: 1; min-width: 0; }
 /* Aligned with the answers rather than the question, since it adds one. */
 .a-option > .a-btn { align-self: flex-start; margin-left: 34px; }
+
+/* ---- custom text ---- */
+/* Same dashed box as the two above: one more thing a listing can ask for. */
+.a-ctext-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--muted); }
+.a-ctext-toggle input { width: 20px; height: 20px; accent-color: var(--accent); flex: 0 0 auto; }
+.a-ctext-fields { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+.a-ctext-label { flex: 1 1 220px; }
+
+/* ---- featured items order ---- */
+/* Rows of a page, not of a table: the position leads, the name carries the row,
+   and where it lives is only there to tell two similar prints apart. */
+.a-feat-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.a-feat-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  border: 2px solid var(--line); background: var(--panel-2); padding: 8px 12px;
+}
+.a-feat-pos { flex: 0 0 24px; text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--muted); }
+.a-feat-name { font-weight: 700; font-size: 0.9rem; }
+.a-feat-where { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; }
+.a-feat-flag {
+  margin-left: auto; font-size: 0.6rem; font-weight: 700; letter-spacing: 1px;
+  color: #FFB800; border: 2px solid #FFB800; padding: 2px 6px;
+}
+.a-feat-row .a-fil-reorder { flex-direction: row; gap: 4px; }
 
 /* ---- photos ---- */
 .a-photos { border-top: 2px dashed var(--line); padding-top: 12px; }
@@ -392,5 +422,5 @@ select.a-input { cursor: pointer; }
   .a-color { height: 44px; }
   .a-photo-input { min-height: 36px; }
   /* A 22px tick box, and the ones on a product line sit 14px apart. */
-  .a-toggle input, .a-field-featured input { width: 26px; height: 26px; }
+  .a-toggle input, .a-field-featured input, .a-field-designed input { width: 26px; height: 26px; }
 }

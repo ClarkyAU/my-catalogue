@@ -2,42 +2,25 @@ import { TelegramIcon } from './Icons';
 import { TELEGRAM_URL } from '../lib/telegram.js';
 
 /**
- * The bottom of every page.
+ * The bottom of every page, and deliberately one line of it.
  *
- * There was no footer at all, but `.app-container` reserved 90px of bottom
- * padding for the floating cart button that has since moved into the header — so
- * every route ended in a band of empty scroll. The things that were only ever
- * said inside the cart, or only on a product page, are the things people look
- * for at the bottom of a shop: how to reach the owner, that nothing is held in
- * stock, and that postage is quoted rather than listed.
+ * It started as three columns: a made-to-order note, a list of routes, and how
+ * ordering works. The routes were already in the bar at the top of every page
+ * and the made-to-order note is already said on the landing page and on every
+ * product, so most of what was down here was the page repeating itself at
+ * smaller type. What survives is the one thing that is genuinely useful on the
+ * way out and stated nowhere else: postage is worked out in the chat, and this
+ * is the way into the chat.
  */
 export const SiteFooter = () => (
   <footer className="site-footer">
     <div className="footer-inner">
-      <div className="footer-block">
-        <span className="footer-label">CLARKY3D</span>
-        <p className="footer-note">
-          Every print is made to order in the colour you pick — nothing here is held on a shelf.
-        </p>
-      </div>
-
-      <nav className="footer-block" aria-label="Footer">
-        <span className="footer-label">BROWSE</span>
-        <a className="footer-link" href="#">Featured items</a>
-        <a className="footer-link" href="#colours">Colour library</a>
-      </nav>
-
-      <div className="footer-block">
-        <span className="footer-label">ORDERING</span>
-        <p className="footer-note">
-          Orders and questions go through Telegram. Postage depends on the size of the box, so it is
-          quoted in the chat.
-        </p>
-        <a className="footer-link strong" href={TELEGRAM_URL} target="_blank" rel="noreferrer">
-          <TelegramIcon />
-          Message Clarky
-        </a>
-      </div>
+      <span className="footer-label">CLARKY3D</span>
+      <p className="footer-note">Made to order. Postage is quoted in the chat.</p>
+      <a className="footer-link" href={TELEGRAM_URL} target="_blank" rel="noreferrer">
+        <TelegramIcon />
+        Message Clarky
+      </a>
     </div>
   </footer>
 );
