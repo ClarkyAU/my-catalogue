@@ -73,7 +73,7 @@ function decodeUpload(dataBase64: string): ArrayBuffer {
 /** Shape of one photo as the admin UI consumes it. */
 const photoView = (ph: typeof photos.$inferSelect) => ({
   id: ph.id,
-  url: ph.blobKey ? `/api/photos/${ph.id}` : ph.staticUrl,
+  url: ph.blobKey ? `/api/photos/${ph.blobKey}` : ph.staticUrl,
   isDefault: ph.isDefault,
   sortOrder: ph.sortOrder,
   filaments: ph.filaments,
@@ -473,7 +473,7 @@ async function handleAdminRequest(req: Request, _context: Context): Promise<Resp
             sortOrder: nextOrder,
           })
           .returning();
-        return json({ ...row, url: `/api/photos/${row.id}` }, 201);
+        return json({ ...row, url: `/api/photos/${row.blobKey}` }, 201);
       }
 
       if (method === "PATCH" && Number.isInteger(id)) {
@@ -610,7 +610,7 @@ async function handleAdminRequest(req: Request, _context: Context): Promise<Resp
             sortOrder: nextOrder,
           })
           .returning();
-        return json({ ...row, url: `/api/filament-photos/${row.id}` }, 201);
+        return json({ ...row, url: `/api/filament-photos/${row.blobKey}` }, 201);
       }
 
       // PATCH /api/admin/filament-photos/:id — edit a print's caption.

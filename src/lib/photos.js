@@ -10,14 +10,15 @@ export const firstPhotoUrl = (product) => product?.photos?.[0]?.url || product?.
 // original to fill a 280px thumbnail wastes most of the bytes downloaded, so
 // every <img> goes through the Netlify Image CDN, which resizes at the edge and
 // caches the result. Both photo sources are same-origin paths — uploads served
-// by /api/photos/:id and the images carried over from the static site under
-// /products/ — so neither needs a `remote_images` allowlist in netlify.toml.
+// by /api/photos/<blob key> and the images carried over from the static site
+// under /products/ — so neither needs a `remote_images` allowlist in
+// netlify.toml.
 //
-// `fm` is deliberately never set here: with no explicit format the CDN reads the
-// browser's Accept header and serves WebP where it is supported, falling back to
-// the original format where it is not. (The one place that does ask for a format
-// is the product page's main photo, which offers AVIF through a <picture> —
-// see avifUrl below.)
+// `fm` is deliberately never set by any caller here: with no explicit format the
+// CDN reads the browser's Accept header and serves WebP where it is supported,
+// falling back to the original format where it is not. Negotiating it this way
+// costs no extra variants, where naming a format explicitly gives the photo a
+// second full ladder of transforms to be asked for.
 
 /**
  * The widest the stored original can be. Uploads are downscaled in the browser
@@ -84,6 +85,14 @@ export function srcSetDensity(url, { w, h, fit = 'cover' } = {}) {
  * descriptors plus `sizes` let it do the arithmetic properly and take the
  * smallest candidate that still covers the box at its density.
  *
+ * Each ladder is deliberately short. Every distinct width, ratio and format is a
+ * separate Image CDN transform, and the first request for each one has to be
+ * produced from scratch — which means fetching the stored original back through
+ * /api/photos, so a rung nobody needs is a function invocation nobody needed.
+ * The rungs kept here are the ones the `sizes` below can actually select at 1x
+ * and 2x; the ones removed sat between two neighbours close enough that dropping
+ * them costs a few kilobytes of over-fetch at most.
+ *
  * The `sizes` values are derived from the real layout in src/styles/global.css:
  * `.main-wrapper` is capped at 1400px with 20px of padding, `.product-grid`
  * drops to two columns at 768px and one at 480px, and `.split` becomes a single
@@ -109,7 +118,7 @@ export function srcSetDensity(url, { w, h, fit = 'cover' } = {}) {
  * whole range has to cover the worst case, so the wide desktops paid for it.
  */
 export const CARD_IMAGE = {
-  widths: [240, 320, 420, 560, 640, 840],
+  widths: [320, 420, 560, 840],
   sizes: '(max-width: 1199px) 380px, 340px',
   ratio: 1,
   // What a browser that ignores srcset/sizes gets, and what `src` points at.
@@ -118,7 +127,7 @@ export const CARD_IMAGE = {
 
 /** The same cards below 768px, where the frame is 3:2 and there are two per row. */
 export const CARD_IMAGE_WIDE = {
-  widths: [240, 320, 420, 560, 640, 840],
+  widths: [320, 420, 560, 840],
   sizes: '(max-width: 480px) calc(100vw - 40px), calc(50vw - 26px)',
   ratio: 2 / 3,
   fallbackWidth: 560,
@@ -136,14 +145,14 @@ export const CARD_IMAGE_WIDE = {
  * actually show.
  */
 export const MAIN_IMAGE = {
-  widths: [400, 610, 800, 1000, 1220, MAX_SOURCE_WIDTH],
+  widths: [400, 610, 1000, MAX_SOURCE_WIDTH],
   sizes: '(orientation: landscape) and (max-height: 620px) 78vh, (max-width: 960px) calc(100vw - 108px), 610px',
   fallbackWidth: 1000,
 };
 
 /** The Colours page lightbox, which opens at 90% of the viewport. */
 export const LIGHTBOX_IMAGE = {
-  widths: [600, 900, 1200, MAX_SOURCE_WIDTH],
+  widths: [600, 1200, MAX_SOURCE_WIDTH],
   sizes: '90vw',
   fallbackWidth: 1200,
 };
@@ -170,23 +179,10 @@ export function responsiveImage(url, preset) {
   return { src, srcSet: candidates.join(', '), sizes };
 }
 
-/**
- * The same preset encoded as AVIF, for use in a `<picture>` source ahead of the
- * default. AVIF is typically 20–30% smaller than the WebP the CDN negotiates on
- * its own, but it has to be asked for by name, and every extra format doubles the
- * set of edge transforms a photo can be asked for — each one paying a cold
- * transform the first time. So this is used on the product page's main photo
- * only: one image per page, the largest thing on it, and the place the saving is
- * actually worth the transform. Browsers without AVIF never request these.
- */
-export function avifSrcSet(url, preset) {
-  if (typeof url !== 'string' || !url.startsWith('/')) return undefined;
-  const { widths, ratio } = preset;
-  return [...new Set(widths.map((w) => Math.min(w, MAX_SOURCE_WIDTH)))]
-    .sort((a, b) => a - b)
-    .map((w) => {
-      const box = ratio ? { w, h: w * ratio, fit: 'cover', fm: 'avif' } : { w, fm: 'avif' };
-      return `${imageUrl(url, box)} ${w}w`;
-    })
-    .join(', ');
-}
+// There is deliberately no AVIF ladder here any more. Offering AVIF as a second
+// <picture> source on the product page's main photo bought 20–30% off that one
+// image, but it doubled the set of transforms the photo could be asked for, and
+// each new one is a cold transform that reads the stored original back through
+// /api/photos. The CDN already negotiates WebP off the Accept header with no
+// extra variants at all, which is most of the same saving for none of the
+// duplication.

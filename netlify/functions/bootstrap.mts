@@ -19,14 +19,30 @@ import { CACHE_TAGS, cacheHeaders } from "../../server/cache.js";
 //
 // /api/filaments is still there — the Colours page is reachable directly, and it
 // remains the fallback if this payload ever arrives without the list.
+//
+// Seeding is checked by looking at what the catalogue read actually returned,
+// rather than by asking first. ensureSeeded() opens with its own `count(*)` on
+// categories, so calling it up front meant one extra query on every cold
+// container for a first-run case that cannot recur once the database has
+// anything in it — and each query is a database the platform has to wake and
+// then bill for its whole active period plus an idle timeout. An empty tree is
+// exactly the condition that count was testing for, so the read answers it for
+// free, and a genuinely empty database still seeds and is served on the same
+// request.
 export default async () => {
   try {
-    await ensureSeeded();
-    const [catalogue, settings, filaments] = await Promise.all([
+    const [tree, settings, filaments] = await Promise.all([
       buildCatalogue(),
       getSettings(),
       listFilaments(),
     ]);
+
+    let catalogue = tree;
+    if (Object.keys(catalogue).length === 0) {
+      await ensureSeeded();
+      catalogue = await buildCatalogue();
+    }
+
     return Response.json(
       { catalogue, settings, filaments },
       // Tagged with both, so editing a colour invalidates this response as well
