@@ -1,31 +1,47 @@
-import type { Config, Context } from "@netlify/functions";
+import type { Config } from "@netlify/functions";
 import { getStore } from "@netlify/blobs";
 import { eq } from "drizzle-orm";
 import { db } from "../../db/index.js";
 import { filamentPhotos } from "../../db/schema.js";
 import { immutableAssetHeaders } from "../../server/cache.js";
+import { BLOB_KEY_PATTERN, LEGACY_ID_PATTERN, sniffImageType } from "../../server/imageType.js";
 
 const FILAMENT_PHOTO_STORE = "filament-photos";
+const PREFIX = "/api/filament-photos/";
 
 // Streams a filament print photo out of Netlify Blobs. These are the example
 // prints shown under each colour on the public "Colours" page.
-export default async (_req: Request, context: Context) => {
-  const id = Number(context.params.id);
-  if (!Number.isInteger(id)) return new Response("Not found", { status: 404 });
+//
+// Keyed off the Blobs key rather than the row id, for the reason given in
+// netlify/functions/photo.mts: serving an image should not wake the database.
+export default async (req: Request) => {
+  const segment = decodeURIComponent(new URL(req.url).pathname.slice(PREFIX.length));
 
-  const [pic] = await db.select().from(filamentPhotos).where(eq(filamentPhotos.id, id));
-  if (!pic || !pic.blobKey) return new Response("Not found", { status: 404 });
+  let blobKey: string | null = null;
+  let contentType: string | null = null;
 
-  const store = getStore(FILAMENT_PHOTO_STORE);
-  const blob = await store.get(pic.blobKey, { type: "arrayBuffer" });
+  if (BLOB_KEY_PATTERN.test(segment)) {
+    blobKey = segment;
+  } else if (LEGACY_ID_PATTERN.test(segment)) {
+    const [pic] = await db
+      .select({ blobKey: filamentPhotos.blobKey, contentType: filamentPhotos.contentType })
+      .from(filamentPhotos)
+      .where(eq(filamentPhotos.id, Number(segment)));
+    blobKey = pic?.blobKey ?? null;
+    contentType = pic?.contentType ?? null;
+  }
+
+  if (!blobKey) return new Response("Not found", { status: 404 });
+
+  const blob = await getStore(FILAMENT_PHOTO_STORE).get(blobKey, { type: "arrayBuffer" });
   if (!blob) return new Response("Not found", { status: 404 });
 
   return new Response(blob, {
-    headers: immutableAssetHeaders(pic.contentType || "application/octet-stream"),
+    headers: immutableAssetHeaders(contentType || sniffImageType(blob)),
   });
 };
 
 export const config: Config = {
-  path: "/api/filament-photos/:id",
+  path: "/api/filament-photos/*",
   method: "GET",
 };

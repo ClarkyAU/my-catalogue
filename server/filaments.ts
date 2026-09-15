@@ -89,11 +89,15 @@ export async function listFilaments() {
     hex2: f.hex2,
     colors: f.colors,
     status: f.status,
+    // The URL carries the Blobs key, not the row id, so that fetching the image
+    // does not cost a database query (see netlify/functions/filament-photo.mts).
+    // A row with no key has no image behind it, so it is left out rather than
+    // published as a URL that can only 404.
     prints: pics
-      .filter((p) => p.filamentId === f.id)
+      .filter((p) => p.filamentId === f.id && p.blobKey)
       .map((p) => ({
         id: p.id,
-        url: `/api/filament-photos/${p.id}`,
+        url: `/api/filament-photos/${p.blobKey}`,
         caption: p.caption || "",
       })),
   }));

@@ -10,7 +10,6 @@ import { loadFilaments } from '../lib/filaments.js';
 import { shareUrl } from '../lib/shareLink.js';
 import {
   MAIN_IMAGE,
-  avifSrcSet,
   firstPhotoUrl,
   imageUrl,
   responsiveImage,
@@ -98,7 +97,6 @@ export const ProductDisplay = ({
   // bare URL strings, so both shapes still have to work here.
   const mainPhotoUrl = currentPhoto?.url || currentPhoto || null;
   const main = responsiveImage(mainPhotoUrl, MAIN_IMAGE);
-  const avifMain = avifSrcSet(mainPhotoUrl, MAIN_IMAGE);
   // The crawler-readable form of this page's URL, so a link pasted into a chat
   // previews as the product rather than the bare homepage.
   const productUrl = path ? shareUrl(path) : window.location.href;
@@ -174,15 +172,13 @@ export const ProductDisplay = ({
                     content of this page rather than decoration, so unlike the
                     grid cards — where the product name sits in the same link —
                     it carries a real alt describing what is pictured. */}
+                {/* One source, so this wrapper looks redundant — it is not.
+                    .image-wrapper is a column flex container, and the landscape
+                    rule for .main-img sets `width: auto; margin: 0 auto` to size
+                    the photo from its own shape. A bare <img> would be the flex
+                    item and get stretched instead; the <picture> takes the
+                    stretch so the image inside can stay auto-width. */}
                 <picture>
-                  {/* AVIF first, for the one image on the site where the extra
-                      edge transform pays for itself. Anything that cannot decode
-                      it skips this source entirely and takes the <img> below,
-                      where the CDN negotiates WebP off the Accept header as
-                      usual. */}
-                  {avifMain && (
-                    <source type="image/avif" srcSet={avifMain} sizes={main.sizes} />
-                  )}
                   <img
                     ref={swipeRef}
                     src={main.src}

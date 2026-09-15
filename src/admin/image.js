@@ -59,7 +59,9 @@ export async function fileToUpload(file, maxDim = MAX_DIMENSION, quality) {
   const blob = await toBlob(canvas, contentType, q);
   const base64 = (await readAsDataURL(blob)).split(',')[1];
   // The real type of what came back, in case toBlob ignored the request and
-  // handed us a PNG — the row stores this and /api/photos/:id serves it back.
+  // handed us a PNG. The row still records it, but what serves the image reads
+  // the format out of the file's own leading bytes (see server/imageType.ts) so
+  // that it needs no database query.
   return { dataBase64: base64, contentType: blob.type || contentType };
 }
 

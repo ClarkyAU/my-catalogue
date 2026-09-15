@@ -134,9 +134,14 @@ export function normalizeCustomText(input: unknown): CustomTextConfig | null {
   return { label, required: Boolean(raw.required) };
 }
 
-/** Public URL for a photo row (Blobs-backed uploads vs. carried-over statics). */
-function photoUrl(row: { id: number; blobKey: string | null; staticUrl: string | null }): string {
-  if (row.blobKey) return `/api/photos/${row.id}`;
+/**
+ * Public URL for a photo row (Blobs-backed uploads vs. carried-over statics).
+ *
+ * An upload's URL carries its Blobs key rather than its row id, so that serving
+ * it needs no database query at all — see netlify/functions/photo.mts.
+ */
+function photoUrl(row: { blobKey: string | null; staticUrl: string | null }): string {
+  if (row.blobKey) return `/api/photos/${row.blobKey}`;
   return row.staticUrl || "";
 }
 
